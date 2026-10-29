@@ -49,7 +49,7 @@
     background: var(--page);
     overflow-x: hidden;
   }
-  h1, h2, h3 { font-family: var(--heading); line-height: 1.15; margin: 0 0 .5em; }
+  h1, h2, h3 { font-family: var(--heading); line-height: 1.15; margin: 0 0 .5em; text-wrap: balance; }
   h1 { font-size: clamp(2rem, 6vw, 3.25rem); font-weight: 700; letter-spacing: -.01em; }
   h2 { font-size: clamp(1.5rem, 4vw, 2.1rem); font-weight: 600; }
   h3 { font-size: 1.15rem; font-weight: 600; }
@@ -88,6 +88,7 @@
   .btn-primary { background: var(--green); color: #fff; }
   .btn-primary:hover { background: var(--green-dark); }
   .btn-ghost { background: transparent; color: var(--green); border-color: var(--green); }
+  .btn:focus-visible, .tabs button:focus-visible, summary:focus-visible, nav.links a:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
   .btn-ghost:hover { background: var(--green-tint); }
   .btn-sm { min-height: 40px; padding: 0 16px; font-size: .95rem; }
 
@@ -201,6 +202,7 @@
   footer { background: var(--ink); color: rgba(255,255,255,.75); padding: 32px 0; font-size: .92rem; }
   footer a { color: var(--yellow); }
 
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   @media (min-width: 720px) {
     nav.links { display: flex; }
     .steps { grid-template-columns: repeat(2, 1fr); }

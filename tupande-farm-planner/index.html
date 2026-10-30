@@ -106,7 +106,7 @@
   }
   .top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 66px; }
   .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-  .brand img { height: 36px; width: auto; display: block; }
+  .brand img { height: 40px; width: auto; display: block; }
   .brand .wordmark { font-family: var(--display); font-weight: 800; font-size: 1.4rem; color: var(--green); }
   .brand .product { font-size: .95rem; color: var(--muted); border-left: 1px solid var(--rule); padding-left: 12px; }
   .top nav { display: none; gap: 26px; }
@@ -130,16 +130,16 @@
   /* Photo frame with the Button and the Bow */
   .photo { position: relative; margin: 0; align-self: end; }
   .photo .frame {
-    position: relative; aspect-ratio: 5 / 4; max-width: 100%; border-radius: 28px 28px 0 0;
+    position: relative; aspect-ratio: 4 / 3; max-width: 100%; border-radius: 28px 28px 0 0;
     overflow: hidden; background: var(--yellow-20);
   }
   .photo .frame svg, .photo .frame img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-  .photo .frame img { object-fit: cover; }
+  .photo .frame img { object-fit: cover; object-position: 62% 50%; }
   .photo .badge { /* The Button */
-    position: absolute; top: -18px; right: 14px; z-index: 2;
-    width: 112px; height: 112px; border-radius: 50%;
+    position: absolute; top: -46px; left: -14px; z-index: 2;
+    width: 108px; height: 108px; border-radius: 50%;
     background: var(--yellow); color: var(--ink); display: grid; place-content: center; text-align: center;
-    font-family: var(--display); font-weight: 800; line-height: 1; transform: rotate(-8deg);
+    font-family: var(--display); font-weight: 800; line-height: 1; transform: rotate(8deg);
     box-shadow: 0 0 0 6px var(--green);
   }
   .photo .badge small { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
@@ -149,9 +149,9 @@
   /* Tally strip under the hero (notebook figures) */
   .tally { background: var(--yellow); }
   .tally .wrap { display: grid; grid-template-columns: repeat(3, 1fr); }
-  .tally div { padding: 18px 8px; text-align: center; border-left: 2px dashed rgba(34,48,45,.25); }
+  .tally div { padding: 18px 4px; text-align: center; border-left: 2px dashed rgba(34,48,45,.25); }
   .tally div:first-child { border-left: 0; }
-  .tally strong { display: block; font-family: var(--display); font-weight: 800; font-size: clamp(1.15rem, 4.5vw, 1.9rem); }
+  .tally strong { display: block; font-family: var(--display); font-weight: 800; font-size: clamp(.9rem, 3.8vw, 1.9rem); white-space: nowrap; }
   .tally small { font-size: .82rem; font-weight: 600; line-height: 1.2; display: block; }
   .tally-note { background: var(--yellow-20); font-size: .88rem; color: var(--muted); padding-block: 10px; text-align: center; }
 
@@ -297,7 +297,7 @@
   }
   @media (max-width: 400px) {
     .brand .product { display: none; }
-    .photo .badge { width: 92px; height: 92px; }
+    .photo .badge { width: 88px; height: 88px; top: -36px; left: -6px; }
     .photo .badge span { font-size: 1.2rem; }
   }
 </style>
@@ -323,8 +323,8 @@
 <header class="top">
   <div class="wrap">
     <a class="brand" href="#top" aria-label="Tupande Farm Planner home">
-      <!-- Official logo goes in assets/tupande-logo.svg (from the brand guidelines folder). Until then the name shows as text. -->
-      <img src="assets/tupande-logo.svg" alt="Tupande" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'wordmark',textContent:'Tupande'}))">
+      <!-- Co-branded horizontal logo, taken unaltered from the Tupande brandbook (staff edition, page 18) -->
+      <img src="assets/tupande-by-oaf-horizontal.png" alt="Tupande by One Acre Fund" width="900" height="267" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'wordmark',textContent:'Tupande'}))">
       <span class="product">Farm Planner</span>
     </a>
     <nav aria-label="Page sections">
@@ -395,8 +395,8 @@
               <path d="M30 360 Q250 300 470 350"/><path d="M60 385 Q250 330 440 378"/>
             </g>
           </svg>
-          <!-- Drop an approved Tupande photo at assets/hero.jpg and it replaces the illustration -->
-          <img src="assets/hero.jpg" alt="A Tupande farmer and agent planning a field together" onerror="this.remove()">
+          <!-- Photo from the Tupande brandbook (page 3). The illustration underneath shows if it fails to load. -->
+          <img src="assets/hero.jpg" alt="A smiling farmer and a One Acre Fund field officer looking over a basket of freshly picked sorghum" width="1600" height="902" onerror="this.remove()">
         </div>
       </figure>
     </div>

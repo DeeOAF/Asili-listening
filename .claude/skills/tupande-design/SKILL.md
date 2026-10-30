@@ -5,7 +5,8 @@ description: Tupande look and feel for any page, screen or component in this rep
 
 # Tupande design
 
-Source: *Tupande Brandbook Master_Final.pdf* (One Acre Fund, Drive id `1_HR-VC9dRPCs-DK2X1nnKr8rSszv7qLO`).
+Sources: *Tupande Brandbook Master_Final.pdf* (Drive id `1_HR-VC9dRPCs-DK2X1nnKr8rSszv7qLO`) and
+*Tupande_Brandbook_Staff_1.14.22_small.pdf* (staff edition).
 The brandbook always wins over anything below. The user's own instructions win over both.
 
 ## Direction: "market poster × agent's notebook"
@@ -28,11 +29,11 @@ Never let the whole page be one register. Never use flat identical cards everywh
 | Primary | Kakamega Green | `#2B7F68` |
 | Primary | Binzari Yellow | `#E8B757` |
 | Primary | Rondo Teal | `#2F6067` |
-| Secondary | (brown) | `#754C3D` |
-| Secondary | (olive) | `#67724D` |
-| Secondary | (leaf olive) | `#8F9A36` |
-| Secondary | (sand) | `#DED6C0` |
-| Secondary | (clay) | `#D8B39D` |
+| Secondary | Sagana Brown | `#754C3D` |
+| Secondary | Kunde | `#67724D` |
+| Secondary | Zaituni | `#8F9A36` |
+| Secondary | Malindi Sand | `#DED6C0` |
+| Secondary | Sangalo Rock | `#D8B39D` |
 | Accent, sparingly | Red Ochre | `#CF482B` |
 | Accent, sparingly | Mlango Blue | `#00B3B6` |
 | Accent, sparingly | Plum | `#6F285B` |
@@ -40,9 +41,9 @@ Never let the whole page be one register. Never use flat identical cards everywh
 
 - Primary colours pair with each other or with white.
 - Tints are named by strength: *Kakamega Green 20* is the lightest (20%), then 40, 60, 80.
-- Secondary colours support the primaries. The brandbook lists the names Kunde, Zaituni,
-  Malindi Sand, Sagana Brown and Sangalo Rock, but the text extract does not pair names to hex
-  values. Use hex values only until a designer confirms the pairing.
+- Secondary colours support the primaries. Note: the staff edition prints Sagana Brown as
+  `#62F6067` / RGB 50, 97, 103 (a typo copied from Rondo Teal); the master edition's `#754C3D`
+  (RGB 117, 76, 61) is correct.
 - Accent colours are small highlights only. **Never** use them as solid backgrounds.
 - Open question: Binzari Yellow's RGB (243, 188, 72) differs from its hex. Use the hex.
 
@@ -58,7 +59,10 @@ Never let the whole page be one register. Never use flat identical cards everywh
 ## Logo
 
 - Use only the locked logo files (EPS, PDF, PNG) from the brand guidelines folder.
-  Put web copies in `tupande-farm-planner/assets/` (e.g. `tupande-logo.svg`, `tupande-logo-inverted.svg`).
+  Web copies live in `tupande-farm-planner/assets/`. `tupande-by-oaf-horizontal.png` is the
+  co-branded horizontal logo cropped unaltered from the staff brandbook (page 18); replace it with
+  the locked file from the brand folder when available. There is no inverted (white) web copy yet,
+  so do not place the logo on dark bands.
 - Coloured logo on light backgrounds; inverted logo on dark backgrounds.
 - Clear space on every side = height of the "T" in the word mark.
 - Never recreate, stretch, recolour, outline, add effects to, or rotate it (only 0° or 90°).
@@ -92,5 +96,7 @@ Clear British English. Estimates are labelled as estimates.
 - Tabular figures (`font-variant-numeric: tabular-nums`) wherever numbers line up.
 - Visible keyboard focus (Binzari Yellow outline); respect `prefers-reduced-motion`.
 - Charts and field diagrams drawn to scale.
-- Photos: real Tupande photography only, from approved brand sources. Never stock photos
+- Photos: real Tupande photography only, from approved brand sources. `assets/hero.jpg` is the
+  farmer and field officer in sorghum from the staff brandbook (page 3); pages 1, 5, 9, 16, 24
+  and 28 hold other usable photos. Never stock photos
   presented as Tupande farmers, and never AI-generated people presented as real.

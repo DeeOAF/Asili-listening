@@ -2,589 +2,708 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tupande Farm Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Plan your land as a productive asset: protect family maize first, then explore affordable ways to earn now and in the future.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Georama:wght@500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Georama:wght@500;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Layout: "market poster × agent's notebook". Full-width poster bands (green, teal, yellow)
+     open each idea; ruled notebook pages on sand carry the figures. Single light theme from the Tupande brandbook. */
   :root {
-    /* Tupande primary brand colours */
+    color-scheme: light;
+    /* Brandbook primaries */
     --green: #2B7F68;
     --yellow: #E8B757;
     --teal: #2F6067;
+    /* Brandbook secondaries */
+    --brown: #754C3D;
+    --olive: #67724D;
+    --leaf: #8F9A36;
+    --sand: #DED6C0;
+    --clay: #D8B39D;
+    /* Brandbook accent, used only for the notebook margin rule and one stamp */
+    --ochre: #CF482B;
 
+    /* Derived tints and neutrals */
+    --green-20: #D5E5E1;
     --green-dark: #1F5E4D;
-    --green-tint: #E6F1EE;
-    --yellow-tint: #FBF1DC;
-    --ink: #1D2B2A;
-    --muted: #55625F;
-    --line: #D8E0DE;
-    --surface: #FFFFFF;
-    --page: #F6F8F7;
+    --yellow-20: #FAF1DD;
+    --sand-20: #F5F2EA;
+    --ink: #22302D;
+    --muted: #5A6461;
+    --rule: #D9D2BF;
+    --paper: #FFFDF8;
 
-    /* Field allocation colours */
-    --c-maize: #E8B757;
-    --c-groundnut: #B9794B;
-    --c-fruit-new: #2B7F68;
-    --c-fruit-old: #7DB8A5;
-    --c-woodlot: #2F6067;
-    --c-free: #EEF1F0;
-
-    --radius: 14px;
-    --heading: "Georama", system-ui, sans-serif;
+    --display: "Georama", "Arial Narrow", system-ui, sans-serif;
     --body: "Source Sans 3", "Source Sans Pro", system-ui, sans-serif;
+    --r: 18px;
   }
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
-    margin: 0;
-    font-family: var(--body);
-    font-size: 1.0625rem;
-    line-height: 1.55;
-    color: var(--ink);
-    background: var(--page);
+    margin: 0; background: var(--sand-20); color: var(--ink);
+    font-family: var(--body); font-size: 1.0625rem; line-height: 1.55;
     overflow-x: hidden;
   }
-  h1, h2, h3 { font-family: var(--heading); line-height: 1.15; margin: 0 0 .5em; text-wrap: balance; }
-  h1 { font-size: clamp(2rem, 6vw, 3.25rem); font-weight: 700; letter-spacing: -.01em; }
-  h2 { font-size: clamp(1.5rem, 4vw, 2.1rem); font-weight: 600; }
-  h3 { font-size: 1.15rem; font-weight: 600; }
-  p { margin: 0 0 1em; }
-  a { color: var(--green); }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.05; margin: 0; text-wrap: balance; }
+  h2 { font-size: clamp(1.9rem, 5.5vw, 3rem); font-weight: 800; letter-spacing: -.015em; }
+  h3 { font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
+  p { margin: 0; }
+  a { color: inherit; }
+  img, svg { max-width: 100%; }
 
-  .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 16px; }
-  section { padding: 56px 0; }
-  .eyebrow {
-    display: inline-block; font-weight: 700; font-size: .8rem; letter-spacing: .08em;
-    text-transform: uppercase; color: var(--green); margin-bottom: .75em;
+  .wrap {
+    width: 100%; max-width: 1140px; margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
-  .lead { font-size: 1.2rem; color: var(--muted); max-width: 40em; }
+  .band { padding-block: 64px; }
+  .stack { display: grid; gap: 16px; }
+  .kicker {
+    font-family: var(--display); font-weight: 700; font-size: .85rem;
+    letter-spacing: .12em; text-transform: uppercase;
+  }
+  .lede { font-size: 1.2rem; max-width: 36em; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* The Arc: a curved yellow highlight under one key phrase */
+  .arc { position: relative; white-space: nowrap; display: inline-block; }
+  .arc::after {
+    content: ""; position: absolute; left: -3%; right: -3%; bottom: -.16em; height: .42em;
+    border-bottom: .13em solid var(--yellow); border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 52px; padding: 0 26px; border-radius: 999px; border: 3px solid transparent;
+    font-family: var(--display); font-weight: 700; font-size: 1.05rem; text-decoration: none; cursor: pointer;
+  }
+  .btn-yellow { background: var(--yellow); color: var(--ink); }
+  .btn-yellow:hover { background: #F0C873; }
+  .btn-line { border-color: currentColor; color: inherit; background: transparent; }
+  .btn-line:hover { background: rgba(255,255,255,.12); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { background: var(--green-dark); }
+  .btn-sm { min-height: 42px; padding: 0 18px; font-size: .95rem; }
+  .btn:focus-visible, .tabs button:focus-visible, summary:focus-visible, .top nav a:focus-visible {
+    outline: 3px solid var(--yellow); outline-offset: 3px;
+  }
 
   /* Header */
-  header.top {
-    position: sticky; top: 0; z-index: 10;
-    background: rgba(255,255,255,.95); backdrop-filter: blur(6px);
-    border-bottom: 1px solid var(--line);
+  body::before {
+    content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+    z-index: 11; background: var(--paper);
   }
-  header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; }
-  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
-  .brand img { height: 34px; width: auto; display: block; }
-  .brand .wordmark { font-family: var(--heading); font-weight: 700; font-size: 1.35rem; color: var(--green); }
-  .brand .product { font-size: .95rem; color: var(--muted); border-left: 1px solid var(--line); padding-left: 10px; }
-  nav.links { display: none; gap: 24px; }
-  nav.links a { color: var(--ink); text-decoration: none; font-weight: 600; }
-  nav.links a:hover { color: var(--green); }
+  .top {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;
+    background: var(--paper); border-bottom: 1px solid var(--rule);
+  }
+  .top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 66px; }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+  .brand img { height: 36px; width: auto; display: block; }
+  .brand .wordmark { font-family: var(--display); font-weight: 800; font-size: 1.4rem; color: var(--green); }
+  .brand .product { font-size: .95rem; color: var(--muted); border-left: 1px solid var(--rule); padding-left: 12px; }
+  .top nav { display: none; gap: 26px; }
+  .top nav a { text-decoration: none; font-weight: 600; color: var(--ink); }
+  .top nav a:hover { color: var(--green); }
 
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    min-height: 48px; padding: 0 22px; border-radius: 999px;
-    font-family: var(--body); font-weight: 700; font-size: 1rem;
-    text-decoration: none; border: 2px solid transparent; cursor: pointer;
+  /* Hero: poster */
+  .hero { background: var(--green); color: #fff; position: relative; overflow: hidden; padding-block: 48px 0; }
+  .hero::before { /* soft leaf pattern, generic leaf shape (not the logo) */
+    content: ""; position: absolute; inset: 0; opacity: .08; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cpath d='M18 50C18 30 32 18 52 18C52 38 38 50 18 50Z' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M18 50L40 30' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-size: 72px 72px;
   }
-  .btn-primary { background: var(--green); color: #fff; }
-  .btn-primary:hover { background: var(--green-dark); }
-  .btn-ghost { background: transparent; color: var(--green); border-color: var(--green); }
-  .btn:focus-visible, .tabs button:focus-visible, summary:focus-visible, nav.links a:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
-  .btn-ghost:hover { background: var(--green-tint); }
-  .btn-sm { min-height: 40px; padding: 0 16px; font-size: .95rem; }
+  .hero .wrap { position: relative; display: grid; gap: 36px; align-items: end; }
+  .hero .kicker { color: var(--yellow); }
+  .hero h1 { font-size: clamp(2.5rem, 9vw, 4.6rem); font-weight: 800; letter-spacing: -.02em; margin: 14px 0 20px; }
+  .hero .lede { color: rgba(255,255,255,.9); }
+  .hero .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .hero-copy { padding-bottom: 48px; min-width: 0; }
 
-  /* Hero */
-  .hero { padding: 40px 0 56px; background: linear-gradient(180deg, #fff 0%, var(--green-tint) 100%); }
-  .hero .grid { display: grid; gap: 32px; align-items: center; }
-  .hero .actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0 16px; }
-  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-  .pill {
-    font-size: .9rem; font-weight: 600; padding: 4px 12px; border-radius: 999px;
-    background: #fff; border: 1px solid var(--line); color: var(--muted);
+  /* Photo frame with the Button and the Bow */
+  .photo { position: relative; margin: 0; align-self: end; }
+  .photo .frame {
+    position: relative; aspect-ratio: 5 / 4; max-width: 100%; border-radius: 28px 28px 0 0;
+    overflow: hidden; background: var(--yellow-20);
+  }
+  .photo .frame svg, .photo .frame img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .photo .frame img { object-fit: cover; }
+  .photo .badge { /* The Button */
+    position: absolute; top: -18px; right: 14px; z-index: 2;
+    width: 112px; height: 112px; border-radius: 50%;
+    background: var(--yellow); color: var(--ink); display: grid; place-content: center; text-align: center;
+    font-family: var(--display); font-weight: 800; line-height: 1; transform: rotate(-8deg);
+    box-shadow: 0 0 0 6px var(--green);
+  }
+  .photo .badge small { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .photo .badge span { font-size: 1.5rem; }
+  .bow { display: block; width: 100%; height: 34px; margin-top: -1px; }
+
+  /* Tally strip under the hero (notebook figures) */
+  .tally { background: var(--yellow); }
+  .tally .wrap { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .tally div { padding: 18px 8px; text-align: center; border-left: 2px dashed rgba(34,48,45,.25); }
+  .tally div:first-child { border-left: 0; }
+  .tally strong { display: block; font-family: var(--display); font-weight: 800; font-size: clamp(1.15rem, 4.5vw, 1.9rem); }
+  .tally small { font-size: .82rem; font-weight: 600; line-height: 1.2; display: block; }
+  .tally-note { background: var(--yellow-20); font-size: .88rem; color: var(--muted); padding-block: 10px; text-align: center; }
+
+  /* Notebook page */
+  .page {
+    position: relative; background-color: var(--paper); border-radius: var(--r);
+    background-image: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px);
+    background-position: 0 14px;
+    box-shadow: 0 1px 0 var(--rule), 0 14px 30px -18px rgba(34,48,45,.35);
+    padding: 26px 22px 26px 44px;
+  }
+  .page::before { /* margin rule */
+    content: ""; position: absolute; top: 0; bottom: 0; left: 26px; width: 2px; background: var(--ochre); opacity: .55;
   }
 
-  /* Plan card */
-  .card {
-    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
-    box-shadow: 0 8px 28px rgba(29,43,42,.08);
-  }
-  .plan-card { padding: 20px; }
-  .plan-card .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
-  .plan-card .head h3 { margin: 0; }
-  .plan-card .head span { font-size: .9rem; color: var(--muted); }
-  .field-svg { width: 100%; height: auto; display: block; }
-  .legend { list-style: none; padding: 0; margin: 14px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; font-size: .92rem; }
-  .legend li { display: flex; align-items: center; gap: 8px; }
-  .swatch { width: 14px; height: 14px; border-radius: 4px; flex: none; }
-  .swatch.ring { background: transparent; border: 3px dotted var(--teal); border-radius: 50%; }
-
-  .totals {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
-    background: var(--line); border-radius: 12px; overflow: hidden; margin-top: 16px;
-  }
-  .totals div { background: var(--teal); color: #fff; padding: 10px 8px; text-align: center; }
-  .totals small { display: block; font-size: .75rem; opacity: .85; line-height: 1.2; }
-  .totals strong { font-family: var(--heading); font-size: 1.05rem; display: block; margin-top: 2px; }
-  .note { font-size: .85rem; color: var(--muted); margin: 10px 0 0; }
+  /* Section heads */
+  .head { display: grid; gap: 14px; margin-bottom: 32px; }
+  .head .kicker { color: var(--green); }
+  .head .lede { color: var(--muted); }
 
   /* Steps */
-  .steps { display: grid; gap: 16px; counter-reset: step; margin-top: 28px; }
-  .step { padding: 22px; position: relative; }
-  .step::before {
-    counter-increment: step; content: counter(step);
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 36px; height: 36px; border-radius: 50%;
-    background: var(--yellow); color: var(--ink);
-    font-family: var(--heading); font-weight: 700; margin-bottom: 12px;
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: s; }
+  .steps li { display: grid; grid-template-columns: 64px 1fr; gap: 16px; align-items: start; padding: 18px 0; border-bottom: 2px dashed var(--rule); }
+  .steps li:last-child { border-bottom: 0; }
+  .icon-dot {
+    width: 64px; height: 64px; border-radius: 50%; background: var(--green); color: #fff;
+    display: grid; place-items: center; position: relative;
   }
-  .step p { color: var(--muted); margin: 0; }
-
-  /* Food first */
-  .food-first { background: var(--teal); color: #fff; }
-  .food-first .eyebrow { color: var(--yellow); }
-  .food-first .lead { color: rgba(255,255,255,.85); }
-  .checks { display: grid; gap: 16px; margin-top: 24px; }
-  .check { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); border-radius: var(--radius); padding: 20px; }
-  .check h3 { color: var(--yellow); }
-  .check p { margin: 0; color: rgba(255,255,255,.9); }
-  .check code { font-family: var(--body); font-weight: 700; color: #fff; }
-
-  /* Enterprises */
-  .ent-grid { display: grid; gap: 16px; margin-top: 28px; }
-  .ent { padding: 20px; border-top: 6px solid var(--accent, var(--green)); }
-  .ent .tag {
-    display: inline-block; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
-    padding: 2px 10px; border-radius: 999px; background: var(--yellow-tint); color: #7A5A17; margin-bottom: 10px;
+  .icon-dot svg { width: 32px; height: 32px; }
+  .icon-dot::after {
+    counter-increment: s; content: counter(s);
+    position: absolute; right: -6px; top: -6px; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--yellow); color: var(--ink); font-family: var(--display); font-weight: 800; font-size: .9rem;
+    display: grid; place-items: center;
   }
-  .ent .tag.locked { background: var(--green-tint); color: var(--green-dark); }
-  .ent ul { margin: 0; padding-left: 1.1em; color: var(--muted); }
-  .ent li { margin-bottom: 4px; }
-  .ent li strong { color: var(--ink); }
+  .steps p { color: var(--muted); margin-top: 4px; }
 
-  /* Tables */
-  .table-wrap { overflow-x: auto; margin-top: 20px; }
-  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; }
-  th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); }
-  th { font-family: var(--heading); font-weight: 600; font-size: .95rem; background: var(--green-tint); }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  tr:last-child td { border-bottom: 0; }
-
-  .split { display: grid; gap: 32px; }
-  .rules { list-style: none; padding: 0; margin: 20px 0 0; }
-  .rules li { padding: 10px 0 10px 30px; border-bottom: 1px solid var(--line); position: relative; }
-  .rules li::before { content: "✓"; position: absolute; left: 4px; color: var(--green); font-weight: 700; }
-
-  /* Example plan */
-  .tabs { display: inline-flex; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 4px; margin: 8px 0 20px; }
-  .tabs button {
-    min-height: 40px; padding: 0 20px; border: 0; border-radius: 999px; background: transparent;
-    font-family: var(--body); font-weight: 700; font-size: 1rem; color: var(--muted); cursor: pointer;
+  /* Food first: teal poster */
+  .food { background: var(--teal); color: #fff; position: relative; overflow: hidden; }
+  .food .head .kicker { color: var(--yellow); }
+  .food .head .lede { color: rgba(255,255,255,.88); }
+  .food-grid { display: grid; gap: 20px; }
+  .check { background: var(--paper); color: var(--ink); border-radius: var(--r); padding: 24px; position: relative; }
+  .check .stamp {
+    position: absolute; top: 16px; right: 16px; transform: rotate(6deg);
+    border: 3px solid var(--ochre); color: var(--ochre); border-radius: 8px; padding: 2px 10px;
+    font-family: var(--display); font-weight: 800; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase;
   }
-  .tabs button[aria-selected="true"] { background: var(--green); color: #fff; }
+  .check h3 { margin-bottom: 10px; color: var(--teal); padding-right: 96px; }
+  .check .sum {
+    margin-top: 14px; padding: 12px 14px; background: var(--sand-20); border-radius: 10px;
+    font-family: var(--display); font-weight: 700; font-size: 1.05rem;
+  }
+  .food-illus { display: none; }
+
+  /* Options */
+  .options { display: grid; gap: 18px; }
+  .opt { background: var(--paper); border-radius: var(--r); padding: 22px; display: grid; gap: 14px; border: 2px solid var(--rule); }
+  .opt.locked { border-color: var(--green); background: var(--green-20); }
+  .opt .row { display: flex; align-items: center; gap: 14px; }
+  .opt .ic { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; flex: none; color: #fff; }
+  .opt .ic svg { width: 28px; height: 28px; }
+  .chip { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 3px 10px; border-radius: 999px; }
+  .chip.lock { background: var(--green); color: #fff; }
+  .chip.opt-c { background: var(--yellow-20); color: var(--brown); }
+  .big { font-family: var(--display); font-weight: 800; font-size: 1.7rem; line-height: 1; }
+  .big small { font-family: var(--body); font-weight: 600; font-size: .9rem; color: var(--muted); display: block; margin-top: 4px; }
+  .opt ul { margin: 0; padding: 12px 0 0 1.1em; color: var(--muted); border-top: 2px dashed var(--rule); }
+  .opt li { margin-bottom: 4px; }
+
+  /* Credit ladder */
+  .credit { background: var(--paper); }
+  .ladder { display: grid; gap: 10px; }
+  .rung { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: center; }
+  .rung span:first-child { font-weight: 700; }
+  .bar { height: 42px; border-radius: 0 999px 999px 0; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: flex-end; padding-right: 14px; font-family: var(--display); font-weight: 700; white-space: nowrap; min-width: 0; }
+  .rules { list-style: none; margin: 0; padding: 0; }
+  .rules li { padding: 9px 0 9px 32px; position: relative; border-bottom: 1px solid var(--rule); }
+  .rules li::before { content: ""; position: absolute; left: 4px; top: 15px; width: 14px; height: 8px; border-left: 3px solid var(--green); border-bottom: 3px solid var(--green); transform: rotate(-45deg); }
+  .split { display: grid; gap: 36px; }
+
+  /* Worked example */
+  .example .tabs { display: inline-flex; background: var(--paper); border: 2px solid var(--rule); border-radius: 999px; padding: 4px; margin-bottom: 20px; }
+  .tabs button { min-height: 44px; padding: 0 22px; border: 0; border-radius: 999px; background: transparent; font-family: var(--display); font-weight: 700; font-size: 1rem; color: var(--muted); cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--teal); color: #fff; }
+  .ex-grid { display: grid; gap: 22px; }
+  .ex-grid > * { min-width: 0; }
+  .field-card h3 { margin-bottom: 12px; }
+  .legend { list-style: none; padding: 0; margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: .92rem; }
+  .legend li { display: flex; align-items: center; gap: 7px; }
+  .sw { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+  .ledger { width: 100%; border-collapse: collapse; }
+  .ledger caption { text-align: left; font-family: var(--display); font-weight: 700; font-size: 1.15rem; }
+  .ledger caption, .ledger td { line-height: 32px; }
+  .ledger td { padding: 0 2px; vertical-align: bottom; }
+  .ledger td + td { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 10px; }
+  .ledger tr.sub td { font-weight: 700; }
+  .ledger tr.total td { font-family: var(--display); font-weight: 800; font-size: 1.12rem; color: var(--green-dark); }
+  .ledger tr.total td + td { text-decoration: underline double var(--green); text-underline-offset: 5px; }
+  .ledger-note { font-size: .88rem; color: var(--muted); margin-top: 12px; line-height: 32px; }
   .panel[hidden] { display: none; }
-  .ledger td:first-child { color: var(--muted); }
-  .ledger tr.total td { font-weight: 700; color: var(--ink); background: var(--yellow-tint); }
-  .ledger tr.sub td { font-weight: 700; color: var(--ink); }
-  details { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin-top: 16px; }
-  summary { cursor: pointer; font-weight: 700; color: var(--green); }
+  details { margin-top: 18px; background: var(--paper); border: 2px solid var(--rule); border-radius: 14px; padding: 14px 18px; }
+  summary { cursor: pointer; font-weight: 700; color: var(--green-dark); }
   details ul { margin: 12px 0 0; padding-left: 1.1em; color: var(--muted); }
 
-  /* Exclusions */
-  .excl { columns: 1; padding-left: 1.1em; color: var(--muted); margin: 20px 0 0; }
-  .excl li { margin-bottom: 6px; break-inside: avoid; }
+  /* Exclusions: sand poster */
+  .limits { background: var(--sand); }
+  .limits .head .kicker { color: var(--brown); }
+  .limits ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+  .limits li { background: var(--paper); border-radius: 12px; padding: 12px 14px 12px 44px; position: relative; font-weight: 600; }
+  .limits li::before, .limits li::after { content: ""; position: absolute; left: 16px; top: 50%; width: 16px; height: 3px; background: var(--brown); border-radius: 2px; }
+  .limits li::before { transform: rotate(45deg); }
+  .limits li::after { transform: rotate(-45deg); }
 
-  /* Pilot */
-  .pilot { padding: 28px; display: grid; gap: 24px; }
-  .facts { display: grid; gap: 14px; margin: 0; }
-  .facts div { border-left: 4px solid var(--yellow); padding-left: 14px; }
-  .facts dt { font-weight: 700; }
-  .facts dd { margin: 0; color: var(--muted); }
+  /* Closing poster */
+  .close { background: var(--green); color: #fff; text-align: left; position: relative; overflow: hidden; }
+  .close h2 { font-size: clamp(2.2rem, 8vw, 4rem); }
+  .close .lede { color: rgba(255,255,255,.9); margin-top: 16px; }
+  .close .actions { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 12px; }
+  .facts { display: grid; gap: 14px; margin: 36px 0 0; }
+  .facts div { border-top: 3px solid var(--yellow); padding-top: 12px; }
+  .facts dt { font-family: var(--display); font-weight: 700; }
+  .facts dd { margin: 4px 0 0; color: rgba(255,255,255,.85); }
 
-  footer { background: var(--ink); color: rgba(255,255,255,.75); padding: 32px 0; font-size: .92rem; }
-  footer a { color: var(--yellow); }
+  footer { background: var(--ink); color: rgba(255,255,255,.75); padding-block: 28px; font-size: .92rem; }
 
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   @media (min-width: 720px) {
-    nav.links { display: flex; }
-    .steps { grid-template-columns: repeat(2, 1fr); }
-    .checks { grid-template-columns: 1fr 1fr; }
-    .ent-grid { grid-template-columns: repeat(2, 1fr); }
-    .excl { columns: 2; column-gap: 40px; }
-    .pilot { grid-template-columns: 1.2fr 1fr; align-items: center; }
+    .top nav { display: flex; }
+    .options { grid-template-columns: repeat(2, 1fr); }
+    .food-grid { grid-template-columns: 1fr 1fr; }
+    .limits ul { grid-template-columns: 1fr 1fr; }
+    .facts { grid-template-columns: repeat(3, 1fr); }
+    .page { padding: 30px 30px 30px 56px; }
+    .page::before { left: 34px; }
   }
   @media (min-width: 980px) {
-    .hero .grid { grid-template-columns: 1.1fr .9fr; }
-    .steps { grid-template-columns: repeat(4, 1fr); }
-    .ent-grid { grid-template-columns: repeat(3, 1fr); }
-    .split { grid-template-columns: 1fr 1fr; }
+    .hero .wrap { grid-template-columns: 1.05fr .95fr; }
+    .options { grid-template-columns: repeat(3, 1fr); }
+    .split, .ex-grid { grid-template-columns: 1fr 1fr; align-items: start; }
+    .steps { grid-template-columns: 1fr 1fr; column-gap: 40px; }
+    .steps li:nth-last-child(2) { border-bottom: 0; }
   }
-  @media (max-width: 380px) {
+  @media (max-width: 400px) {
     .brand .product { display: none; }
+    .photo .badge { width: 92px; height: 92px; }
+    .photo .badge span { font-size: 1.2rem; }
   }
 </style>
 </head>
 <body>
 
+<!-- Reusable line icons: single weight, round caps -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-pin" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 28s-9-8.2-9-15a9 9 0 0 1 18 0c0 6.8-9 15-9 15z"/><circle cx="16" cy="13" r="3.5"/></g></symbol>
+    <symbol id="i-bag" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6h10l-2 5h-6z"/><path d="M13 11c-5 3-7 8-7 12 0 3 2 4 4 4h12c2 0 4-1 4-4 0-4-2-9-7-12"/><path d="M12 20h8"/></g></symbol>
+    <symbol id="i-sprout" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 28V14"/><path d="M16 17c0-5-4-8-10-8 0 5 4 8 10 8z"/><path d="M16 14c0-5 4-8 10-8 0 5-4 8-10 8z"/><path d="M8 28h16"/></g></symbol>
+    <symbol id="i-share" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="23" cy="8" r="3.5"/><circle cx="9" cy="16" r="3.5"/><circle cx="23" cy="24" r="3.5"/><path d="M12 14.3l8-4.6M12 17.7l8 4.6"/></g></symbol>
+    <symbol id="i-maize" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4c4 3 5 8 5 12s-2 9-5 10c-3-1-5-6-5-10s1-9 5-12z"/><path d="M12 12h8M11.5 17h9M12.5 22h7"/><path d="M16 26c-4 0-8-3-9-8M16 26c4 0 8-3 9-8"/></g></symbol>
+    <symbol id="i-nut" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a6 6 0 0 1 6 6c0 1.5-.8 2.5-.8 4.5s.8 3 .8 4.5a6 6 0 0 1-12 0c0-1.5.8-2.5.8-4.5S6 12.5 6 11a6 6 0 0 1 6-6z" transform="translate(4 1)"/><path d="M13 10h2M13 15h2M13 20h2" transform="translate(2 1)"/></g></symbol>
+    <symbol id="i-fruit" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10c6 0 9 5 9 10s-4 8-9 8-9-3-9-8 3-10 9-10z"/><path d="M16 10c0-3 1-5 3-6"/><path d="M19 7c3-2 6-1 7 0-2 2-5 2-7 0z"/></g></symbol>
+    <symbol id="i-tree" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3l7 10h-4l6 8H7l6-8H9z"/><path d="M16 21v8"/></g></symbol>
+    <symbol id="i-hen" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9a3 3 0 1 1 6 0v5c3 0 8-2 10-5 1 7-3 13-10 13s-9-4-9-8c0-2 1-3 3-3"/><path d="M10 8L7 9l3 1.5"/><path d="M14 22v5M18 22v5"/></g></symbol>
+    <pattern id="rows" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(90)"><path d="M0 4h8" stroke="rgba(117,76,61,.22)" stroke-width="1.5"/></pattern>
+  </defs>
+</svg>
+
 <header class="top">
   <div class="wrap">
     <a class="brand" href="#top" aria-label="Tupande Farm Planner home">
-      <!-- Place the official Tupande logo from the brandbook at assets/tupande-logo.svg. Until then, the name is shown as text. -->
+      <!-- Official logo goes in assets/tupande-logo.svg (from the brand guidelines folder). Until then the name shows as text. -->
       <img src="assets/tupande-logo.svg" alt="Tupande" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'wordmark',textContent:'Tupande'}))">
       <span class="product">Farm Planner</span>
     </a>
-    <nav class="links" aria-label="Page sections">
+    <nav aria-label="Page sections">
       <a href="#how">How it works</a>
-      <a href="#enterprises">Options</a>
+      <a href="#options">Options</a>
       <a href="#example">Example</a>
-      <a href="#assumptions">Assumptions</a>
+      <a href="#limits">Assumptions</a>
     </nav>
-    <a class="btn btn-primary btn-sm" href="https://tupande-farm-planner.oneacrefund-1514.chatgpt.site/">Open planner</a>
+    <a class="btn btn-green btn-sm" href="https://tupande-farm-planner.oneacrefund-1514.chatgpt.site/">Open planner</a>
   </div>
 </header>
 
 <main id="top">
 
-  <!-- Hero -->
+  <!-- Hero: poster -->
   <section class="hero">
-    <div class="wrap grid">
-      <div>
-        <span class="eyebrow">Kakamega pilot</span>
-        <h1>See your land as a productive asset</h1>
-        <p class="lead">A guided planning conversation for farmers and Tupande agents. Protect your family's maize first, then explore affordable ways to earn this year and in the years ahead, within your land, your cash and your Tupande credit.</p>
+    <div class="wrap">
+      <div class="hero-copy">
+        <span class="kicker">Kakamega pilot · Let us plant, let us rise</span>
+        <h1>Your land can feed your family <span class="arc">and grow</span> your income.</h1>
+        <p class="lede">Sit down with your Tupande agent and plan your field together. Family maize comes first. Then see what extra maize, groundnuts, trees or chickens could earn, within your land, your cash and your credit.</p>
         <div class="actions">
-          <a class="btn btn-primary" href="https://tupande-farm-planner.oneacrefund-1514.chatgpt.site/">Start a plan</a>
-          <a class="btn btn-ghost" href="#how">How it works</a>
-        </div>
-        <div class="pill-row" aria-label="Key features">
-          <span class="pill">Works on phones and tablets</span>
-          <span class="pill">Food security first</span>
-          <span class="pill">Share on WhatsApp</span>
+          <a class="btn btn-yellow" href="https://tupande-farm-planner.oneacrefund-1514.chatgpt.site/">Start a plan</a>
+          <a class="btn btn-line" href="#how">How it works</a>
         </div>
       </div>
 
-      <div class="card plan-card" aria-label="Illustrative example plan">
-        <div class="head">
-          <h3>Example: 1-acre field</h3>
-          <span>Illustrative</span>
+      <figure class="photo">
+        <div class="badge" aria-hidden="true"><div><small>Family</small><span>food first</span></div></div>
+        <div class="frame">
+          <!-- Line illustration in the brandbook style: single weight, curved baseline -->
+          <svg viewBox="0 0 500 400" role="img" aria-labelledby="hTitle">
+            <title id="hTitle">A farmer and a Tupande agent planning beside a maize field, with young trees and the sun rising</title>
+            <rect width="500" height="400" fill="#FAF1DD"/>
+            <circle cx="390" cy="120" r="54" fill="#E8B757"/>
+            <path d="M0 300 Q250 220 500 290 V400 H0Z" fill="#D5E5E1"/>
+            <path d="M0 330 Q250 260 500 320 V400 H0Z" fill="#DED6C0"/>
+            <g fill="none" stroke="#22302D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M0 300 Q250 220 500 290"/>
+              <!-- maize stalks -->
+              <g stroke="#2B7F68">
+                <path d="M40 300V200M40 240c-14-6-22-18-24-30M40 225c14-6 22-16 26-30M40 260c-12-4-20-12-24-22"/>
+                <path d="M85 288V180M85 225c-14-6-22-18-24-30M85 205c14-6 22-16 26-30M85 248c12-4 20-12 24-22"/>
+                <path d="M130 278V196M130 236c-14-6-22-18-24-30M130 218c14-6 22-16 26-30"/>
+              </g>
+              <path d="M44 214c6-10 6-18 2-26" stroke="#E8B757"/>
+              <path d="M89 196c6-10 6-18 2-26" stroke="#E8B757"/>
+              <!-- young trees -->
+              <g stroke="#2F6067">
+                <path d="M448 290v-70M448 230l-18-14M448 244l20-16"/>
+                <circle cx="448" cy="196" r="28"/>
+                <path d="M396 288v-40M396 262l-12-8M396 270l12-10"/>
+                <circle cx="396" cy="236" r="16"/>
+              </g>
+              <!-- farmer -->
+              <circle cx="222" cy="168" r="18"/>
+              <path d="M222 186c-26 0-36 26-38 60l-4 46M222 186c26 0 34 26 36 60l4 46"/>
+              <path d="M198 200 Q200 238 230 240 L262 226"/>
+              <path d="M200 160 Q222 132 244 160"/>
+              <!-- agent with phone -->
+              <circle cx="312" cy="176" r="17"/>
+              <path d="M312 193c-22 0-30 24-32 54l-3 40M312 193c22 0 30 24 32 54l3 40"/>
+              <path d="M292 210 Q282 236 270 228"/>
+              <rect x="256" y="208" width="20" height="32" rx="4" fill="#E8B757" transform="rotate(-14 266 224)"/>
+            </g>
+            <!-- plot lines on the ground -->
+            <g stroke="#754C3D" stroke-width="3" stroke-linecap="round" opacity=".35">
+              <path d="M30 360 Q250 300 470 350"/><path d="M60 385 Q250 330 440 378"/>
+            </g>
+          </svg>
+          <!-- Drop an approved Tupande photo at assets/hero.jpg and it replaces the illustration -->
+          <img src="assets/hero.jpg" alt="A Tupande farmer and agent planning a field together" onerror="this.remove()">
         </div>
-        <!-- Strip widths are proportional to the allocation: maize 0.60, groundnuts 0.25, new avocado 0.128, available 0.022 acres -->
-        <svg class="field-svg" viewBox="0 0 320 200" role="img" aria-labelledby="fieldTitle fieldDesc">
-          <title id="fieldTitle">Field allocation diagram</title>
-          <desc id="fieldDesc">Maize 60%, groundnuts 25%, new avocado trees 13%, available land 2%, with 50 Grevillea trees around the boundary.</desc>
-          <defs>
-            <clipPath id="fieldClip"><rect x="20" y="20" width="280" height="160" rx="10"/></clipPath>
-          </defs>
-          <g clip-path="url(#fieldClip)">
-            <rect x="20"     y="20" width="168"   height="160" fill="var(--c-maize)"/>
-            <rect x="188"    y="20" width="70"    height="160" fill="var(--c-groundnut)"/>
-            <rect x="258"    y="20" width="35.87" height="160" fill="var(--c-fruit-new)"/>
-            <rect x="293.87" y="20" width="6.13"  height="160" fill="var(--c-free)"/>
-          </g>
-          <rect x="20" y="20" width="280" height="160" rx="10" fill="none" stroke="var(--ink)" stroke-width="2"/>
-          <rect x="11" y="11" width="298" height="178" rx="16" fill="none" stroke="var(--teal)" stroke-width="5" stroke-dasharray="0.1 9.3" stroke-linecap="round"/>
-          <text x="104" y="105" text-anchor="middle" font-family="Georama, sans-serif" font-weight="600" font-size="15" fill="#3d2f0c">Maize 0.60 ac</text>
-          <text x="223" y="100" text-anchor="middle" font-family="Georama, sans-serif" font-weight="600" font-size="12" fill="#fff">Groundnuts</text>
-          <text x="223" y="116" text-anchor="middle" font-family="Georama, sans-serif" font-weight="600" font-size="12" fill="#fff">0.25 ac</text>
-        </svg>
-        <ul class="legend">
-          <li><span class="swatch" style="background:var(--c-maize)"></span>Maize</li>
-          <li><span class="swatch" style="background:var(--c-groundnut)"></span>Groundnuts</li>
-          <li><span class="swatch" style="background:var(--c-fruit-new)"></span>New avocado</li>
-          <li><span class="swatch" style="background:var(--c-free);border:1px solid var(--line)"></span>Available</li>
-          <li><span class="swatch ring"></span>Boundary timber</li>
-        </ul>
-        <div class="totals" aria-label="Rolling totals">
-          <div><small>Annual benefit</small><strong>KES 46,150+</strong></div>
-          <div><small>Cash needed to start</small><strong>KES 2,100</strong></div>
-          <div><small>Acres available</small><strong>0.02</strong></div>
-        </div>
-        <p class="note">Annual benefit includes the value of maize kept for food. Sections show proportions, not planting positions.</p>
+      </figure>
+    </div>
+    <!-- The Bow: curve under the photo -->
+    <svg class="bow" viewBox="0 0 1200 34" preserveAspectRatio="none" aria-hidden="true"><path d="M0 34 Q600 -26 1200 34Z" fill="#E8B757"/></svg>
+  </section>
+
+  <div class="tally" aria-label="Example rolling totals for a 1-acre plan">
+    <div class="wrap">
+      <div><strong class="num">KES 46,150+</strong><small>Annual benefit</small></div>
+      <div><strong class="num">KES 2,100</strong><small>Cash needed to start</small></div>
+      <div><strong class="num">0.02 ac</strong><small>Acres available</small></div>
+    </div>
+  </div>
+  <p class="tally-note"><span class="wrap" style="display:block">The worked example below. Annual benefit includes the value of maize kept for food.</span></p>
+
+  <!-- How it works: notebook -->
+  <section class="band" id="how">
+    <div class="wrap">
+      <div class="head">
+        <span class="kicker">How it works</span>
+        <h2>Four steps, one conversation</h2>
+        <p class="lede">The agent and farmer fill in the plan together, like a page in the agent's notebook. Every choice stays within what the farmer has.</p>
+      </div>
+      <div class="page">
+        <ol class="steps">
+          <li>
+            <span class="icon-dot"><svg aria-hidden="true"><use href="#i-pin"/></svg></span>
+            <div><h3>Your assets</h3><p>Trace the field's corners on the satellite map with GPS. Then enter the cash you can invest now and your year with Tupande.</p></div>
+          </li>
+          <li>
+            <span class="icon-dot"><svg aria-hidden="true"><use href="#i-bag"/></svg></span>
+            <div><h3>Family food and trees</h3><p>How many 90&nbsp;kg bags of maize does your family need? Will you plant short rains? Do you already have mango or avocado trees?</p></div>
+          </li>
+          <li>
+            <span class="icon-dot"><svg aria-hidden="true"><use href="#i-sprout"/></svg></span>
+            <div><h3>Choose your options</h3><p>Add extra maize, groundnuts, fruit trees, timber or chickens. Totals update as you go, and controls stop at your land and cash limits.</p></div>
+          </li>
+          <li>
+            <span class="icon-dot"><svg aria-hidden="true"><use href="#i-share"/></svg></span>
+            <div><h3>Review and share</h3><p>Compare up to three alternatives, keep the plan you like, and send a picture and summary on WhatsApp.</p></div>
+          </li>
+        </ol>
       </div>
     </div>
   </section>
 
-  <!-- How it works -->
-  <section id="how">
+  <!-- Food first: teal poster -->
+  <section class="band food">
     <div class="wrap">
-      <span class="eyebrow">How it works</span>
-      <h2>Four steps, one conversation</h2>
-      <p class="lead">The agent and farmer work through the plan together. Every choice stays within what the farmer actually has.</p>
-      <div class="steps">
-        <div class="card step">
-          <h3>Your assets</h3>
-          <p>Use GPS and the satellite map to trace the field's corners. Then enter the cash you can invest now and your year with Tupande.</p>
-        </div>
-        <div class="card step">
-          <h3>Family food and trees</h3>
-          <p>Tell us how many 90&nbsp;kg bags of maize your family needs, whether you plant short rains, and any mango or avocado trees you already have.</p>
-        </div>
-        <div class="card step">
-          <h3>Choose your options</h3>
-          <p>Add extra maize, groundnuts, fruit trees, timber or chickens. Totals update instantly and controls stop at your land and cash limits.</p>
-        </div>
-        <div class="card step">
-          <h3>Review and share</h3>
-          <p>Compare up to three alternatives, keep the plan you like, and share a picture and short summary on WhatsApp.</p>
-        </div>
+      <div class="head">
+        <span class="kicker">Food security first</span>
+        <h2>Your family's maize is <span class="arc">protected</span> before anything else.</h2>
+        <p class="lede">Other options open only when both checks pass. If one fails, the planner shows the shortfall so you can correct your details. It never lowers your family's food needs for you.</p>
       </div>
-    </div>
-  </section>
-
-  <!-- Food first -->
-  <section class="food-first">
-    <div class="wrap">
-      <span class="eyebrow">Food security first</span>
-      <h2>Your family's maize is protected before anything else</h2>
-      <p class="lead">Other options unlock only when both checks pass. If one fails, the planner shows the shortfall so you can correct your details. It never reduces your family's food needs for you.</p>
-      <div class="checks">
+      <div class="food-grid">
         <div class="check">
-          <h3>Land check</h3>
-          <p>Family maize plus existing fruit trees must fit inside the field. At <code>20 bags per acre</code>, a family needing 10 bags reserves 0.5 acres for one long-rains harvest, or 0.25 acres if they also plant short rains.</p>
+          <span class="stamp">Check 1</span>
+          <h3>Is there enough land?</h3>
+          <p>Family maize plus any existing fruit trees must fit inside the field. Each acre gives 20 bags per harvest.</p>
+          <p class="sum num">10 bags ÷ 20 = 0.5 acres<br><small style="font-weight:600;color:var(--muted)">or 0.25 acres if you also plant short rains</small></p>
         </div>
         <div class="check">
-          <h3>Funding check</h3>
-          <p>Your cash plus your Tupande long-rains credit must cover the family-maize inputs of <code>KES 13,250 per acre</code>. Once protected, this maize area stays locked.</p>
+          <span class="stamp">Check 2</span>
+          <h3>Is there enough money?</h3>
+          <p>Your cash plus your Tupande long-rains credit must cover the family-maize inputs. Once protected, this maize stays locked.</p>
+          <p class="sum num">0.5 acres × KES 13,250 = KES 6,625</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Enterprises -->
-  <section id="enterprises">
+  <!-- Options -->
+  <section class="band" id="options">
     <div class="wrap">
-      <span class="eyebrow">What you can plan</span>
-      <h2>Family maize, plus five ways to earn</h2>
-      <p class="lead">Each option uses agreed planning assumptions for the Kakamega pilot.</p>
-      <div class="ent-grid">
-        <article class="card ent" style="--accent: var(--c-maize)">
-          <span class="tag locked">Always included</span>
-          <h3>Family maize</h3>
-          <ul>
-            <li><strong>20 bags</strong> per acre per season (90&nbsp;kg bags)</li>
-            <li>Inputs <strong>KES 13,250</strong> per acre: 5 seed bags, 1 DAP, 1 CAN</li>
-            <li>Food kept is valued at <strong>KES 3,000</strong> a bag</li>
-          </ul>
+      <div class="head">
+        <span class="kicker">What you can plan</span>
+        <h2>Family maize, plus five ways to earn</h2>
+        <p class="lede">The figures are the agreed planning assumptions for the Kakamega pilot.</p>
+      </div>
+      <div class="options">
+        <article class="opt locked">
+          <div class="row"><span class="ic" style="background:var(--green)"><svg aria-hidden="true"><use href="#i-maize"/></svg></span><div><span class="chip lock">Always included</span><h3 style="margin-top:6px">Family maize</h3></div></div>
+          <p class="big num">20 bags<small>per acre per season, 90&nbsp;kg bags</small></p>
+          <ul><li>Inputs KES 13,250 an acre: 5 seed bags, 1 DAP, 1 CAN</li><li>Food kept is valued at KES 3,000 a bag</li></ul>
         </article>
-        <article class="card ent" style="--accent: var(--c-maize)">
-          <span class="tag">Optional</span>
-          <h3>Extra maize</h3>
-          <ul>
-            <li>Same yield and input cost as family maize</li>
-            <li>Extra bags are assumed sold at <strong>KES 3,000</strong></li>
-            <li>Inputs can use your long-rains credit</li>
-          </ul>
+        <article class="opt">
+          <div class="row"><span class="ic" style="background:var(--leaf)"><svg aria-hidden="true"><use href="#i-maize"/></svg></span><div><span class="chip opt-c">Optional</span><h3 style="margin-top:6px">Extra maize</h3></div></div>
+          <p class="big num">KES 60,000<small>sales per extra acre, per season</small></p>
+          <ul><li>Same yield and input cost as family maize</li><li>Inputs can use your long-rains credit</li></ul>
         </article>
-        <article class="card ent" style="--accent: var(--c-groundnut)">
-          <span class="tag">Optional</span>
-          <h3>Groundnuts</h3>
-          <ul>
-            <li>One <strong>quarter-acre</strong> package, long rains only</li>
-            <li>Inputs and financing <strong>KES 6,500</strong>, deducted at sale</li>
-            <li>150&nbsp;kg at KES 145/kg: <strong>KES 15,250</strong> paid after deduction</li>
-          </ul>
+        <article class="opt">
+          <div class="row"><span class="ic" style="background:var(--brown)"><svg aria-hidden="true"><use href="#i-nut"/></svg></span><div><span class="chip opt-c">Optional</span><h3 style="margin-top:6px">Groundnuts</h3></div></div>
+          <p class="big num">KES 15,250<small>paid after input deduction</small></p>
+          <ul><li>One quarter-acre package, long rains only</li><li>150&nbsp;kg at KES 145/kg; KES 6,500 inputs deducted at sale</li></ul>
         </article>
-        <article class="card ent" style="--accent: var(--c-fruit-new)">
-          <span class="tag">Optional</span>
-          <h3>Fruit trees</h3>
-          <ul>
-            <li>Avocado seedling <strong>KES 75</strong>, mango <strong>KES 20</strong></li>
-            <li>First harvest in year 3; 70% of new seedlings assumed to survive</li>
-            <li>From year 5: <strong>KES 1,800</strong> (avocado) or <strong>KES 2,000</strong> (mango) a year per surviving tree</li>
-          </ul>
+        <article class="opt">
+          <div class="row"><span class="ic" style="background:var(--green)"><svg aria-hidden="true"><use href="#i-fruit"/></svg></span><div><span class="chip opt-c">Optional</span><h3 style="margin-top:6px">Fruit trees</h3></div></div>
+          <p class="big num">KES 1,800–2,000<small>a year per surviving tree, from year 5</small></p>
+          <ul><li>Avocado seedling KES 75, mango KES 20</li><li>First harvest in year 3; 70% of seedlings assumed to survive</li></ul>
         </article>
-        <article class="card ent" style="--accent: var(--c-woodlot)">
-          <span class="tag">Optional</span>
-          <h3>Grevillea timber</h3>
-          <ul>
-            <li>Boundary (5&nbsp;m apart) or woodlot (3 × 3&nbsp;m)</li>
-            <li>First <strong>50 seedlings free</strong>, then KES 5 each</li>
-            <li>One-off sale from <strong>KES 1,500</strong> a tree at year 5 to <strong>KES 5,000</strong> at year 10</li>
-          </ul>
+        <article class="opt">
+          <div class="row"><span class="ic" style="background:var(--teal)"><svg aria-hidden="true"><use href="#i-tree"/></svg></span><div><span class="chip opt-c">Optional</span><h3 style="margin-top:6px">Grevillea timber</h3></div></div>
+          <p class="big num">KES 1,500–5,000<small>one-off sale per tree, year 5 to year 10</small></p>
+          <ul><li>Boundary (5&nbsp;m apart) or woodlot (3 × 3&nbsp;m)</li><li>First 50 seedlings free, then KES 5 each</li></ul>
         </article>
-        <article class="card ent" style="--accent: var(--yellow)">
-          <span class="tag">Optional</span>
-          <h3>Chickens</h3>
-          <ul>
-            <li>Six-week-old chicks at <strong>KES 150</strong> each</li>
-            <li>Sold from three months at <strong>KES 550–600</strong>; 10% mortality</li>
-            <li>Only the first batch is paid upfront; later batches come from sales</li>
-          </ul>
+        <article class="opt">
+          <div class="row"><span class="ic" style="background:var(--olive)"><svg aria-hidden="true"><use href="#i-hen"/></svg></span><div><span class="chip opt-c">Optional</span><h3 style="margin-top:6px">Chickens</h3></div></div>
+          <p class="big num">KES 550–600<small>per bird sold, from three months</small></p>
+          <ul><li>Six-week-old chicks at KES 150; 10% mortality</li><li>Only the first batch is paid upfront</li></ul>
         </article>
       </div>
     </div>
   </section>
 
-  <!-- Credit -->
-  <section style="background:#fff">
+  <!-- Credit ladder -->
+  <section class="band credit">
     <div class="wrap split">
-      <div>
-        <span class="eyebrow">Tupande credit</span>
+      <div class="head" style="margin-bottom:0">
+        <span class="kicker">Tupande credit</span>
         <h2>Credit grows with you</h2>
-        <p class="lead">Illustrative long-rains staple-credit ceilings by customer year. Eligibility is confirmed by your agent.</p>
+        <p class="lede">Illustrative long-rains staple-credit ceilings by customer year. Your agent confirms eligibility.</p>
         <ul class="rules">
-          <li>Credit covers long-rains maize inputs only.</li>
-          <li>You borrow only what the inputs need, up to your ceiling.</li>
-          <li>Credit is never counted as income.</li>
-          <li>Trees and chicks are paid from your own cash.</li>
-          <li>Groundnut financing is separate.</li>
+          <li>Covers long-rains maize inputs only</li>
+          <li>You borrow only what the inputs need, up to your ceiling</li>
+          <li>Never counted as income</li>
+          <li>Trees and chicks are paid from your own cash</li>
+          <li>Groundnut financing is separate</li>
         </ul>
       </div>
-      <div class="table-wrap">
-        <table>
-          <caption class="note" style="caption-side:bottom;text-align:left">No separate financing charge is added to agreed input prices.</caption>
-          <thead><tr><th>Customer year</th><th class="num">Credit ceiling</th></tr></thead>
-          <tbody>
-            <tr><td>Year 1</td><td class="num">KES 10,000</td></tr>
-            <tr><td>Year 2</td><td class="num">KES 15,000</td></tr>
-            <tr><td>Year 3</td><td class="num">KES 20,000</td></tr>
-            <tr><td>Year 4</td><td class="num">KES 25,000</td></tr>
-            <tr><td>Year 5 and later</td><td class="num">KES 30,000</td></tr>
-          </tbody>
-        </table>
+      <div class="page">
+        <!-- Bars drawn to scale: KES 30,000 = 100% -->
+        <div class="ladder" role="table" aria-label="Credit ceiling by customer year">
+          <div class="rung" role="row"><span role="cell">Year 1</span><span role="cell" class="bar num" style="width:33.33%">10,000</span></div>
+          <div class="rung" role="row"><span role="cell">Year 2</span><span role="cell" class="bar num" style="width:50%">15,000</span></div>
+          <div class="rung" role="row"><span role="cell">Year 3</span><span role="cell" class="bar num" style="width:66.67%">20,000</span></div>
+          <div class="rung" role="row"><span role="cell">Year 4</span><span role="cell" class="bar num" style="width:83.33%">25,000</span></div>
+          <div class="rung" role="row"><span role="cell">Year 5+</span><span role="cell" class="bar num" style="width:100%;background:var(--teal)">30,000</span></div>
+        </div>
+        <p class="ledger-note">KES. No separate financing charge is added to agreed input prices.</p>
       </div>
     </div>
   </section>
 
-  <!-- Example -->
-  <section id="example">
+  <!-- Worked example -->
+  <section class="band example" id="example">
     <div class="wrap">
-      <span class="eyebrow">Worked example</span>
-      <h2>A 1-acre plan, step by step</h2>
-      <p class="lead">A year-2 customer with KES 5,000 cash. The family needs 10 bags of maize a year and plants long rains only. They choose 0.1 acres of extra maize, the groundnut package, 8 avocado seedlings, 50 boundary Grevillea and 10 chicks.</p>
+      <div class="head">
+        <span class="kicker">Worked example</span>
+        <h2>A 1-acre plan, worked through</h2>
+        <p class="lede">A year-2 customer with KES 5,000 cash. The family needs 10 bags of maize a year and plants long rains only. They add 0.1 acres of extra maize, the groundnut package, 8 avocado seedlings, 50 boundary Grevillea and 10 chicks.</p>
+      </div>
 
       <div class="tabs" role="tablist" aria-label="Example plan views">
         <button role="tab" id="tab-now" aria-controls="panel-now" aria-selected="true">This year</button>
         <button role="tab" id="tab-future" aria-controls="panel-future" aria-selected="false" tabindex="-1">Future</button>
       </div>
 
-      <div class="panel" id="panel-now" role="tabpanel" aria-labelledby="tab-now">
-        <div class="split">
-          <div class="table-wrap" style="margin-top:0">
-            <table class="ledger">
-              <thead><tr><th>Cash to start</th><th class="num">KES</th></tr></thead>
-              <tbody>
-                <tr><td>Long-rains maize inputs (0.6 ac)</td><td class="num">7,950</td></tr>
-                <tr><td>Less Tupande credit (ceiling 15,000)</td><td class="num">−7,950</td></tr>
-                <tr><td>8 avocado seedlings</td><td class="num">600</td></tr>
-                <tr><td>50 Grevillea seedlings (free)</td><td class="num">0</td></tr>
-                <tr><td>10 chicks</td><td class="num">1,500</td></tr>
-                <tr class="total"><td>Cash needed to start</td><td class="num">2,100</td></tr>
-                <tr><td>Cash left uncommitted</td><td class="num">2,900</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="table-wrap" style="margin-top:0">
-            <table class="ledger">
-              <thead><tr><th>Annual result</th><th class="num">KES</th></tr></thead>
-              <tbody>
-                <tr><td>Extra maize sold (2 bags)</td><td class="num">6,000</td></tr>
-                <tr><td>Groundnuts, gross</td><td class="num">21,750</td></tr>
-                <tr><td>Chickens (9 birds)</td><td class="num">4,950–5,400</td></tr>
-                <tr><td>Less listed costs</td><td class="num">−16,550</td></tr>
-                <tr class="sub"><td>Cash return after listed costs</td><td class="num">16,150–16,600</td></tr>
-                <tr><td>Maize kept for food (10 bags)</td><td class="num">30,000</td></tr>
-                <tr class="total"><td>Annual benefit after listed costs</td><td class="num">46,150–46,600</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <details>
-          <summary>What the listed costs include</summary>
-          <ul>
-            <li>Maize inputs for 0.6 acres: KES 7,950 (the credit repays this, so it is counted once)</li>
-            <li>Groundnut inputs and financing: KES 6,500</li>
-            <li>Chick purchases: KES 1,500</li>
-            <li>Avocado seedlings: KES 600</li>
+      <div class="ex-grid">
+        <div class="page field-card">
+          <h3>The field, 1 acre</h3>
+          <!-- Strip widths proportional: maize 0.60, groundnuts 0.25, new avocado 0.128, available 0.022 acres -->
+          <svg viewBox="0 0 320 200" role="img" aria-labelledby="fTitle" style="width:100%;height:auto;display:block">
+            <title id="fTitle">Maize 60%, groundnuts 25%, new avocado trees 13%, available land 2%, with 50 Grevillea trees around the boundary</title>
+            <defs><clipPath id="fc"><rect x="20" y="20" width="280" height="160" rx="10"/></clipPath></defs>
+            <g clip-path="url(#fc)">
+              <rect x="20" y="20" width="168" height="160" fill="#E8B757"/>
+              <rect x="20" y="20" width="168" height="160" fill="url(#rows)"/>
+              <rect x="188" y="20" width="70" height="160" fill="#754C3D"/>
+              <rect x="258" y="20" width="35.87" height="160" fill="#2B7F68"/>
+              <rect x="293.87" y="20" width="6.13" height="160" fill="#F5F2EA"/>
+            </g>
+            <rect x="20" y="20" width="280" height="160" rx="10" fill="none" stroke="#22302D" stroke-width="2"/>
+            <rect x="11" y="11" width="298" height="178" rx="16" fill="none" stroke="#2F6067" stroke-width="5" stroke-dasharray="0.1 9.3" stroke-linecap="round"/>
+            <text x="104" y="106" text-anchor="middle" font-family="Georama, sans-serif" font-weight="700" font-size="15" fill="#22302D">Maize 0.60 ac</text>
+            <text x="223" y="100" text-anchor="middle" font-family="Georama, sans-serif" font-weight="700" font-size="12" fill="#FFFDF8">Groundnuts</text>
+            <text x="223" y="116" text-anchor="middle" font-family="Georama, sans-serif" font-weight="700" font-size="12" fill="#FFFDF8">0.25 ac</text>
+          </svg>
+          <ul class="legend">
+            <li><span class="sw" style="background:var(--yellow)"></span>Maize</li>
+            <li><span class="sw" style="background:var(--brown)"></span>Groundnuts</li>
+            <li><span class="sw" style="background:var(--green)"></span>New avocado</li>
+            <li><span class="sw" style="background:var(--sand-20);border:1px solid var(--rule)"></span>Available</li>
+            <li><span class="sw" style="border:3px dotted var(--teal);border-radius:50%"></span>Boundary timber</li>
           </ul>
-        </details>
-      </div>
+          <p class="ledger-note">Sections show proportions, not planting positions.</p>
+        </div>
 
-      <div class="panel" id="panel-future" role="tabpanel" aria-labelledby="tab-future" hidden>
-        <div class="split">
-          <div class="table-wrap" style="margin-top:0">
-            <table class="ledger">
-              <thead><tr><th>Avocado: 5.6 surviving trees</th><th class="num">KES a year</th></tr></thead>
-              <tbody>
-                <tr><td>Years 1–2</td><td class="num">0</td></tr>
-                <tr><td>Year 3 (40&nbsp;kg a tree)</td><td class="num">6,720</td></tr>
-                <tr><td>Year 4 (50&nbsp;kg a tree)</td><td class="num">8,400</td></tr>
-                <tr class="total"><td>Year 5 onwards (60&nbsp;kg a tree)</td><td class="num">10,080</td></tr>
-              </tbody>
-            </table>
-            <p class="note">Annual gross sales at KES 30/kg.</p>
+        <div>
+          <div class="panel" id="panel-now" role="tabpanel" aria-labelledby="tab-now">
+            <div class="page stack" style="gap:26px">
+              <table class="ledger">
+                <caption>Cash to start (KES)</caption>
+                <tbody>
+                  <tr><td>Long-rains maize inputs, 0.6 ac</td><td>7,950</td></tr>
+                  <tr><td>Less Tupande credit</td><td>−7,950</td></tr>
+                  <tr><td>8 avocado seedlings</td><td>600</td></tr>
+                  <tr><td>50 Grevillea seedlings (free)</td><td>0</td></tr>
+                  <tr><td>10 chicks</td><td>1,500</td></tr>
+                  <tr class="total"><td>Cash needed to start</td><td>2,100</td></tr>
+                  <tr><td>Cash left uncommitted</td><td>2,900</td></tr>
+                </tbody>
+              </table>
+              <table class="ledger">
+                <caption>Annual result (KES)</caption>
+                <tbody>
+                  <tr><td>Extra maize sold, 2 bags</td><td>6,000</td></tr>
+                  <tr><td>Groundnuts, gross</td><td>21,750</td></tr>
+                  <tr><td>Chickens, 9 birds</td><td>4,950–5,400</td></tr>
+                  <tr><td>Less listed costs</td><td>−16,550</td></tr>
+                  <tr class="sub"><td>Cash return after listed costs</td><td>16,150–16,600</td></tr>
+                  <tr><td>Maize kept for food, 10 bags</td><td>30,000</td></tr>
+                  <tr class="total"><td>Annual benefit</td><td>46,150–46,600</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <details>
+              <summary>What the listed costs include</summary>
+              <ul>
+                <li>Maize inputs for 0.6 acres: KES 7,950 (the credit repays this, so it is counted once)</li>
+                <li>Groundnut inputs and financing: KES 6,500</li>
+                <li>Chick purchases: KES 1,500</li>
+                <li>Avocado seedlings: KES 600</li>
+              </ul>
+            </details>
           </div>
-          <div class="table-wrap" style="margin-top:0">
-            <table class="ledger">
-              <thead><tr><th>Grevillea: 35 surviving trees</th><th class="num">One-off sale</th></tr></thead>
-              <tbody>
-                <tr><td>Sell at year 5</td><td class="num">52,500</td></tr>
-                <tr><td>Sell at year 7</td><td class="num">101,500</td></tr>
-                <tr class="total"><td>Sell at year 10</td><td class="num">175,000</td></tr>
-              </tbody>
-            </table>
-            <p class="note">These are alternatives, not added together. Waiting longer raises the value but delays the cash. Once harvested, the trees have no further value.</p>
+
+          <div class="panel" id="panel-future" role="tabpanel" aria-labelledby="tab-future" hidden>
+            <div class="page stack" style="gap:26px">
+              <table class="ledger">
+                <caption>Avocado, 5.6 surviving trees (KES a year)</caption>
+                <tbody>
+                  <tr><td>Years 1–2</td><td>0</td></tr>
+                  <tr><td>Year 3, 40&nbsp;kg a tree</td><td>6,720</td></tr>
+                  <tr><td>Year 4, 50&nbsp;kg a tree</td><td>8,400</td></tr>
+                  <tr class="total"><td>Year 5 onwards, 60&nbsp;kg</td><td>10,080</td></tr>
+                </tbody>
+              </table>
+              <table class="ledger">
+                <caption>Grevillea, 35 surviving trees (one-off sale)</caption>
+                <tbody>
+                  <tr><td>Sell at year 5</td><td>52,500</td></tr>
+                  <tr><td>Sell at year 7</td><td>101,500</td></tr>
+                  <tr class="total"><td>Sell at year 10</td><td>175,000</td></tr>
+                </tbody>
+              </table>
+              <p class="ledger-note" style="margin-top:0">Timber values are alternatives, never added together. Waiting raises the value but delays the cash.</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Assumptions and exclusions -->
-  <section id="assumptions" style="background:#fff">
+  <!-- Exclusions: sand poster -->
+  <section class="band limits" id="limits">
     <div class="wrap">
-      <span class="eyebrow">Be clear about estimates</span>
-      <h2>What the planner does not include</h2>
-      <p class="lead">Results are an <strong>estimated return after listed costs</strong>, not a guaranteed profit. Prices, yields and survival rates are planning assumptions for this pilot, not buyer quotations or agronomic recommendations.</p>
-      <ul class="excl">
-        <li>Labour, transport, harvesting and maintenance costs</li>
-        <li>Detailed cash-flow timing or food stocks between harvests</li>
+      <div class="head">
+        <span class="kicker">Be clear about estimates</span>
+        <h2>What the planner leaves out</h2>
+        <p class="lede">Results are an estimated return after listed costs, not a guaranteed profit. Prices, yields and survival rates are planning assumptions for this pilot, not buyer quotations or agronomic advice.</p>
+      </div>
+      <ul>
+        <li>Labour, transport, harvesting and maintenance</li>
+        <li>Cash-flow timing and food stocks between harvests</li>
         <li>Guaranteed funding for short-rains inputs</li>
         <li>Poultry housing, feed or carrying capacity</li>
         <li>Tree–crop shading and root competition</li>
-        <li>Future years' tree-planting cohorts</li>
+        <li>Future years' tree planting</li>
         <li>Inflation, discounting or live market prices</li>
-        <li>Automatic field boundaries or survey-grade measurement</li>
-        <li>Land ownership verification</li>
-        <li>Orders, credit approval, payments or loan processing</li>
+        <li>Automatic field boundaries or land ownership checks</li>
+        <li>Orders, credit approval, payments or loans</li>
+        <li>Survey-grade measurement</li>
       </ul>
       <details>
         <summary>Key planning assumptions</summary>
         <ul>
-          <li>Short-rains maize uses the same area, yield and input cost; its inputs are assumed to be paid later from long-rains proceeds, so they are not reserved upfront.</li>
-          <li>Mature-space allowance per tree: avocado 64.8&nbsp;m², mango 80&nbsp;m². Land is reserved for every seedling planted.</li>
-          <li>Existing fruit trees use their current age; no survival discount is applied to them.</li>
-          <li>Boundary timber is limited by the field perimeter, one tree every 5&nbsp;m. Agent judgement is needed on shading.</li>
-          <li>The prototype allows up to 100 chicks per batch and up to six batches a year. These are prototype limits, not farm recommendations.</li>
+          <li>Short-rains maize uses the same area, yield and input cost. Its inputs are assumed to be paid later from long-rains proceeds, so they are not reserved upfront.</li>
+          <li>Space per mature tree: avocado 64.8&nbsp;m², mango 80&nbsp;m². Land is reserved for every seedling planted.</li>
+          <li>Existing fruit trees use their current age, with no survival discount.</li>
+          <li>Boundary timber is limited to one tree every 5&nbsp;m of perimeter. Agent judgement is needed on shading.</li>
+          <li>Up to 100 chicks per batch and six batches a year are prototype limits, not farm advice.</li>
           <li>Manual acreage assumes a square field to estimate the perimeter.</li>
         </ul>
       </details>
     </div>
   </section>
 
-  <!-- Pilot -->
-  <section>
+  <!-- Closing poster -->
+  <section class="band close">
     <div class="wrap">
-      <div class="card pilot">
-        <div>
-          <span class="eyebrow">Pilot</span>
-          <h2>Restricted pilot in Kakamega</h2>
-          <p class="lead" style="margin-bottom:20px">Access is limited to the pilot team. Your agent can walk you through a plan on their phone or tablet.</p>
-          <a class="btn btn-primary" href="https://tupande-farm-planner.oneacrefund-1514.chatgpt.site/">Open the planner</a>
-        </div>
-        <dl class="facts">
-          <div><dt>No personal details needed</dt><dd>No farmer name or phone number is collected.</dd></div>
-          <div><dt>Saved on this device</dt><dd>Plans stay in the browser. There is no shared farmer database.</dd></div>
-          <div><dt>Shared safely</dt><dd>WhatsApp pictures leave out exact GPS coordinates, and nothing is sent automatically.</dd></div>
-        </dl>
-      </div>
+      <span class="kicker" style="color:var(--yellow)">Restricted pilot · Kakamega</span>
+      <h2 style="margin-top:12px">Together, <span class="arc">we rise.</span></h2>
+      <p class="lede">Access is limited to the pilot team for now. Your agent can walk you through a plan on their phone or tablet.</p>
+      <div class="actions"><a class="btn btn-yellow" href="https://tupande-farm-planner.oneacrefund-1514.chatgpt.site/">Open the planner</a></div>
+      <dl class="facts">
+        <div><dt>No personal details</dt><dd>No farmer name or phone number is collected.</dd></div>
+        <div><dt>Saved on this device</dt><dd>Plans stay in the browser. There is no shared farmer database.</dd></div>
+        <div><dt>Shared safely</dt><dd>WhatsApp pictures leave out exact GPS coordinates, and nothing is sent automatically.</dd></div>
+      </dl>
     </div>
   </section>
 
 </main>
 
 <footer>
-  <div class="wrap">
-    <p style="margin:0">Tupande Farm Planner, MVP pilot. All figures are illustrative planning assumptions and remain subject to agent confirmation.</p>
-  </div>
+  <div class="wrap">Tupande Farm Planner, MVP pilot. All figures are illustrative planning assumptions and remain subject to agent confirmation.</div>
 </footer>
 
 <script>

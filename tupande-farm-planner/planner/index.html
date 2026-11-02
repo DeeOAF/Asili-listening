@@ -16,6 +16,7 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <symbol id="i-pin" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 28s-9-8.2-9-15a9 9 0 0 1 18 0c0 6.8-9 15-9 15z"/><circle cx="16" cy="13" r="3.5"/></g></symbol>
+    <symbol id="i-walk" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="17" cy="5.5" r="2.5"/><path d="M15 11l-4 5 3 2M15 11l4 3 4 1M15 11l-1 8 5 4 1 6M14 19l-4 9"/></g></symbol>
     <symbol id="i-maize" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4c4 3 5 8 5 12s-2 9-5 10c-3-1-5-6-5-10s1-9 5-12z"/><path d="M12 12h8M11.5 17h9M12.5 22h7"/><path d="M16 26c-4 0-8-3-9-8M16 26c4 0 8-3 9-8"/></g></symbol>
     <symbol id="i-nut" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6a6 6 0 0 1 6 6c0 1.5-.8 2.5-.8 4.5s.8 3 .8 4.5a6 6 0 0 1-12 0c0-1.5.8-2.5.8-4.5S10 13.5 10 12a6 6 0 0 1 6-6z"/><path d="M15 11h2M15 16h2M15 21h2"/></g></symbol>
     <symbol id="i-fruit" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10c6 0 9 5 9 10s-4 8-9 8-9-3-9-8 3-10 9-10z"/><path d="M16 10c0-3 1-5 3-6"/><path d="M19 7c3-2 6-1 7 0-2 2-5 2-7 0z"/></g></symbol>
@@ -59,36 +60,75 @@
     </div>
     <div class="wrap stack-lg">
       <div class="page">
-        <h2>Locate and confirm your field</h2>
-        <p class="hint">Stand at the field with GPS on. The planner places a starting shape near you. Move its corners onto the real field boundary.</p>
-        <div class="row-actions">
-          <button class="btn btn-green" id="useGps" type="button"><svg aria-hidden="true"><use href="#i-pin"/></svg>Use my GPS</button>
-          <button class="btn btn-link" id="noGps" type="button">I cannot access my GPS</button>
+        <h2>Map your field</h2>
+        <p class="hint">Choose how to measure it. Walking the corners works without mobile data.</p>
+        <div class="methods" role="group" aria-label="How to map the field">
+          <button class="method" id="methodWalk" type="button" aria-pressed="false">
+            <span class="ic" style="background:var(--green)"><svg aria-hidden="true"><use href="#i-walk"/></svg></span>
+            <span><strong>Walk the corners</strong><small>Stand at each corner and tap. Works without mobile data.</small></span>
+            <span class="badge">Recommended</span>
+          </button>
+          <button class="method" id="methodTap" type="button" aria-pressed="false">
+            <span class="ic" style="background:var(--teal)"><svg aria-hidden="true"><use href="#i-pin"/></svg></span>
+            <span><strong>Tap corners on the map</strong><small>Needs mobile data for the satellite picture.</small></span>
+          </button>
         </div>
+        <button class="btn btn-link" id="noGps" type="button">I cannot access my GPS</button>
         <p class="notice" id="gpsStatus" role="status" hidden></p>
 
-        <div class="map-wrap" id="mapWrap" hidden>
-          <div id="map" aria-label="Satellite map of your field. Drag the round corner handles onto the field boundary."></div>
-          <div class="map-tools">
-            <button class="btn btn-quiet btn-sm" id="addCorner" type="button">Add corner</button>
-            <button class="btn btn-quiet btn-sm" id="removeCorner" type="button">Remove corner</button>
-            <span class="count" id="cornerCount"></span>
+        <!-- Walk the corners -->
+        <div class="walk" id="walkPanel" hidden>
+          <p class="gps-meter" id="gpsMeter" aria-live="polite"><span class="dot"></span><span id="gpsMeterText">Looking for GPS…</span></p>
+          <button class="btn btn-yellow btn-xl" id="markCorner" type="button">Mark corner 1</button>
+          <div class="capture" id="capture" hidden>
+            <div class="bar"><span id="captureBar"></span></div>
+            <p id="captureText">Hold still at the corner…</p>
           </div>
-          <p class="warn-inline">The starting shape is not your field. GPS finds your phone, not the boundary, and does not show who owns the land.</p>
+          <p class="walk-msg" id="walkMsg" role="status"></p>
+          <div class="walk-preview" id="walkPreview" aria-hidden="true"></div>
+          <ol class="corner-list" id="cornerList"></ol>
+          <div class="row-actions">
+            <button class="btn btn-quiet btn-sm" id="undoCorner" type="button">Undo last corner</button>
+            <button class="btn btn-green btn-sm" id="finishWalk" type="button">Finish field</button>
+          </div>
+          <p class="note">Walk round the field in order. Stand right at each corner, in the open if you can, and keep the planner open with the screen on. Corners are saved only when GPS is accurate to 10&nbsp;m or better.</p>
         </div>
 
+        <!-- Satellite map: tap mode, and fine-tuning after a walk -->
+        <div class="map-wrap" id="mapWrap" hidden>
+          <p class="hint" id="mapHelp"></p>
+          <div id="map" aria-label="Satellite map of your field"></div>
+          <div class="map-tools">
+            <button class="btn btn-quiet btn-sm" id="lockMap" type="button" aria-pressed="false">Lock map</button>
+            <button class="btn btn-quiet btn-sm" id="undoTap" type="button">Undo last corner</button>
+            <button class="btn btn-quiet btn-sm" id="clearTap" type="button">Start again</button>
+          </div>
+          <p class="warn-inline">GPS and the satellite picture show where the field is, not who owns it.</p>
+        </div>
+
+        <!-- Step out the sides (fallback) -->
         <div class="manual" id="manual" hidden>
-          <h3>Enter the acreage instead</h3>
-          <p class="hint" id="manualWhy">Type the field size. You can use decimals, for example 0.75.</p>
-          <label class="field">
+          <h3>Step out the field</h3>
+          <p class="hint" id="manualWhy">Walk along one long side and one short side, counting normal steps.</p>
+          <div class="seg" role="radiogroup" aria-label="Measure in">
+            <label><input type="radio" name="manualUnit" value="steps">Steps</label>
+            <label><input type="radio" name="manualUnit" value="metres">Metres</label>
+            <label><input type="radio" name="manualUnit" value="acres">Acres</label>
+          </div>
+          <div class="rect-grid" id="rectRows">
+            <label class="field"><span id="lenLabel">Length (steps)</span><input class="numin" id="lenIn" inputmode="decimal" autocomplete="off" data-min="1" data-max="5000" data-decimals="1"></label>
+            <label class="field"><span id="widLabel">Width (steps)</span><input class="numin" id="widIn" inputmode="decimal" autocomplete="off" data-min="1" data-max="5000" data-decimals="1"></label>
+            <label class="field" id="stepRow"><span>One step (metres)</span><input class="numin" id="stepM" inputmode="decimal" autocomplete="off" data-min="0.3" data-max="1.5" data-decimals="2"></label>
+          </div>
+          <label class="field" id="acresRow" hidden>
             <span>Field size (acres)</span>
             <input class="numin" id="manualAcres" inputmode="decimal" autocomplete="off" data-min="0.05" data-max="100" data-decimals="2">
           </label>
-          <p class="note">Without a map, the planner assumes a square field to estimate the boundary length. Boundary tree numbers are less accurate.</p>
+          <p class="note" id="manualNote">Assumes a rectangular field. A normal adult step is about 0.75&nbsp;m; change it if you have measured yours.</p>
         </div>
 
         <div class="measure" id="measure" hidden>
-          <div><small>Estimated size</small><strong id="mAcres">–</strong></div>
+          <div><small>Estimated size</small><strong id="mAcres">–</strong><small id="mPlusMinus"></small></div>
           <div><small>Boundary length</small><strong id="mPerim">–</strong></div>
         </div>
         <p class="problem" id="fieldProblem" role="alert" hidden></p>
@@ -446,6 +486,7 @@
 
 <script src="vendor/leaflet/leaflet.js"></script>
 <script src="calc.js"></script>
+<script src="field.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

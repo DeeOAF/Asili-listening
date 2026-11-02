@@ -13,7 +13,7 @@
   function defaults() {
     return {
       step: 1,
-      field: { acres: 0, perimeterM: 0, source: null, confirmed: false, points: null },
+      field: { acres: 0, perimeterM: 0, source: null, confirmed: false, points: null, accuracies: [], walkDone: false, steps: null },
       cash: null, year: 1, bags: null, shortRains: null, hasTrees: null,
       existing: { avocado: { count: 0, age: 0 }, mango: { count: 0, age: 0 } },
       ent: {
@@ -86,140 +86,8 @@
     state.step = step;
     save(); render();
     window.scrollTo(0, 0);
-    if (step === 1) setTimeout(function () { if (map) map.invalidateSize(); }, 60);
+    if (step === 1) window.TupandeField.invalidate(); else window.TupandeField.onLeave();
     if (step === 5) buildShare();
-  }
-
-  /* ---------- Step 1: field ---------- */
-  var map, poly, handles = [], tileErrors = 0, tileLoads = 0;
-
-  function status(msg) { var el = $('#gpsStatus'); el.textContent = msg || ''; el.hidden = !msg; }
-
-  function showManual(why) {
-    state.field.source = 'manual';
-    state.field.confirmed = false;
-    $('#manual').hidden = false;
-    $('#manualWhy').textContent = why || 'Type the field size. You can use decimals, for example 0.75.';
-    save(); render();
-    setTimeout(function () { $('#manualAcres').focus(); }, 50);
-  }
-
-  function initMap(center, zoom) {
-    if (!window.L) { showManual('The map could not load on this device. Enter the field size instead.'); return false; }
-    $('#mapWrap').hidden = false;
-    if (!map) {
-      map = L.map('map', { zoomControl: true, attributionControl: true }).setView(center, zoom);
-      var layer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics'
-      });
-      layer.on('tileload', function () { tileLoads++; });
-      layer.on('tileerror', function () {
-        tileErrors++;
-        if (tileLoads === 0 && tileErrors === 4) showManual('Satellite imagery is not available right now. Enter the field size instead, or try GPS again later.');
-      });
-      layer.addTo(map);
-    } else {
-      map.setView(center, zoom);
-    }
-    setTimeout(function () { map.invalidateSize(); }, 60);
-    return true;
-  }
-
-  function startingSquare(lat, lng) {
-    var half = 22.5 / 111195, dLng = half / Math.cos(lat * Math.PI / 180); // ~45 m square, about half an acre
-    return [[lat - half, lng - dLng], [lat - half, lng + dLng], [lat + half, lng + dLng], [lat + half, lng - dLng]];
-  }
-
-  function drawPolygon() {
-    var pts = state.field.points;
-    if (!map || !pts) return;
-    if (poly) poly.remove();
-    handles.forEach(function (h) { h.remove(); });
-    handles = [];
-    poly = L.polygon(pts, { color: '#E8B757', weight: 3, fillColor: '#E8B757', fillOpacity: 0.18 }).addTo(map);
-    pts.forEach(function (p, i) {
-      var h = L.marker(p, { draggable: true, keyboard: true, title: 'Corner ' + (i + 1), icon: L.divIcon({ className: 'corner-handle', iconSize: [30, 30] }) }).addTo(map);
-      h.on('drag', function (e) {
-        var ll = e.target.getLatLng();
-        state.field.points[i] = [ll.lat, ll.lng];
-        poly.setLatLngs(state.field.points);
-        state.field.confirmed = false;
-        renderMeasure();
-      });
-      h.on('dragend', function () { save(); render(); });
-      handles.push(h);
-    });
-    $('#cornerCount').textContent = pts.length + ' corners (4 to 6)';
-  }
-
-  function addCorner() {
-    var p = state.field.points;
-    if (!p || p.length >= 6) return;
-    var best = 0, bestLen = -1, xy = C.project(p);
-    for (var i = 0; i < p.length; i++) {
-      var j = (i + 1) % p.length, len = Math.hypot(xy[j][0] - xy[i][0], xy[j][1] - xy[i][1]);
-      if (len > bestLen) { bestLen = len; best = i; }
-    }
-    var a = p[best], b = p[(best + 1) % p.length];
-    p.splice(best + 1, 0, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]);
-    state.field.confirmed = false;
-    drawPolygon(); save(); render();
-  }
-  function removeCorner() {
-    var p = state.field.points;
-    if (!p || p.length <= 4) return;
-    p.pop();
-    state.field.confirmed = false;
-    drawPolygon(); save(); render();
-  }
-
-  function useGps() {
-    if (!navigator.geolocation) { showManual('This device cannot share its location. Enter the field size instead.'); return; }
-    status('Finding your location…');
-    navigator.geolocation.getCurrentPosition(function (pos) {
-      var lat = pos.coords.latitude, lng = pos.coords.longitude;
-      state.field.source = 'gps';
-      state.field.confirmed = false;
-      if (!initMap([lat, lng], 18)) return;
-      state.field.points = startingSquare(lat, lng);
-      drawPolygon();
-      status('Map centred on your location' + (pos.coords.accuracy ? ' (accurate to about ' + Math.round(pos.coords.accuracy) + ' m)' : '') + '. Drag the yellow corners onto the field boundary.');
-      $('#manual').hidden = true;
-      save(); render();
-    }, function (err) {
-      var why = err && err.code === 1 ? 'Location permission was refused.' : 'Your location could not be found.';
-      status('');
-      showManual(why + ' Enter the field size instead.');
-    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
-  }
-
-  function currentMeasure() {
-    var f = state.field;
-    if (f.source === 'gps' && f.points) return C.measureField(f.points);
-    if (f.source === 'manual' && f.acres > 0) return { acres: f.acres, perimeterM: C.squarePerimeter(f.acres), valid: true, problem: '' };
-    return null;
-  }
-
-  function renderMeasure() {
-    var m = currentMeasure();
-    $('#measure').hidden = !m;
-    $('#fieldProblem').hidden = !(m && !m.valid);
-    if (m) {
-      $('#mAcres').textContent = ac(m.acres);
-      $('#mPerim').textContent = n0(m.perimeterM) + ' m' + (state.field.source === 'manual' ? ' (square estimate)' : '');
-      $('#fieldProblem').textContent = m.problem;
-    }
-    $('#confirmField').disabled = !(m && m.valid) || state.field.confirmed;
-    $('#fieldOk').hidden = !state.field.confirmed;
-  }
-
-  function confirmField() {
-    var m = currentMeasure();
-    if (!m || !m.valid) return;
-    state.field.acres = Math.round(m.acres * 1000) / 1000;
-    state.field.perimeterM = m.perimeterM;
-    state.field.confirmed = true;
-    save(); render();
   }
 
   /* ---------- Step 3: enterprises ---------- */
@@ -334,9 +202,7 @@
   function polyArea(p) { var s = 0; for (var i = 0; i < p.length; i++) { var j = (i + 1) % p.length; s += p[i][0] * p[j][1] - p[j][0] * p[i][1]; } return Math.abs(s) / 2; }
 
   function fieldShape() {
-    var xy;
-    if (state.field.source === 'gps' && state.field.points && state.field.points.length >= 4) xy = C.project(state.field.points).map(function (p) { return [p[0], -p[1]]; });
-    else xy = [[0, 0], [1, 0], [1, 0.62], [0, 0.62]];
+    var xy = window.TupandeField.shapeXY() || [[0, 0], [1, 0], [1, 0.62], [0, 0.62]];
     var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     xy.forEach(function (p) { minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]); });
     var W = 320, H = 210, pad = 18, s = Math.min((W - 2 * pad) / (maxX - minX || 1), (H - 2 * pad) / (maxY - minY || 1));
@@ -699,14 +565,10 @@
     });
 
     // Step 1
-    renderMeasure();
-    $('#manual').hidden = state.field.source !== 'manual';
-    showNumber($('#manualAcres'), state.field.source === 'manual' && state.field.acres ? state.field.acres : null, 2);
+    window.TupandeField.render();
     showNumber($('#cash'), state.cash, 0);
     $('#year').value = String(state.year);
     $('#creditOut').textContent = kes(C.creditCeiling(state.year));
-    $('#addCorner').disabled = !(state.field.points && state.field.points.length < 6);
-    $('#removeCorner').disabled = !(state.field.points && state.field.points.length > 4);
     $('#to2').disabled = !canEnter(2);
     $('#to2Hint').textContent = canEnter(2) ? '' : !state.field.confirmed ? 'Confirm your field to continue.' : 'Enter the cash you can invest now (0 is fine).';
 
@@ -754,12 +616,6 @@
   }
 
   /* ---------- Wiring ---------- */
-  $('#useGps').addEventListener('click', useGps);
-  $('#noGps').addEventListener('click', function () { $('#mapWrap').hidden = true; status(''); showManual(); });
-  $('#addCorner').addEventListener('click', addCorner);
-  $('#removeCorner').addEventListener('click', removeCorner);
-  $('#confirmField').addEventListener('click', confirmField);
-  bindNumber($('#manualAcres'), function (v) { state.field.source = 'manual'; state.field.acres = v; state.field.confirmed = false; save(); render(); });
   bindNumber($('#cash'), function (v) { state.cash = v; save(); render(); });
   $('#year').addEventListener('change', function (e) { state.year = Number(e.target.value); save(); render(); });
   $('#to2').addEventListener('click', function () { go(2); });
@@ -820,19 +676,13 @@
     if (!window.confirm('Start a new plan? This clears the current plan on this device.')) return;
     state = defaults();
     try { localStorage.removeItem(STORE); } catch (e) { /* nothing stored */ }
-    if (poly) { poly.remove(); poly = null; }
-    handles.forEach(function (h) { h.remove(); }); handles = [];
-    $('#mapWrap').hidden = true; status('');
+    window.TupandeField.reset();
     render(); window.scrollTo(0, 0);
   }
   $('#newPlan').addEventListener('click', newPlan);
   $('#newPlan2').addEventListener('click', newPlan);
 
-  // Restore a saved map shape.
-  if (state.field.source === 'gps' && state.field.points && window.L) {
-    var c = state.field.points.reduce(function (a, p) { return [a[0] + p[0] / state.field.points.length, a[1] + p[1] / state.field.points.length]; }, [0, 0]);
-    if (initMap(c, 18)) drawPolygon();
-  }
+  window.TupandeField.init(function () { return state; }, function () { save(); render(); });
   if (!canEnter(state.step)) state.step = 1;
   render();
   if (state.step === 5) buildShare();

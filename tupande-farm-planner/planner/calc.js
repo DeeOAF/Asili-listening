@@ -319,12 +319,49 @@
   // Manual entry assumes a square field to estimate the perimeter (spec 4.2).
   function squarePerimeter(acres) { return 4 * Math.sqrt(num(acres) * A.acreM2); }
 
+  // Stepped-out fields are treated as rectangles.
+  function rectangleField(lengthM, widthM) {
+    var l = num(lengthM), w = num(widthM);
+    return { acres: l * w / A.acreM2, perimeterM: 2 * (l + w) };
+  }
+
+  function distanceM(a, b) {
+    var xy = project([a, b]);
+    return Math.hypot(xy[1][0] - xy[0][0], xy[1][1] - xy[0][1]);
+  }
+
+  /* One corner from several GPS fixes taken while standing still.
+     readings: [{ lat, lng, accuracy }]. The position is weighted towards the more accurate fixes.
+     The reported accuracy is the median of the fixes, not a combined figure, because
+     consecutive phone fixes share most of their error. */
+  function averageFix(readings) {
+    var sw = 0, lat = 0, lng = 0;
+    readings.forEach(function (r) { var w = 1 / Math.max(r.accuracy, 1) / Math.max(r.accuracy, 1); sw += w; lat += r.lat * w; lng += r.lng * w; });
+    var accs = readings.map(function (r) { return r.accuracy; }).sort(function (a, b) { return a - b; });
+    var mid = accs.length >> 1, median = accs.length % 2 ? accs[mid] : (accs[mid - 1] + accs[mid]) / 2;
+    return { lat: lat / sw, lng: lng / sw, accuracyM: median, fixes: readings.length };
+  }
+
+  /* Area uncertainty from independent GPS error at each corner, at about 95% confidence.
+     A phone's reported accuracy is a 68% radius, roughly 1.5 σ per axis. Moving corner i shifts the
+     area by half the distance between its two neighbours, so SD² = Σ (σᵢ · dᵢ / 2)². Returns 2 SD in acres. */
+  function areaUncertaintyAcres(points, accuracies) {
+    var xy = project(points), n = xy.length, v = 0;
+    for (var i = 0; i < n; i++) {
+      var a = xy[(i + n - 1) % n], b = xy[(i + 1) % n];
+      var sigma = num(accuracies[i]) / 1.5, half = Math.hypot(b[0] - a[0], b[1] - a[1]) / 2;
+      v += sigma * sigma * half * half;
+    }
+    return 2 * Math.sqrt(v) / A.acreM2;
+  }
+
   return {
     ASSUMPTIONS: A, creditCeiling: creditCeiling, minMaizeAcres: minMaizeAcres,
     existingFruitAcres: existingFruitAcres, quantities: quantities, derive: derive,
     foodChecks: foodChecks, violations: violations, maxFeasible: maxFeasible,
     yieldAt: yieldAt, fruitByYear: fruitByYear, timberValues: timberValues,
     alternatives: alternatives, measureField: measureField, squarePerimeter: squarePerimeter,
-    project: project, clone: clone
+    rectangleField: rectangleField, distanceM: distanceM, averageFix: averageFix,
+    areaUncertaintyAcres: areaUncertaintyAcres, project: project, clone: clone
   };
 });

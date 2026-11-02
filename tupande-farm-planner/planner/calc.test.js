@@ -157,3 +157,35 @@ test('field measurement rejects crossing and tiny shapes', () => {
   const tiny = sq.map(p => [lat + (p[0] - lat) / 100, lng + (p[1] - lng) / 100]);
   assert.equal(C.measureField(tiny).valid, false);
 });
+
+test('stepped-out rectangle: 85 × 64 steps of 0.75 m is about 0.76 acres', () => {
+  const r = C.rectangleField(85 * 0.75, 64 * 0.75);
+  close(r.perimeterM, 2 * (63.75 + 48), 'perimeter');
+  assert.ok(Math.abs(r.acres - 63.75 * 48 / 4046.8564224) < 1e-9);
+});
+
+test('corner averaging favours accurate fixes and reports the median accuracy', () => {
+  const f = C.averageFix([
+    { lat: 0.28270, lng: 34.75190, accuracy: 4 },
+    { lat: 0.28270, lng: 34.75190, accuracy: 4 },
+    { lat: 0.28290, lng: 34.75210, accuracy: 10 }
+  ]);
+  assert.ok(Math.abs(f.lat - 0.28270) < 0.00003, 'pulled towards the 4 m fixes');
+  assert.equal(f.accuracyM, 4);
+  assert.equal(f.fixes, 3);
+});
+
+test('distance between two fixes in metres', () => {
+  const d = C.distanceM([0.2827, 34.7519], [0.2827 + 10 / 111195, 34.7519]);
+  assert.ok(Math.abs(d - 10) < 0.05, `distance ${d}`);
+});
+
+test('area uncertainty: 1-acre square walked at 5 m is about ±0.15 acres (95%)', () => {
+  const lat = 0.2827, lng = 34.7519, d = 63.6149 / 111195, dl = d / Math.cos(lat * Math.PI / 180);
+  const sq = [[lat, lng], [lat, lng + dl], [lat + d, lng + dl], [lat + d, lng]];
+  const u = C.areaUncertaintyAcres(sq, [5, 5, 5, 5]);
+  // sigma 5/1.5 per axis; each corner moves area by half the 90 m diagonal: 2 * sqrt(4 * (3.33 * 45)^2) m²
+  const expected = 2 * Math.sqrt(4 * Math.pow(5 / 1.5 * Math.hypot(63.6149, 63.6149) / 2, 2)) / 4046.8564224;
+  assert.ok(Math.abs(u - expected) < 0.002, `${u} vs ${expected}`);
+  assert.ok(u > 0.14 && u < 0.16);
+});

@@ -1,6 +1,7 @@
 # Tupande Farm Planner — Updated MVP
 
 > **Change log**
+> - 2 November 2026: field mapping redesigned for TAs — Walk the corners (default, works without data), Tap corners on the map, and Step out the sides as the fallback (sections 4.1–4.2, 14).
 > - 2 November 2026: access changed from a restricted three-person pilot to public, no sign-in (section 2). Live application moved to the Vercel deployment of this repository (section 1).
 
 ## 1. Purpose
@@ -62,31 +63,55 @@ The MVP does not require a full current-state assessment of farm earnings or cro
 
 ## 4. Step one — Your assets
 
-### 4.1 Locate and confirm the field
+### 4.1 Map and confirm the field
 
-The primary entry method is GPS-assisted satellite mapping.
+*Changed on 2 November 2026 to make mapping easier for Tupande agents (TAs) in the field.*
 
-- Provide a **Use my GPS** action.
-- Centre the map on the device’s location when permission is granted.
-- Place an editable starting polygon near that location.
-- Let the farmer and agent move the corners onto the actual field boundary.
-- Support four to six boundary points.
-- Update estimated acreage and perimeter as the corners move.
-- Reject self-crossing or effectively zero-area polygons.
-- Require the user to confirm the field.
+Offer two GPS methods. **Walk the corners** is the recommended, default method because GPS works without mobile data; only the satellite picture needs data.
 
-GPS locates the device; it does not detect the real field boundary or establish ownership. The starting shape must not be presented as an automatically identified field.
+**Walk the corners**
 
-### 4.2 Manual acreage fallback
+- The TA stands at each corner of the field and taps **Mark corner N**.
+- The planner averages GPS fixes for about 10 seconds while the TA holds still, weighting more accurate fixes more heavily.
+- A corner is saved only when at least three fixes are accurate to **10 m or better**. If that cannot be reached within about 25 seconds, the corner is not saved and the TA is told to move into the open and try again.
+- A live GPS indicator shows the current accuracy and the distance from the last corner.
+- A corner less than 3 m from the previous one is rejected.
+- The phone vibrates when a corner is saved or rejected, and the planner asks the phone to keep the screen on while walking.
+- **Undo last corner** removes the most recent corner. **Finish field** is available from four corners; six is the maximum.
+- A sketch of the corners and the TA's position is always shown, so the method works without the satellite picture. When imagery is available, the finished corners appear on the map and can be dragged to fine-tune them.
+- The size is shown as an estimate with a margin, for example "about 0.48 acres, give or take 0.06". The margin is about 95% confidence, calculated from each corner's GPS accuracy.
 
-Do not display an always-visible “Know the acreage already?” panel.
+**Tap corners on the map**
 
-Reveal manual acreage entry only when:
+- The map centres on the device's location, with a "you are here" dot.
+- The TA taps each corner in order, four to six corners, and can drag corners afterwards. **Undo last corner** and **Start again** are available.
+- **Lock map** stops the map moving by accident while corners are adjusted.
+- If satellite imagery does not load, the planner says so and points the TA to Walk the corners or stepping out the sides.
 
-- The farmer selects **I cannot access my GPS**; or
-- GPS or map imagery is unavailable.
+**For both methods**
 
-Manual acreage uses an assumed square field to estimate perimeter. Make this limitation visible.
+- Corner handles are large and numbered.
+- Estimated acreage and perimeter update as corners change.
+- Reject self-crossing or effectively zero-area shapes.
+- The user must confirm the field. Moving, adding or removing a corner removes the confirmation.
+- Switching method asks before clearing corners already marked.
+
+GPS locates the device; it does not detect the real field boundary or establish ownership.
+
+### 4.2 Step out the sides (fallback)
+
+Do not display the fallback all the time. Reveal it only when:
+
+- The user selects **I cannot access my GPS**; or
+- Location permission is refused or the device cannot share its location.
+
+The fallback offers three units:
+
+- **Steps** (default): the TA walks one long side and one short side, counting normal steps. One step is taken as **0.75 m** and can be changed. The field is treated as a rectangle: acres = length × width ÷ 4,046.86 m², perimeter = 2 × (length + width).
+- **Metres**: the same rectangle with lengths in metres.
+- **Acres**: the size typed directly. A square field is assumed to estimate the perimeter.
+
+The rectangle or square assumption is shown next to the result.
 
 ### 4.3 Cash available
 
@@ -593,8 +618,9 @@ Use **estimated return after listed costs**, not an unqualified claim of net pro
 
 ### Entry and editing
 
-- GPS is the primary field entry route.
-- Manual acreage is hidden until requested or a location/map failure occurs.
+- GPS is the primary field entry route; Walk the corners is the default method.
+- A walked corner is saved only at 10 m GPS accuracy or better, and the size is shown with a margin.
+- Stepping out the sides is hidden until requested or location is unavailable.
 - Cash and customer year are collected on the first page.
 - Numeric fields can be cleared and replaced without minimum values being reinserted while typing.
 - Field confirmation persists into the planning flow.

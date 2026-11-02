@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tupande Farm Planner</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Georama:wght@500;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-pin" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 28s-9-8.2-9-15a9 9 0 0 1 18 0c0 6.8-9 15-9 15z"/><circle cx="16" cy="13" r="3.5"/></g></symbol>
+    <symbol id="i-maize" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4c4 3 5 8 5 12s-2 9-5 10c-3-1-5-6-5-10s1-9 5-12z"/><path d="M12 12h8M11.5 17h9M12.5 22h7"/><path d="M16 26c-4 0-8-3-9-8M16 26c4 0 8-3 9-8"/></g></symbol>
+    <symbol id="i-nut" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 6a6 6 0 0 1 6 6c0 1.5-.8 2.5-.8 4.5s.8 3 .8 4.5a6 6 0 0 1-12 0c0-1.5.8-2.5.8-4.5S10 13.5 10 12a6 6 0 0 1 6-6z"/><path d="M15 11h2M15 16h2M15 21h2"/></g></symbol>
+    <symbol id="i-fruit" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10c6 0 9 5 9 10s-4 8-9 8-9-3-9-8 3-10 9-10z"/><path d="M16 10c0-3 1-5 3-6"/><path d="M19 7c3-2 6-1 7 0-2 2-5 2-7 0z"/></g></symbol>
+    <symbol id="i-tree" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3l7 10h-4l6 8H7l6-8H9z"/><path d="M16 21v8"/></g></symbol>
+    <symbol id="i-hen" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 9a3 3 0 1 1 6 0v5c3 0 8-2 10-5 1 7-3 13-10 13s-9-4-9-8c0-2 1-3 3-3"/><path d="M10 8L7 9l3 1.5"/><path d="M14 22v5M18 22v5"/></g></symbol>
+    <symbol id="i-lock" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="14" width="16" height="12" rx="2"/><path d="M11 14v-3a5 5 0 0 1 10 0v3"/></g></symbol>
+    <symbol id="i-tick" viewBox="0 0 32 32"><path d="M8 16.5l5.5 5.5L24 11" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 32 32"><path d="M10 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <pattern id="rows" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(90)"><path d="M0 4h8" stroke="rgba(117,76,61,.22)" stroke-width="1.5"/></pattern>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="../" aria-label="Tupande Farm Planner, back to the overview">
+      <img src="../assets/tupande-by-oaf-horizontal.png" alt="Tupande by One Acre Fund" width="900" height="267">
+      <span class="product">Farm Planner</span>
+    </a>
+    <button class="btn btn-quiet btn-sm" id="newPlan" type="button">New plan</button>
+  </div>
+  <nav class="progress wrap" aria-label="Plan steps">
+    <ol>
+      <li data-step="1"><span>1</span>Assets</li>
+      <li data-step="2"><span>2</span>Family food</li>
+      <li data-step="3"><span>3</span>Choices</li>
+      <li data-step="4"><span>4</span>Review</li>
+    </ol>
+  </nav>
+</header>
+
+<main>
+
+  <!-- STEP 1: YOUR ASSETS -->
+  <section class="step" id="step-1" data-step="1">
+    <div class="poster">
+      <div class="wrap">
+        <span class="kicker">Step 1 of 4</span>
+        <h1>Your assets</h1>
+        <p class="lede">Start with what you have: your field, the cash you can invest now, and your year with Tupande.</p>
+      </div>
+    </div>
+    <div class="wrap stack-lg">
+      <div class="page">
+        <h2>Locate and confirm your field</h2>
+        <p class="hint">Stand at the field with GPS on. The planner places a starting shape near you. Move its corners onto the real field boundary.</p>
+        <div class="row-actions">
+          <button class="btn btn-green" id="useGps" type="button"><svg aria-hidden="true"><use href="#i-pin"/></svg>Use my GPS</button>
+          <button class="btn btn-link" id="noGps" type="button">I cannot access my GPS</button>
+        </div>
+        <p class="notice" id="gpsStatus" role="status" hidden></p>
+
+        <div class="map-wrap" id="mapWrap" hidden>
+          <div id="map" aria-label="Satellite map of your field. Drag the round corner handles onto the field boundary."></div>
+          <div class="map-tools">
+            <button class="btn btn-quiet btn-sm" id="addCorner" type="button">Add corner</button>
+            <button class="btn btn-quiet btn-sm" id="removeCorner" type="button">Remove corner</button>
+            <span class="count" id="cornerCount"></span>
+          </div>
+          <p class="warn-inline">The starting shape is not your field. GPS finds your phone, not the boundary, and does not show who owns the land.</p>
+        </div>
+
+        <div class="manual" id="manual" hidden>
+          <h3>Enter the acreage instead</h3>
+          <p class="hint" id="manualWhy">Type the field size. You can use decimals, for example 0.75.</p>
+          <label class="field">
+            <span>Field size (acres)</span>
+            <input class="numin" id="manualAcres" inputmode="decimal" autocomplete="off" data-min="0.05" data-max="100" data-decimals="2">
+          </label>
+          <p class="note">Without a map, the planner assumes a square field to estimate the boundary length. Boundary tree numbers are less accurate.</p>
+        </div>
+
+        <div class="measure" id="measure" hidden>
+          <div><small>Estimated size</small><strong id="mAcres">–</strong></div>
+          <div><small>Boundary length</small><strong id="mPerim">–</strong></div>
+        </div>
+        <p class="problem" id="fieldProblem" role="alert" hidden></p>
+        <div class="row-actions">
+          <button class="btn btn-yellow" id="confirmField" type="button" disabled>Confirm this field</button>
+          <span class="chip chip-ok" id="fieldOk" hidden><svg aria-hidden="true"><use href="#i-tick"/></svg>Field confirmed</span>
+        </div>
+      </div>
+
+      <div class="page">
+        <h2>Cash and credit</h2>
+        <label class="field">
+          <span>How much cash can you invest now? (KES)</span>
+          <input class="numin" id="cash" inputmode="numeric" autocomplete="off" data-key="cash" data-min="0" data-max="10000000" data-decimals="0">
+        </label>
+        <label class="field">
+          <span>Which year are you with Tupande?</span>
+          <select id="year" data-key="year">
+            <option value="1">Year 1</option>
+            <option value="2">Year 2</option>
+            <option value="3">Year 3</option>
+            <option value="4">Year 4</option>
+            <option value="5">Year 5 or later</option>
+          </select>
+        </label>
+        <div class="credit-line">
+          <span>Long-rains maize credit, up to</span>
+          <strong id="creditOut">–</strong>
+        </div>
+        <p class="note">Credit pays only for long-rains maize inputs. Trees and chicks are paid from your own cash. Your agent confirms eligibility.</p>
+      </div>
+
+      <div class="nav-row">
+        <span></span>
+        <button class="btn btn-green" id="to2" type="button" disabled>Next: family food</button>
+      </div>
+      <p class="nav-hint" id="to2Hint"></p>
+    </div>
+  </section>
+
+  <!-- STEP 2: FAMILY FOOD AND TREES -->
+  <section class="step" id="step-2" data-step="2" hidden>
+    <div class="poster poster-teal">
+      <div class="wrap">
+        <span class="kicker">Step 2 of 4</span>
+        <h1>Family food comes first</h1>
+        <p class="lede">We protect enough land and money for your family's maize before anything else.</p>
+      </div>
+    </div>
+    <div class="wrap stack-lg">
+      <div class="page">
+        <h2>Your family's maize</h2>
+        <label class="field">
+          <span>How many 90&nbsp;kg bags of maize does your family need for the year?</span>
+          <input class="numin" id="bags" inputmode="decimal" autocomplete="off" data-key="bags" data-min="0" data-max="500" data-decimals="1">
+        </label>
+        <fieldset class="field">
+          <legend>Will you plant maize in the short rains too?</legend>
+          <div class="seg" role="radiogroup">
+            <label><input type="radio" name="shortRains" value="no">No</label>
+            <label><input type="radio" name="shortRains" value="yes">Yes</label>
+          </div>
+        </fieldset>
+        <p class="note" id="srNote">Each acre gives 20 bags per harvest.</p>
+      </div>
+
+      <div class="page">
+        <h2>Trees you already have</h2>
+        <fieldset class="field">
+          <legend>Do you already have mango or avocado trees?</legend>
+          <div class="seg" role="radiogroup">
+            <label><input type="radio" name="hasTrees" value="no">No</label>
+            <label><input type="radio" name="hasTrees" value="yes">Yes</label>
+          </div>
+        </fieldset>
+        <div class="tree-grid" id="treeDetails" hidden>
+          <div>
+            <h3>Avocado</h3>
+            <label class="field"><span>Number of trees</span><input class="numin" id="exAvCount" inputmode="numeric" data-key="existing.avocado.count" data-min="0" data-max="2000" data-decimals="0"></label>
+            <label class="field"><span>Average age (years)</span><input class="numin" id="exAvAge" inputmode="numeric" data-key="existing.avocado.age" data-min="0" data-max="60" data-decimals="0"></label>
+          </div>
+          <div>
+            <h3>Mango</h3>
+            <label class="field"><span>Number of trees</span><input class="numin" id="exMgCount" inputmode="numeric" data-key="existing.mango.count" data-min="0" data-max="2000" data-decimals="0"></label>
+            <label class="field"><span>Average age (years)</span><input class="numin" id="exMgAge" inputmode="numeric" data-key="existing.mango.age" data-min="0" data-max="60" data-decimals="0"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="checks" id="foodChecks" aria-live="polite">
+        <div class="check" id="checkLand">
+          <span class="stamp">Land</span>
+          <h3>Is there enough land?</h3>
+          <p class="sum" id="landSum"></p>
+          <p class="result" id="landResult"></p>
+        </div>
+        <div class="check" id="checkFund">
+          <span class="stamp">Money</span>
+          <h3>Is there enough money?</h3>
+          <p class="sum" id="fundSum"></p>
+          <p class="result" id="fundResult"></p>
+        </div>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn btn-quiet" data-go="1" type="button">Back</button>
+        <button class="btn btn-green" id="to3" type="button" disabled>Next: choose options</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3: CHOICES -->
+  <section class="step" id="step-3" data-step="3" hidden>
+    <div class="poster">
+      <div class="wrap">
+        <span class="kicker">Step 3 of 4</span>
+        <h1>Choose ways to earn</h1>
+        <p class="lede">Tick an option to add it. Every control stops at what your land and cash allow.</p>
+      </div>
+    </div>
+    <div class="wrap stack-lg">
+      <div class="page field-card">
+        <h2>Your field</h2>
+        <div class="field-svg" data-field-svg></div>
+        <ul class="legend" data-legend></ul>
+      </div>
+
+      <div class="tiles">
+        <article class="tile locked">
+          <div class="tile-head">
+            <span class="tile-toggle" aria-disabled="true">
+              <span class="ic" style="background:var(--green)"><svg aria-hidden="true"><use href="#i-maize"/></svg></span>
+              <span class="tile-name"><strong>Family maize</strong><small id="famSummary"></small></span>
+              <span class="lock"><svg aria-hidden="true"><use href="#i-lock"/></svg>Locked</span>
+            </span>
+          </div>
+        </article>
+
+        <article class="tile" data-ent="extraMaize">
+          <div class="tile-head">
+            <button class="tile-toggle" type="button" aria-pressed="false">
+              <span class="ic" style="background:var(--leaf)"><svg aria-hidden="true"><use href="#i-maize"/></svg></span>
+              <span class="tile-name"><strong>Extra maize</strong><small data-summary>Sell extra bags at KES 3,000</small></span>
+              <span class="tick"><svg aria-hidden="true"><use href="#i-tick"/></svg></span>
+            </button>
+            <button class="tile-expand" type="button" aria-expanded="false" aria-label="Show or hide extra maize details"><svg aria-hidden="true"><use href="#i-chev"/></svg></button>
+          </div>
+          <div class="tile-body" hidden>
+            <div class="ctl" data-path="ent.extraMaize.acres" data-step="0.01" data-cap="field" data-unit="acres">
+              <label for="emAcres">Extra maize area (acres)</label>
+              <div class="ctl-row"><input type="range" id="emAcresR" aria-label="Extra maize acres slider"><input class="numin ctl-num" id="emAcres" inputmode="decimal" data-decimals="2"></div>
+              <p class="limit" data-limit></p>
+            </div>
+            <p class="note">Same inputs as family maize, KES 13,250 an acre per season. Long-rains inputs can use your credit.</p>
+          </div>
+        </article>
+
+        <article class="tile" data-ent="groundnut">
+          <div class="tile-head">
+            <button class="tile-toggle" type="button" aria-pressed="false">
+              <span class="ic" style="background:var(--brown)"><svg aria-hidden="true"><use href="#i-nut"/></svg></span>
+              <span class="tile-name"><strong>Groundnuts</strong><small data-summary>Quarter-acre package, long rains</small></span>
+              <span class="tick"><svg aria-hidden="true"><use href="#i-tick"/></svg></span>
+            </button>
+            <button class="tile-expand" type="button" aria-expanded="false" aria-label="Show or hide groundnut details"><svg aria-hidden="true"><use href="#i-chev"/></svg></button>
+          </div>
+          <div class="tile-body" hidden>
+            <p class="selected-banner" data-gn-banner hidden><svg aria-hidden="true"><use href="#i-tick"/></svg>Groundnut package selected</p>
+            <table class="ledger compact">
+              <tbody>
+                <tr><td>Area</td><td>0.25 acres</td></tr>
+                <tr><td>Expected harvest, 150&nbsp;kg at KES 145</td><td>21,750</td></tr>
+                <tr><td>Inputs and financing, deducted at sale</td><td>−6,500</td></tr>
+                <tr class="total"><td>Payment to you</td><td>15,250</td></tr>
+              </tbody>
+            </table>
+            <p class="note">Seed, fertiliser, gypsum and Aflasafe are included. No cash is needed now. One package per farmer; no short-rains package.</p>
+            <p class="limit" data-gn-limit></p>
+          </div>
+        </article>
+
+        <article class="tile" data-ent="fruit">
+          <div class="tile-head">
+            <button class="tile-toggle" type="button" aria-pressed="false">
+              <span class="ic" style="background:var(--green)"><svg aria-hidden="true"><use href="#i-fruit"/></svg></span>
+              <span class="tile-name"><strong>Fruit trees</strong><small data-summary>Avocado and mango, harvest from year 3</small></span>
+              <span class="tick"><svg aria-hidden="true"><use href="#i-tick"/></svg></span>
+            </button>
+            <button class="tile-expand" type="button" aria-expanded="false" aria-label="Show or hide fruit tree details"><svg aria-hidden="true"><use href="#i-chev"/></svg></button>
+          </div>
+          <div class="tile-body" hidden>
+            <div class="ctl" data-path="ent.fruit.avocado" data-step="1" data-cap="2000" data-unit="seedlings">
+              <label for="avN">Avocado seedlings, KES 75 each</label>
+              <div class="ctl-row"><input type="range" id="avNR" aria-label="Avocado seedlings slider"><input class="numin ctl-num" id="avN" inputmode="numeric" data-decimals="0"></div>
+              <p class="limit" data-limit></p>
+            </div>
+            <div class="ctl" data-path="ent.fruit.mango" data-step="1" data-cap="2000" data-unit="seedlings">
+              <label for="mgN">Mango seedlings, KES 20 each</label>
+              <div class="ctl-row"><input type="range" id="mgNR" aria-label="Mango seedlings slider"><input class="numin ctl-num" id="mgN" inputmode="numeric" data-decimals="0"></div>
+              <p class="limit" data-limit></p>
+            </div>
+            <p class="note">Land is reserved for every seedling planted: 64.8&nbsp;m² per avocado, 80&nbsp;m² per mango. 70% of new seedlings are assumed to survive.</p>
+          </div>
+        </article>
+
+        <article class="tile" data-ent="timber">
+          <div class="tile-head">
+            <button class="tile-toggle" type="button" aria-pressed="false">
+              <span class="ic" style="background:var(--teal)"><svg aria-hidden="true"><use href="#i-tree"/></svg></span>
+              <span class="tile-name"><strong>Grevillea timber</strong><small data-summary>First 50 seedlings free</small></span>
+              <span class="tick"><svg aria-hidden="true"><use href="#i-tick"/></svg></span>
+            </button>
+            <button class="tile-expand" type="button" aria-expanded="false" aria-label="Show or hide timber details"><svg aria-hidden="true"><use href="#i-chev"/></svg></button>
+          </div>
+          <div class="tile-body" hidden>
+            <fieldset class="field">
+              <legend>Where will you plant?</legend>
+              <div class="seg" role="radiogroup">
+                <label><input type="radio" name="timberMode" value="boundary">Boundary</label>
+                <label><input type="radio" name="timberMode" value="woodlot">Woodlot</label>
+              </div>
+            </fieldset>
+            <div class="ctl" data-path="ent.timber.count" data-step="1" data-cap="5000" data-unit="seedlings">
+              <label for="tN">Grevillea seedlings</label>
+              <div class="ctl-row"><input type="range" id="tNR" aria-label="Grevillea seedlings slider"><input class="numin ctl-num" id="tN" inputmode="numeric" data-decimals="0"></div>
+              <p class="limit" data-limit></p>
+            </div>
+            <p class="note" id="timberNote"></p>
+          </div>
+        </article>
+
+        <article class="tile" data-ent="chickens">
+          <div class="tile-head">
+            <button class="tile-toggle" type="button" aria-pressed="false">
+              <span class="ic" style="background:var(--olive)"><svg aria-hidden="true"><use href="#i-hen"/></svg></span>
+              <span class="tile-name"><strong>Chickens</strong><small data-summary>Chicks at KES 150, sold at KES 550–600</small></span>
+              <span class="tick"><svg aria-hidden="true"><use href="#i-tick"/></svg></span>
+            </button>
+            <button class="tile-expand" type="button" aria-expanded="false" aria-label="Show or hide chicken details"><svg aria-hidden="true"><use href="#i-chev"/></svg></button>
+          </div>
+          <div class="tile-body" hidden>
+            <div class="ctl" data-path="ent.chickens.perBatch" data-step="1" data-cap="100" data-unit="chicks">
+              <label for="chN">Chicks per batch</label>
+              <div class="ctl-row"><input type="range" id="chNR" aria-label="Chicks per batch slider"><input class="numin ctl-num" id="chN" inputmode="numeric" data-decimals="0"></div>
+              <p class="limit" data-limit></p>
+            </div>
+            <div class="ctl" data-path="ent.chickens.batches" data-step="1" data-cap="6" data-min="1" data-unit="batches">
+              <label for="chK">Batches a year</label>
+              <div class="ctl-row"><input type="range" id="chKR" aria-label="Batches a year slider"><input class="numin ctl-num" id="chK" inputmode="numeric" data-decimals="0"></div>
+              <p class="limit" data-limit></p>
+            </div>
+            <p class="note">Six-week-old chicks, sold from three months, 10% mortality. Cash is reserved for the first batch; later batches are paid from sales. No feed or housing costs are included.</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn btn-quiet" data-go="2" type="button">Back</button>
+        <button class="btn btn-green" id="toReview" type="button">Review my plan</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 4: REVIEW -->
+  <section class="step" id="step-4" data-step="4" hidden>
+    <div class="poster poster-teal">
+      <div class="wrap">
+        <span class="kicker">Step 4 of 4</span>
+        <h1>Review your plan</h1>
+        <p class="lede">See this year and the years ahead, compare a few alternatives, then keep the plan you like.</p>
+      </div>
+    </div>
+    <div class="wrap stack-lg">
+      <div class="review-grid">
+        <div class="page field-card">
+          <h2>Your field, <span id="rvAcres"></span></h2>
+          <div class="field-svg" data-field-svg></div>
+          <ul class="legend" data-legend></ul>
+          <p class="note">Sections show how much land each use takes, not where to plant.</p>
+        </div>
+        <div>
+          <div class="tabs" role="tablist" aria-label="Plan views">
+            <button role="tab" id="tab-now" aria-controls="panel-now" aria-selected="true" type="button">This year</button>
+            <button role="tab" id="tab-future" aria-controls="panel-future" aria-selected="false" tabindex="-1" type="button">Future</button>
+          </div>
+          <div class="panel" id="panel-now" role="tabpanel" aria-labelledby="tab-now"></div>
+          <div class="panel" id="panel-future" role="tabpanel" aria-labelledby="tab-future" hidden></div>
+        </div>
+      </div>
+
+      <div id="altsBox">
+        <h2 class="section-h">Alternatives to compare</h2>
+        <p class="hint">Each one keeps your family maize and fits your land and cash. None is better for everyone; choose what suits you.</p>
+        <div class="alts" id="alts"></div>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn btn-quiet" data-go="3" type="button">Back to choices</button>
+        <button class="btn btn-yellow" id="happy" type="button">I'm happy with this plan</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHARE -->
+  <section class="step" id="step-5" data-step="5" hidden>
+    <div class="poster">
+      <div class="wrap">
+        <span class="kicker">Your plan is ready</span>
+        <h1>Together, <span class="arc">we rise.</span></h1>
+        <p class="lede">Share the picture and summary on WhatsApp, or save the picture to your phone.</p>
+      </div>
+    </div>
+    <div class="wrap stack-lg">
+      <div class="share-grid">
+        <figure class="preview"><img id="pngPreview" alt="Picture of your farm plan"></figure>
+        <div class="stack">
+          <div class="page">
+            <h2>Message</h2>
+            <textarea id="summaryText" rows="12" readonly></textarea>
+          </div>
+          <div class="row-actions">
+            <button class="btn btn-green" id="sharePlan" type="button">Share on WhatsApp</button>
+            <button class="btn btn-quiet" id="downloadPng" type="button">Download picture</button>
+          </div>
+          <div class="notice" id="shareFallback" hidden>
+            <p>This phone cannot attach the picture automatically. The picture has been downloaded.</p>
+            <ol>
+              <li>Tap <strong>Open WhatsApp with the message</strong> below.</li>
+              <li>Choose who to send it to.</li>
+              <li>Attach the downloaded picture from your phone's downloads or gallery.</li>
+            </ol>
+            <a class="btn btn-green" id="waLink" href="#" target="_blank" rel="noopener">Open WhatsApp with the message</a>
+          </div>
+          <p class="note">The picture leaves out your GPS location. Nothing is sent until you choose who to send it to.</p>
+        </div>
+      </div>
+      <div class="nav-row">
+        <button class="btn btn-quiet" data-go="4" type="button">Back to review</button>
+        <button class="btn btn-quiet" id="newPlan2" type="button">Start a new plan</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Rolling totals, visible while choosing and reviewing -->
+<div class="totals" id="totals" hidden aria-live="polite">
+  <div class="wrap">
+    <div><small>Annual benefit*</small><strong id="tBenefit">–</strong></div>
+    <div><small>Cash needed to start</small><strong id="tCash">–</strong></div>
+    <div><small>Acres available</small><strong id="tAcres">–</strong></div>
+  </div>
+  <p class="wrap totals-note">*Includes the value of maize kept for food. Estimates after listed costs.</p>
+</div>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="calc.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

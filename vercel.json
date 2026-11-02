@@ -1,7 +1,12 @@
 {
+  "redirects": [
+    { "source": "/planner", "destination": "/planner/", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/tupande-farm-planner/index.html" },
-    { "source": "/assets/:path*", "destination": "/tupande-farm-planner/assets/:path*" }
+    { "source": "/assets/:path*", "destination": "/tupande-farm-planner/assets/:path*" },
+    { "source": "/planner/", "destination": "/tupande-farm-planner/planner/index.html" },
+    { "source": "/planner/:path*", "destination": "/tupande-farm-planner/planner/:path*" }
   ],
   "headers": [
     {

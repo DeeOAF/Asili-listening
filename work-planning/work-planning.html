@@ -2664,7 +2664,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     var a = WP.aggregate(rows, p), st = statusFromScore(v);
     var who = isDA(p) && u.role !== 'DA' ? ' Done by Duka Assistants.' : '';
     var left = rows.length === 1 ? Math.max(0, a.need - a.gain) : a.ask, by = ' by ' + DAYS_LONG[p.deadline];
-    var sofar = 'Done so far: ' + amt(p.metric, a.gain) + ' of ' + amt(p.metric, a.need) + '.' +
+    var sofar = (a.gain > a.need ? 'Done so far: ' + amt(p.metric, a.gain) + ', more than the ' + amt(p.metric, a.need) + ' needed in total.' : 'Done so far: ' + amt(p.metric, a.gain) + ' of ' + amt(p.metric, a.need) + '.') +
       (left <= 0.5 ? ' Nothing more is needed.' : rows.length === 1 ? ' Still to do' + by + ': ' + amt(p.metric, left) + '.' : ' Still owed' + by + ' by those behind: ' + amt(p.metric, left) + '.');
     return '<li class="pl"><div class="pl-t">' + pTag(p.metric) + '<b>' + esc(p.title) + '</b><span class="pl-n num">' + Math.round(v) + '</span>' + stateLine(v) + '</div>' +
       '<div class="oup-bar"><i class="' + fcls(st) + '" style="width:' + Math.min(100, v) + '%"></i></div>' +

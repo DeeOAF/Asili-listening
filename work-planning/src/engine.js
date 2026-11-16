@@ -21,7 +21,7 @@
     hvc:      { label: 'HVC client visits',       unit: 'visits',  kind: 'count',  hrs: 0.5,       mean: 5.7 },
     training: { label: 'Training modules passed', unit: 'modules', kind: 'count',  hrs: 1.5,       mean: 0.42 },
     glcalls:  { label: 'GL validation calls',     unit: 'calls',   kind: 'count',  hrs: 0.25,      mean: 4.1 },
-    duka:     { label: 'Duka compliance visits',  unit: 'dukas',   kind: 'count',  hrs: 1,         mean: 5, owner: 'DO' }
+    duka:     { label: 'Duka compliance visits',  unit: 'dukas',   kind: 'count',  hrs: 1,         mean: 5, owner: 'DA' }
   };
   /* the pillar each measure serves, so a priority can be read as a push on enrolment, repayment, HVC, extension or the duka network */
   var PILLARS = {
@@ -31,7 +31,7 @@
     extension: { label: 'Extension', short: 'Ext', metrics: ['training', 'scoped', 'glcalls'] },
     duka:      { label: 'Duka', short: 'Duka', metrics: ['duka'] }
   };
-  function ownedByDO(metric) { return METRICS[metric].owner === 'DO'; }
+  function ownedByDA(metric) { return METRICS[metric].owner === 'DA'; }
   function pillarOf(metric) { for (var k in PILLARS) if (PILLARS[k].metrics.indexOf(metric) >= 0) return k; return null; }
 
   var KIND_LABEL = { season: 'Trajectory', rate: 'Rate', count: 'Per person' };
@@ -50,12 +50,14 @@
       also: { AC: ['Review the Healthy Path with your ZSs and agree an execution plan for each zone.', 'Check progress every morning and support the lagging zones first.'],
               ZS: ['Help each TA build a workplan and pick the clients and GLs to start with.', 'Review progress with every TA each day.'] },
       prios: [
-        P('p1', 'groups', 'Group enrolment', 'Reach 8% of our group target by Friday and 35% by 30 November. Every TA enrols at least 3 groups a day, starting with last season finishers and GLs already scoped.', 8, 4, 50, { norm: 3,
+        P('p1', 'groups', 'Group enrolment', 'Reach 8% of our group target by Friday and 35% by 30 November. Every TA enrols at least 3 groups a day, starting with last season finishers and GLs already scoped.', 8, 4, 45, { norm: 3,
           aud: { AC: 'Rank zones by gap and support the furthest behind first.', ZS: 'Sit with the TAs carrying most of the gap and fix their week.', TA: 'Enrol groups daily, finishers and scoped GLs first.' } }),
-        P('p2', 'repaid', 'Repayment', 'Lift portfolio repayment to 66% by Friday. Chase the biggest arrears first.', 66, 4, 30, {
+        P('p2', 'repaid', 'Repayment', 'Lift portfolio repayment to 66% by Friday. Chase the biggest arrears first.', 66, 4, 25, {
           aud: { AC: 'Watch zone repayment each morning.', ZS: 'Pair TAs with the biggest arrears for joint visits.', TA: 'Collect from the largest arrears first.' } }),
-        P('p3', 'glcalls', 'GL validation calls', 'Finish 12 GL validation calls each by Wednesday 11am.', 12, 2, 20, {
-          aud: { AC: 'Confirm every ZS has the call list.', ZS: 'Check calls are done before the Wednesday deadline.', TA: 'Call your GLs before any group visit.' } })
+        P('p3', 'glcalls', 'GL validation calls', 'Finish 12 GL validation calls each by Wednesday 11am.', 12, 2, 15, {
+          aud: { AC: 'Confirm every ZS has the call list.', ZS: 'Check calls are done before the Wednesday deadline.', TA: 'Call your GLs before any group visit.' } }),
+        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 25 dukas for compliance by Friday, the dukas with the most farmer orders first.', 25, 4, 15, {
+          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
       ]
     },
     {
@@ -63,12 +65,14 @@
       areas: [['Rift North', 'Jepkoech Langat'], ['Rift South', 'Mutai Kiprop']],
       also: { AC: ['Plan HVC visits by zone so no zone is left for Friday.'], ZS: ['Book training slots for your TAs on Monday.'] },
       prios: [
-        P('p1', 'hvc', 'HVC visits', 'Every TA visits 30 HVC clients this week, soya and sunflower first.', 30, 4, 40, {
+        P('p1', 'hvc', 'HVC visits', 'Every TA visits 30 HVC clients this week, soya and sunflower first.', 30, 4, 35, {
           aud: { AC: 'Make sure each zone has a visit plan by Tuesday.', ZS: 'Cluster HVC visits by village.', TA: 'Visit 6 HVC clients a day, soya and sunflower first.' } }),
-        P('p2', 'clients', 'Client enrolment', 'Reach 9% of clients enrolled by Friday.', 9, 4, 35, {
+        P('p2', 'clients', 'Client enrolment', 'Reach 9% of clients enrolled by Friday.', 9, 4, 30, {
           aud: { AC: 'Support zones below the Healthy Path.', ZS: 'Agree each TA\'s enrolment list.', TA: 'Enrol within groups you already know.' } }),
-        P('p3', 'training', 'Training', 'All TAs and ZSs complete 4 training modules and pass at 80%.', 4, 4, 25, {
-          aud: { AC: 'Block training time in your zones.', ZS: 'Complete your own modules first.', TA: 'Finish one module each day.' } })
+        P('p3', 'training', 'Training', 'All TAs and ZSs complete 4 training modules and pass at 80%.', 4, 4, 20, {
+          aud: { AC: 'Block training time in your zones.', ZS: 'Complete your own modules first.', TA: 'Finish one module each day.' } }),
+        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 20 dukas for compliance by Friday, starting with dukas not visited this month.', 20, 4, 15, {
+          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
       ]
     },
     {
@@ -76,12 +80,14 @@
       areas: [['Upper Western East', 'Simiyu Barasa'], ['Upper Western West', 'Nekesa Wanyama']],
       also: { AC: ['Review GL scoping lists with each ZS on Tuesday.'], ZS: ['Confirm scoped GLs with a call before enrolment.'] },
       prios: [
-        P('p1', 'repaid', 'Repayment', 'Reach 68% repayment by Friday. Every TA works their own arrears list.', 68, 4, 45, {
+        P('p1', 'repaid', 'Repayment', 'Reach 68% repayment by Friday. Every TA works their own arrears list.', 68, 4, 40, {
           aud: { AC: 'Compare zone repayment daily.', ZS: 'Joint visits for the three largest arrears per TA.', TA: 'Work your arrears list from the largest.' } }),
-        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by the end of the week.', 70, 4, 35, {
+        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by the end of the week.', 70, 4, 30, {
           aud: { AC: 'Track scoping by zone.', ZS: 'Review each TA\'s scoped list.', TA: 'Scope the GLs with the most farmers first.' } }),
-        P('p3', 'hvc', 'HVC visits', 'Each TA visits 20 HVC clients, groundnut and soya first.', 20, 4, 20, {
-          aud: { AC: 'No action beyond monitoring.', ZS: 'Cluster visits by village.', TA: 'About 4 HVC visits a day.' } })
+        P('p3', 'hvc', 'HVC visits', 'Each TA visits 20 HVC clients, groundnut and soya first.', 20, 4, 15, {
+          aud: { AC: 'No action beyond monitoring.', ZS: 'Cluster visits by village.', TA: 'About 4 HVC visits a day.' } }),
+        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 25 dukas for compliance by Friday.', 25, 4, 15, {
+          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
       ]
     },
     {
@@ -89,12 +95,14 @@
       areas: [['Lower Western North', 'Atieno Opiyo'], ['Lower Western South', 'Awino Onyango']],
       also: { AC: ['Support the lagging zones on repayment first.'], ZS: ['Stawi Station: finish socketing by Thursday.', 'Send the weekly KPI form by Friday noon.'] },
       prios: [
-        P('p1', 'repaid', 'Repayment completion', 'Lift repayment to 70% by Friday. Every TA reaches 70% on their own portfolio.', 70, 4, 45, {
+        P('p1', 'repaid', 'Repayment completion', 'Lift repayment to 70% by Friday. Every TA reaches 70% on their own portfolio.', 70, 4, 40, {
           aud: { AC: 'Support lagging zones on repayment.', ZS: 'Joint visits for the largest arrears.', TA: 'Collect from the largest arrears first.' } }),
-        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by Friday.', 70, 4, 30, {
+        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by Friday.', 70, 4, 25, {
           aud: { AC: 'Track scoping by zone.', ZS: 'Check scoped lists with each TA.', TA: 'Scope the biggest GLs first.' } }),
-        P('p3', 'glcalls', 'GL validation calls', 'Complete GL validation calls by Wednesday 11am, 10 each.', 10, 2, 25, {
-          aud: { AC: 'Confirm ZS call lists.', ZS: 'Check calls before the deadline.', TA: 'Call before visiting.' } })
+        P('p3', 'glcalls', 'GL validation calls', 'Complete GL validation calls by Wednesday 11am, 10 each.', 10, 2, 20, {
+          aud: { AC: 'Confirm ZS call lists.', ZS: 'Check calls before the deadline.', TA: 'Call before visiting.' } }),
+        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 25 dukas for compliance by Friday, Stawi Station dukas first.', 25, 4, 15, {
+          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
       ]
     },
     {
@@ -102,12 +110,14 @@
       areas: [['Nyanza North', 'Auma Odhiambo'], ['Nyanza South', 'Omondi Okoth']],
       also: { AC: ['Keep one training day free in every zone.'], ZS: ['Share the enrolment list with TAs on Monday.'] },
       prios: [
-        P('p1', 'clients', 'Client enrolment', 'Reach 10% of clients enrolled by Friday.', 10, 4, 40, {
+        P('p1', 'clients', 'Client enrolment', 'Reach 10% of clients enrolled by Friday.', 10, 4, 35, {
           aud: { AC: 'Support zones below the Healthy Path.', ZS: 'Agree enrolment lists with TAs.', TA: 'Enrol within groups you already know.' } }),
-        P('p2', 'repaid', 'Repayment', 'Lift repayment to 66% by Friday.', 66, 4, 35, {
+        P('p2', 'repaid', 'Repayment', 'Lift repayment to 66% by Friday.', 66, 4, 30, {
           aud: { AC: 'Watch zone repayment daily.', ZS: 'Joint visits for the largest arrears.', TA: 'Collect from the largest arrears first.' } }),
-        P('p3', 'training', 'Training', 'All TAs and ZSs complete 3 training modules with an 80% pass rate.', 3, 4, 25, {
-          aud: { AC: 'Protect training time.', ZS: 'Complete your own modules first.', TA: 'Finish a module a day.' } })
+        P('p3', 'training', 'Training', 'All TAs and ZSs complete 3 training modules with an 80% pass rate.', 3, 4, 20, {
+          aud: { AC: 'Protect training time.', ZS: 'Complete your own modules first.', TA: 'Finish a module a day.' } }),
+        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 20 dukas for compliance by Friday.', 20, 4, 15, {
+          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
       ]
     }
   ];
@@ -193,7 +203,7 @@
               }
               daily[mk] = arr;
             });
-            daily.duka = [0, 0, 0, 0, 0, 0]; // Duka compliance belongs to the zone's Duka Officers
+            daily.duka = [0, 0, 0, 0, 0, 0]; // Duka compliance belongs to the zone's Duka Assistants
             // training can never pass 4 modules in total
             var tcap = 4 - A0.training, ts = 0;
             daily.training = daily.training.map(function (v) { var k = Math.min(v, Math.max(0, tcap - ts)); ts += k; return k; });
@@ -230,18 +240,21 @@
       data.regions.push(region);
       data.byId[region.id] = region;
     });
-    // Duka Officers: a separate branch under the zone, two per zone, generated last
-    data.dos = [];
+    // Duka Assistants: a separate branch under the zone, two per zone, generated last
+    data.das = [];
     var dn = 0;
     data.regions.forEach(function (rg) { rg.areas.forEach(function (ar) { ar.zones.forEach(function (zn) {
-      zn.dos = [0, 1].map(function (k) {
-        var id = 'do' + (++dn), f = clip((1 + 0.18 * gauss('dof|' + id)) * zn.effect, 0.35, 1.6), arr = [], hr = hashRng('dod|' + id);
+      zn.das = [0, 1].map(function (k) {
+        var id = 'da' + (++dn), f = clip((1 + 0.18 * gauss('dof|' + id)) * zn.effect, 0.35, 1.6), arr = [], hr = hashRng('dod|' + id);
         for (var di = 0; di < 6; di++) {
           var x = METRICS.duka.mean * f * DAYF[di] * clip(1 + 0.3 * gauss('dd|' + id + '|' + di), 0.3, 2), fl = Math.floor(x);
           arr.push(fl + (hr() < x - fl ? 1 : 0));
         }
-        var o = { id: id, name: personName(), role: 'DO', regionId: rg.id, areaId: ar.id, zoneId: zn.id, territory: village() + ' cluster', f: f, season: {}, due: 0, A0: { duka: 0 }, pool: {}, daily: { duka: arr }, groups: [] };
-        data.dos.push(o); data.byId[id] = o; return o;
+        var o = { id: id, name: personName(), role: 'DA', regionId: rg.id, areaId: ar.id, zoneId: zn.id, territory: null, f: f, season: {}, due: 0, A0: { duka: 0 }, pool: {}, daily: { duka: arr }, groups: [], dukas: [] };
+        var dk = ['Agrovet', 'Farm Shop', 'Stores', 'Duka', 'Agro Centre', 'Traders'];
+        for (var j = 0; j < 6; j++) { var vv = village(); o.dukas.push({ name: vv + ' ' + dk[(j + k) % dk.length], village: vv }); }
+        o.patch = o.dukas[0].village + ' to ' + o.dukas[5].village;
+        data.das.push(o); data.byId[id] = o; return o;
       });
     }); }); });
     return data;
@@ -284,12 +297,12 @@
   function naCalc(p) {
     return { pid: p.id, metric: p.metric, kind: 'count', S: null, base: 0, A0: 0, raw: 0, need: 0, gain: 0, pace: 1, expected: 0, distance: 0, remaining: 0, progress: 1, paceProg: 1, poolLeft: 0, ask: 0, status: 'done', na: true };
   }
-  /* Duka priorities are carried by Duka Officers: a unit above the TA is read from its zones' officers, a single TA carries nothing */
-  function doRowsFor(rows) {
-    if (rows.length && rows[0].isDO) return rows;
+  /* Duka priorities are carried by Duka Assistants: a unit above the TA is read from its zones' assistants, a single TA carries nothing */
+  function daRowsFor(rows) {
+    if (rows.length && rows[0].isDA) return rows;
     if (rows.length === 1) return [];
     var seen = {}, out = [];
-    rows.forEach(function (r) { if (!seen[r.zone.id]) { seen[r.zone.id] = 1; (r.dos || []).forEach(function (d) { out.push(d); }); } });
+    rows.forEach(function (r) { if (!seen[r.zone.id]) { seen[r.zone.id] = 1; (r.das || []).forEach(function (d) { out.push(d); }); } });
     return out;
   }
   function statusOf(c) {
@@ -339,13 +352,13 @@
     for (var i = d + 1; i <= 5; i++) days.push(i);
     var Hrem = sum(days, function (i) { return DAY_CAP[i]; });
 
-    var wTA = sum(prios, function (p) { return ownedByDO(p.metric) ? 0 : p.weight; }) || 100;
+    var wTA = sum(prios, function (p) { return ownedByDA(p.metric) ? 0 : p.weight; }) || 100;
     // 1. what each priority still needs, in hours
     var items = prios.map(function (p) {
       var c = row.calcs[p.id];
       var ask = opts.met === p.id ? 0 : c.ask;
       var needH = hrsFor(p.metric, ask);
-      return { pid: p.id, p: p, weight: p.weight, ask: ask, needH: needH, met: needH < 0.05, doOwned: ownedByDO(p.metric), baseBudget: ownedByDO(p.metric) ? 0 : Hrem * p.weight / wTA, budget: 0, alloc: 0, overdue: false };
+      return { pid: p.id, p: p, weight: p.weight, ask: ask, needH: needH, met: needH < 0.05, daOwned: ownedByDA(p.metric), baseBudget: ownedByDA(p.metric) ? 0 : Hrem * p.weight / wTA, budget: 0, alloc: 0, overdue: false };
     });
 
     // 2. weights share the time, but only among priorities that still have work:
@@ -420,7 +433,7 @@
     var items = prios.map(function (p, i) {
       var agg = aggregate(rows, p);
       return {
-        pid: p.id, p: p, weight: p.weight, agg: agg, doOwned: ownedByDO(p.metric),
+        pid: p.id, p: p, weight: p.weight, agg: agg, daOwned: ownedByDA(p.metric),
         alloc: sum(rows, function (r) { return r.plan.items[i].alloc; }),
         needH: sum(rows, function (r) { return r.plan.items[i].needH; }),
         metCount: sum(rows, function (r) { return r.plan.items[i].met ? 1 : 0; })
@@ -428,10 +441,10 @@
     });
     var ageH = sum(rows, function (r) { return r.plan.ageHours || 0; });
     var total = sum(items, function (it) { return it.alloc; });
-    var wT = sum(items, function (it) { return it.doOwned ? 0 : it.weight; }) || 1;
+    var wT = sum(items, function (it) { return it.daOwned ? 0 : it.weight; }) || 1;
     items.forEach(function (it) {
-      it.weightEff = it.doOwned ? null : it.weight / wT * 100;
-      it.share = (total > 0 && !it.doOwned) ? it.alloc / total * 100 : null;
+      it.weightEff = it.daOwned ? null : it.weight / wT * 100;
+      it.share = (total > 0 && !it.daOwned) ? it.alloc / total * 100 : null;
       it.delta = it.share == null ? null : it.share - it.weightEff;
     });
     return { items: items, total: total, ageH: ageH, n: rows.length, over: total <= 0 };
@@ -479,9 +492,9 @@
       ptr[p.id] = k + 1;
       text = 'Training module ' + mod + ' and its assessment (80% to pass)';
     } else if (m === 'duka') {
-      var dv = ta.groups[k % ta.groups.length].village;
+      var dl = ta.dukas && ta.dukas.length ? ta.dukas : ta.groups, d1 = dl[k % dl.length];
       ptr[p.id] = k + 1;
-      text = 'Check ' + Math.max(1, Math.round(units)) + ' dukas for compliance around ' + dv + ', nearest first';
+      text = 'Check ' + Math.max(1, Math.round(units)) + ' dukas for compliance around ' + d1.village + (ta.dukas ? ', starting with ' + d1.name : ', nearest first');
     } else {
       var l4 = ranked(ta, 'calls', function (a, b) { return b.members - a.members; });
       var c1 = l4[k % l4.length];
@@ -494,24 +507,25 @@
   /* ---------- compute a whole region ---------- */
   function computeRegion(region, prios, d, opts) {
     opts = opts || {};
-    var rows = [], byTA = {}, zoneAlloc = {}, dRows = [], byDO = {};
-    var taP = prios.filter(function (p) { return !ownedByDO(p.metric); }), doP = prios.filter(function (p) { return ownedByDO(p.metric); });
+    var rows = [], byTA = {}, zoneAlloc = {}, dRows = [], byDA = {};
+    var taP = prios.filter(function (p) { return !ownedByDA(p.metric); }), daP = prios.filter(function (p) { return ownedByDA(p.metric); });
     region.areas.forEach(function (area) {
       area.zones.forEach(function (zone) {
         var zrows = zone.tas.map(function (ta) {
           var calcs = {};
-          prios.forEach(function (p) { calcs[p.id] = ownedByDO(p.metric) ? naCalc(p) : calcTA(ta, p, d); });
+          prios.forEach(function (p) { calcs[p.id] = ownedByDA(p.metric) ? naCalc(p) : calcTA(ta, p, d); });
           return { ta: ta, zone: zone, area: area, calcs: calcs };
         });
-        var zd = (zone.dos || []).map(function (o) {
+        var zd = (zone.das || []).map(function (o) {
           var calcs = {};
-          doP.forEach(function (p) { calcs[p.id] = calcTA(o, p, d); });
-          var wsD = sum(doP, function (p) { return p.weight; }) || 1;
-          var sc = doP.length ? sum(doP, function (p) { return p.weight * calcs[p.id].paceProg; }) / wsD * 100 : 100;
-          var rowD = { ta: o, zone: zone, area: area, calcs: calcs, isDO: true, score: sc, status: sc >= 95 ? 'on' : sc >= 82 ? 'slip' : sc >= 60 ? 'behind' : 'critical' };
-          dRows.push(rowD); byDO[o.id] = rowD; return rowD;
+          daP.forEach(function (p) { calcs[p.id] = calcTA(o, p, d); });
+          var wsD = sum(daP, function (p) { return p.weight; }) || 1;
+          var sc = daP.length ? sum(daP, function (p) { return p.weight * calcs[p.id].paceProg; }) / wsD * 100 : 100;
+          var rowD = { ta: o, zone: zone, area: area, calcs: calcs, isDA: true, score: sc, status: sc >= 95 ? 'on' : sc >= 82 ? 'slip' : sc >= 60 ? 'behind' : 'critical' };
+          rowD.plan = planTA(rowD, daP, d);
+          dRows.push(rowD); byDA[o.id] = rowD; return rowD;
         });
-        zrows.forEach(function (r) { r.dos = zd; });
+        zrows.forEach(function (r) { r.das = zd; });
         zoneAlloc[zone.id] = {};
         prios.forEach(function (p) {
           if (METRICS[p.metric].kind === 'season') zoneAlloc[zone.id][p.id] = allocateZone(zrows, p.id);
@@ -528,13 +542,13 @@
         });
       });
     });
-    return { rows: rows, byTA: byTA, dRows: dRows, byDO: byDO, zoneAlloc: zoneAlloc, d: d, prios: prios };
+    return { rows: rows, byTA: byTA, dRows: dRows, byDA: byDA, zoneAlloc: zoneAlloc, d: d, prios: prios };
   }
 
   /* roll a list of TA rows up into one line for a priority */
   function aggregate(rows, p) {
     var m = METRICS[p.metric];
-    if (ownedByDO(p.metric)) rows = doRowsFor(rows);
+    if (ownedByDA(p.metric)) rows = daRowsFor(rows);
     var a = { n: rows.length, need: 0, gain: 0, expected: 0, distance: 0, remaining: 0, ask: 0, A0: 0, S: 0, counts: { done: 0, ahead: 0, on: 0, slip: 0, behind: 0, critical: 0 } };
     rows.forEach(function (r) {
       var c = r.calcs[p.id];
@@ -558,9 +572,9 @@
   function weekCheck(region, prios) {
     var tas = [];
     region.areas.forEach(function (a) { a.zones.forEach(function (z) { z.tas.forEach(function (t) { tas.push(t); }); }); });
-    var wT = sum(prios, function (p) { return ownedByDO(p.metric) ? 0 : p.weight; }) || 1;
+    var wT = sum(prios, function (p) { return ownedByDA(p.metric) ? 0 : p.weight; }) || 1;
     var out = prios.map(function (p) {
-      if (ownedByDO(p.metric)) return { pid: p.id, weight: p.weight, budget: 0, needUnits: 0, needH: 0, owner: 'DO' };
+      if (ownedByDA(p.metric)) return { pid: p.id, weight: p.weight, budget: 0, needUnits: 0, needH: 0, owner: 'DA' };
       var needUnits = sum(tas, function (t) { return calcTA(t, p, -1).need; }) / tas.length;
       var needH = needUnits * METRICS[p.metric].hrs;
       return { pid: p.id, weight: p.weight, budget: WEEK_HOURS * p.weight / wT, needUnits: needUnits, needH: needH };
@@ -579,7 +593,7 @@
     region.areas.forEach(function (a) { a.zones.forEach(function (z) { z.tas.forEach(function (t) { tas.push(t); }); }); });
     var res = [];
     prios.forEach(function (p) {
-      if (!p.norm || ownedByDO(p.metric)) return;
+      if (!p.norm || ownedByDA(p.metric)) return;
       var needUnits = sum(tas, function (t) { return calcTA(t, p, -1).need; }) / tas.length;
       var implied = p.norm * 5;
       res.push({ pid: p.id, norm: p.norm, implied: implied, needUnits: needUnits, ratio: needUnits > 0 ? implied / needUnits : Infinity });
@@ -612,7 +626,7 @@
     d = d == null ? 5 : d; var share = dayShare(d);
     var ids = {}; prios.forEach(function (p) { ids[p.metric] = true; });
     var items = prios.map(function (p) {
-      var need = 0, gain = 0, prior = 0, met = 0, pp = 0, rr = ownedByDO(p.metric) ? doRowsFor(rows) : rows;
+      var need = 0, gain = 0, prior = 0, met = 0, pp = 0, rr = ownedByDA(p.metric) ? daRowsFor(rows) : rows;
       if (!rr.length) return { pid: p.id, p: p, weight: p.weight, need: 0, gain: 0, prior: 0, met: 0, n: 0, achieved: 1, change: null, verdict: 'met-flat', na: true };
       rr.forEach(function (r) {
         var c = r.calcs[p.id];
@@ -626,7 +640,7 @@
     });
     var others = Object.keys(METRICS).filter(function (k) { return !ids[k]; }).map(function (k) {
       var gain = 0, prior = 0;
-      (ownedByDO(k) ? doRowsFor(rows) : rows).forEach(function (r) { gain += weekGain(r.ta, k, d) * NONPRIO; prior += priorAvg(r.ta, k, false) * share; });
+      (ownedByDA(k) ? daRowsFor(rows) : rows).forEach(function (r) { gain += weekGain(r.ta, k, d) * NONPRIO; prior += priorAvg(r.ta, k, false) * share; });
       return { metric: k, gain: gain, prior: prior, change: prior > 0 ? (gain - prior) / prior : null };
     });
     function avg(a) { var x = a.filter(function (i) { return i.change != null; }); return x.length ? sum(x, function (i) { return i.change; }) / x.length : null; }
@@ -639,6 +653,13 @@
   var WSETS = [[50, 30, 20], [40, 40, 20], [40, 30, 30], [60, 20, 20], [45, 35, 20]];
   function gauss(key) { var r = hashRng(key), u = 0, v = 0; while (u === 0) u = r(); while (v === 0) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
   function typicalWeek(ta, metric) { var t = 0; for (var d = 0; d < 6; d++) t += METRICS[metric].mean * ta.f * DAYF[d]; return t; }
+  /* weights for a generated past week: the weight set over the first three, 15 for any fourth, scaled back to 100 */
+  function histPrios(metrics, ws, w2) {
+    var raw = metrics.map(function (m, i) { return i < ws.length ? ws[i] : 15; }), tot = sum(raw);
+    var out = metrics.map(function (m, i) { return { id: 'h' + w2 + i, metric: m, title: METRICS[m].label, weight: Math.round(raw[i] * 100 / tot) }; });
+    out[0].weight += 100 - sum(out, function (p) { return p.weight; });
+    return out;
+  }
   function history(region, prios, rows5, dd) {
     dd = dd == null ? 5 : dd;
     var keys = Object.keys(METRICS), r = hashRng('hist|' + region.id), sets = [];
@@ -650,27 +671,27 @@
       sets[w] = s;
     }
     var tas = [], struct = [];
-    region.areas.forEach(function (a) { var sa = { id: a.id, zones: [] }; a.zones.forEach(function (z) { var sz = { id: z.id, tas: [], dos: (z.dos || []) }; z.tas.forEach(function (t) { tas.push(t); sz.tas.push(t.id); }); sa.zones.push(sz); }); struct.push(sa); });
+    region.areas.forEach(function (a) { var sa = { id: a.id, zones: [] }; a.zones.forEach(function (z) { var sz = { id: z.id, tas: [], das: (z.das || []) }; z.tas.forEach(function (t) { tas.push(t); sz.tas.push(t.id); }); sa.zones.push(sz); }); struct.push(sa); });
     var weeks = [];
     function zf(zoneId, w2) { return 1.0 + 0.012 * (w2 + 1) * (gauss('zs|' + zoneId) > 0 ? 1 : -0.6) + 0.07 * gauss('zw|' + zoneId + '|' + w2) + 0.03 * gauss('rw|' + region.id + '|' + w2); }
     for (var w2 = 0; w2 < 8; w2++) {
       var live = w2 === 7;
       var pl = live ? prios.map(function (p) { return { id: p.id, metric: p.metric, title: p.title, weight: p.weight }; })
-        : sets[w2].map(function (m, i) { var ws = WSETS[Math.floor(hashRng('w|' + region.id + w2)() * WSETS.length)]; return { id: 'h' + w2 + i, metric: m, title: METRICS[m].label, weight: ws[i] }; });
+        : histPrios(sets[w2], WSETS[Math.floor(hashRng('w|' + region.id + w2)() * WSETS.length)], w2);
       var wk = { label: HIST_WEEKS[w2], live: live, prios: pl, idx: {}, p: {}, score: {}, dp: {}, zidx: {} };
-      var wT = sum(pl, function (p) { return ownedByDO(p.metric) ? 0 : p.weight; }) || 1;
-      // Duka Officers, one value per zone
+      var wT = sum(pl, function (p) { return ownedByDA(p.metric) ? 0 : p.weight; }) || 1;
+      // Duka Assistants, one value per zone
       struct.forEach(function (sa) { sa.zones.forEach(function (sz) {
         var zi = {}, dpz = [];
-        keys.filter(ownedByDO).forEach(function (m) {
+        keys.filter(ownedByDA).forEach(function (m) {
           var isP = pl.some(function (p) { return p.metric === m; });
           if (live) {
-            var vals = sz.dos.map(function (o) { var t = typicalWeek(o, m); return t > 0 ? weekGain(o, m, dd) / (t * dayShare(dd)) : 1; });
+            var vals = sz.das.map(function (o) { var t = typicalWeek(o, m); return t > 0 ? weekGain(o, m, dd) / (t * dayShare(dd)) : 1; });
             zi[m] = (sum(vals) / (vals.length || 1)) * (isP ? 1 : NONPRIO);
           } else zi[m] = Math.max(0.35, Math.min(1.6, (isP ? 1.0 : NONPRIO) * zf(sz.id, w2) + 0.14 * gauss(sz.id + '|do|' + w2 + '|' + m)));
         });
         pl.forEach(function (p) {
-          if (!ownedByDO(p.metric)) { dpz.push(null); return; }
+          if (!ownedByDA(p.metric)) { dpz.push(null); return; }
           if (live) { var rr = (rows5.dRows || []).filter(function (x) { return x.zone.id === sz.id; }); dpz.push(rr.length ? sum(rr, function (x) { return x.calcs[p.id].paceProg; }) / rr.length : 1); }
           else dpz.push(Math.max(0, Math.min(1, zi[p.metric] * 1.02)));
         });
@@ -680,12 +701,12 @@
         var idx = {}, pr = [];
         var zfa = zf(ta.zoneId, w2);
         keys.forEach(function (m) {
-          if (ownedByDO(m)) { idx[m] = wk.zidx[ta.zoneId][m]; return; }
+          if (ownedByDA(m)) { idx[m] = wk.zidx[ta.zoneId][m]; return; }
           var isP = pl.some(function (p) { return p.metric === m; });
           if (live) { var t = typicalWeek(ta, m); idx[m] = (t > 0 ? weekGain(ta, m, dd) / (t * dayShare(dd)) : 1) * (isP ? 1 : NONPRIO); }
           else idx[m] = Math.max(0.35, Math.min(1.6, (isP ? 1.0 : NONPRIO) * zfa + 0.14 * gauss(ta.id + '|' + w2 + '|' + m)));
         });
-        pl.forEach(function (p) { pr.push(ownedByDO(p.metric) ? null : (live ? rows5.byTA[ta.id].calcs[p.id].paceProg : Math.max(0, Math.min(1, idx[p.metric] * 1.02)))); });
+        pl.forEach(function (p) { pr.push(ownedByDA(p.metric) ? null : (live ? rows5.byTA[ta.id].calcs[p.id].paceProg : Math.max(0, Math.min(1, idx[p.metric] * 1.02)))); });
         wk.idx[ta.id] = idx; wk.p[ta.id] = pr;
         wk.score[ta.id] = sum(pl, function (p, i) { return pr[i] == null ? 0 : p.weight * pr[i]; }) / wT * 100;
       });
@@ -709,7 +730,7 @@
     var fullZones = zones.filter(function (sz) { return sz.tas.every(function (id) { return inIds[id]; }); });
     // progress on priority i for a set of TAs and the zones they belong to
     function prog(wk, i, taIds, zIds) {
-      if (ownedByDO(wk.prios[i].metric)) return (single && taIds.length === 1) ? null : mean(zIds.map(function (z) { return wk.dp[z][i]; }));
+      if (ownedByDA(wk.prios[i].metric)) return (single && taIds.length === 1) ? null : mean(zIds.map(function (z) { return wk.dp[z][i]; }));
       return mean(taIds.map(function (id) { return wk.p[id][i]; }));
     }
     function allMet(wk, taIds, zIds, th) {
@@ -736,11 +757,11 @@
         var v = mean(ids.map(function (id) { return wk.idx[id][m]; }));
         if (wk.prios.some(function (p) { return p.metric === m; })) pi.push(v); else ni.push(v);
       });
-      var a = mean(pi), b = mean(ni), blocked = single && ownedByDO(m);
-      return { metric: m, title: METRICS[m].label, owner: ownedByDO(m) ? 'DO' : 'TA', weeksPrio: pi.length, prioIdx: blocked ? null : a, nonIdx: blocked ? null : b, lift: (!blocked && a != null && b != null && b > 0) ? a / b - 1 : null };
+      var a = mean(pi), b = mean(ni), blocked = single && ownedByDA(m);
+      return { metric: m, title: METRICS[m].label, owner: ownedByDA(m) ? 'DA' : 'TA', weeksPrio: pi.length, prioIdx: blocked ? null : a, nonIdx: blocked ? null : b, lift: (!blocked && a != null && b != null && b > 0) ? a / b - 1 : null };
     });
     var pillars = Object.keys(PILLARS).map(function (k) {
-      var ms = PILLARS[k].metrics, pi = [], ni = [], sc = [], tw = 0, blocked = single && ms.every(ownedByDO);
+      var ms = PILLARS[k].metrics, pi = [], ni = [], sc = [], tw = 0, blocked = single && ms.every(ownedByDA);
       weeks.forEach(function (w, wi) {
         var wk = h.weeks[wi], hit = wk.prios.some(function (p) { return pillarOf(p.metric) === k; });
         var v = mean(ms.map(function (m) { return mean(ids.map(function (id) { return wk.idx[id][m]; })); }));
@@ -752,7 +773,7 @@
         else w.pil[k] = null;
       });
       var a = mean(pi), b = mean(ni);
-      return { key: k, label: PILLARS[k].label, owner: ms.every(ownedByDO) ? 'DO' : 'TA', weeksPrio: blocked ? 0 : tw, avgScore: mean(sc), prioIdx: a, nonIdx: b, lift: (!blocked && a != null && b != null && b > 0) ? a / b - 1 : null };
+      return { key: k, label: PILLARS[k].label, owner: ms.every(ownedByDA) ? 'DA' : 'TA', weeksPrio: blocked ? 0 : tw, avgScore: mean(sc), prioIdx: a, nonIdx: b, lift: (!blocked && a != null && b != null && b > 0) ? a / b - 1 : null };
     });
     var scores = weeks.map(function (w) { return w.score; });
     var trend = mean(scores.slice(4)) - mean(scores.slice(0, 4));
@@ -762,7 +783,7 @@
   }
 
   root.WP = {
-    DAYS: DAYS, DAY_DATES: DAY_DATES, DAY_CAP: DAY_CAP, WEEK_HOURS: WEEK_HOURS, METRICS: METRICS, PILLARS: PILLARS, pillarOf: pillarOf, ownedByDO: ownedByDO, doRowsFor: doRowsFor, KIND_LABEL: KIND_LABEL,
+    DAYS: DAYS, DAY_DATES: DAY_DATES, DAY_CAP: DAY_CAP, WEEK_HOURS: WEEK_HOURS, METRICS: METRICS, PILLARS: PILLARS, pillarOf: pillarOf, ownedByDA: ownedByDA, daRowsFor: daRowsFor, KIND_LABEL: KIND_LABEL,
     REGION_DEFS: REGION_DEFS, generateData: generateData, defaultPriorities: defaultPriorities,
     calcTA: calcTA, computeRegion: computeRegion, aggregate: aggregate, focusOf: focusOf, reviewUnit: reviewUnit, history: history, histUnit: histUnit, weekCheck: weekCheck, normCheck: normCheck,
     allocateZone: allocateZone, planTA: planTA, paceAt: paceAt, sum: sum

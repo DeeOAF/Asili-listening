@@ -126,5 +126,18 @@ ok(Math.abs(d2.plan.items[0].budget - res.rows.find(r => r.ta.name === 'Doreen A
   ok(a.byTA[other].plan.items[0].budget === b.byTA[other].plan.items[0].budget, 'other zones are unaffected');
 }
 
+// hierarchy and Duka Assistants
+{
+  const reg = data.regions[0], pr = WP.defaultPriorities(reg.id), r2 = WP.computeRegion(reg, pr, 2);
+  ok(data.tas.every(t => t.territory && t.zoneId && t.areaId && t.regionId), 'every TA holds one territory inside a zone, area and region');
+  ok(data.regions.every(rg => rg.areas.every(a => a.zones.every(z => z.das.length === 2 && z.das.every(d => d.role === 'DA' && d.dukas.length === 6)))), 'two Duka Assistants per zone, each with their dukas');
+  ok(data.regions.every(rg => WP.defaultPriorities(rg.id).some(p => WP.ownedByDA(p.metric))), 'every region has a duka priority by default');
+  const da = r2.dRows[0];
+  ok(da.plan && da.plan.days.length === 3 && da.plan.days.every(d => d.used <= d.cap + 0.51), 'a Duka Assistant gets a week plan within capacity');
+  ok(da.plan.days.some(d => d.blocks.some(b => b.metric === 'duka' && /starting with/.test(b.text))), 'Duka Assistant blocks name a duka');
+  const doreenRow = r2.rows.find(r => r.ta.name === 'Doreen Achieng');
+  ok(doreenRow.plan.days.every(d => d.blocks.every(b => b.metric !== 'duka')), 'TAs are never planned duka work');
+}
+
 console.log(fails ? '\n' + fails + ' FAILED' : '\nall passed');
 process.exit(fails ? 1 : 0);

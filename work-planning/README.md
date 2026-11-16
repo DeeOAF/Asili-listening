@@ -2,7 +2,7 @@
 
 1. `cd work-planning`
 2. `node test.js` (all tests should print "all passed")
-3. `node build.js` then open `work-planning.html` in a browser.
+3. `node build.js` then open `work-planning.html` in a browser. Commit the rebuilt `work-planning.html`: Vercel serves it as is at `/work-planning/`.
 
 Edit files in `src/`, rebuild, reload. To continue with Claude Code, open this folder and say:
 

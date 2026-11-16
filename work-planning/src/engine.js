@@ -490,10 +490,11 @@
     });
     var ageH = sum(rows, function (r) { return r.plan.ageHours || 0; });
     var total = sum(items, function (it) { return it.alloc; });
-    var wT = sum(items, function (it) { return it.daOwned ? 0 : it.weight; }) || 1;
+    var lane = !!(rows.length && rows[0].isDA), out = function (it) { return it.daOwned !== lane; };
+    var wT = sum(items, function (it) { return out(it) ? 0 : it.weight; }) || 1;
     items.forEach(function (it) {
-      it.weightEff = it.daOwned ? null : it.weight / wT * 100;
-      it.share = (total > 0 && !it.daOwned) ? it.alloc / total * 100 : null;
+      it.weightEff = out(it) ? null : it.weight / wT * 100;
+      it.share = (total > 0 && !out(it)) ? it.alloc / total * 100 : null;
       it.delta = it.share == null ? null : it.share - it.weightEff;
     });
     return { items: items, total: total, ageH: ageH, n: rows.length, over: total <= 0 };
@@ -577,7 +578,9 @@
           var wsD = sum(daP, function (p) { return p.weight; }) || 1;
           var sc = daP.length ? sum(daP, function (p) { return p.weight * calcs[p.id].paceProg; }) / wsD * 100 : 100;
           var rowD = { ta: o, zone: zone, area: area, calcs: calcs, isDA: true, score: sc, status: sc >= 95 ? 'on' : sc >= 82 ? 'slip' : sc >= 60 ? 'behind' : 'critical' };
-          rowD.plan = planTA(rowD, daP, d);
+          var dzw = opts.dukaZoneWeights && opts.dukaZoneWeights[zone.id];
+          rowD.plan = planTA(rowD, dzw ? daP.map(function (p, i) { var c = {}; Object.keys(p).forEach(function (k) { c[k] = p[k]; }); c.weight = dzw[i]; return c; }) : daP, d);
+          rowD.localWeights = dzw || null;
           dRows.push(rowD); byDA[o.id] = rowD; return rowD;
         });
         zrows.forEach(function (r) { r.das = zd; });

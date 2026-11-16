@@ -148,5 +148,17 @@ ok(Math.abs(d2.plan.items[0].budget - res.rows.find(r => r.ta.name === 'Doreen A
   ok(Math.abs(base.rows[0].score - r2.rows[0].score) < 1e-9, 'the duka set does not change TA scores');
 }
 
+// zone duka weights change a Duka Assistant's time, not their score
+{
+  const reg = data.regions[0], pr = WP.defaultPriorities(reg.id), dk = WP.defaultDukaPriorities(reg.id), z0 = reg.areas[0].zones[0], dzw = {};
+  dzw[z0.id] = [20, 35, 25, 20];
+  const a = WP.computeRegion(reg, pr, 2, { duka: dk }), b = WP.computeRegion(reg, pr, 2, { duka: dk, dukaZoneWeights: dzw }), id = z0.das[0].id;
+  ok(Math.abs(a.byDA[id].plan.items[0].budget - b.byDA[id].plan.items[0].budget) > 0.5, 'zone duka weights change a Duka Assistant time budget');
+  ok(a.byDA[id].score === b.byDA[id].score, 'Duka Assistant scores stay on the RM duka weights');
+  const other = reg.areas[1].zones[0].das[0].id;
+  ok(a.byDA[other].plan.items[0].budget === b.byDA[other].plan.items[0].budget, 'other zones keep the RM duka weights');
+  ok(a.rows[0].plan.items[0].budget === b.rows[0].plan.items[0].budget, 'duka weights do not touch TA plans');
+}
+
 console.log(fails ? '\n' + fails + ' FAILED' : '\nall passed');
 process.exit(fails ? 1 : 0);

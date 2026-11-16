@@ -77,8 +77,8 @@
 
   var cache = {};
   function comp(regId) {
-    var zw = zoneWeights(regId), key = regId + '|' + S.day + '|' + JSON.stringify(S.prios[regId]) + '|' + JSON.stringify(S.dprios[regId]) + '|' + JSON.stringify(zw);
-    if (!cache[key]) { var k = Object.keys(cache); if (k.length > 40) cache = {}; cache[key] = WP.computeRegion(DATA.byId[regId], S.prios[regId], S.day, { zoneWeights: zw, duka: S.dprios[regId] }); }
+    var zw = zoneWeights(regId), dzw = zoneWeights(regId, 'duka'), key = regId + '|' + S.day + '|' + JSON.stringify(S.prios[regId]) + '|' + JSON.stringify(S.dprios[regId]) + '|' + JSON.stringify(zw) + '|' + JSON.stringify(dzw);
+    if (!cache[key]) { var k = Object.keys(cache); if (k.length > 40) cache = {}; cache[key] = WP.computeRegion(DATA.byId[regId], S.prios[regId], S.day, { zoneWeights: zw, duka: S.dprios[regId], dukaZoneWeights: dzw }); }
     return cache[key];
   }
 
@@ -151,7 +151,7 @@
   function setOf(id) { return DATA.byId[id].role === 'DA' ? dprios(DATA.byId[id].regionId) : S.prios[DATA.byId[id].regionId]; }
   function planKey(taId) {
     var l = setOf(taId);
-    return taId + '|' + S.day + '|' + JSON.stringify(l.map(function (p) { return [p.id, p.metric, p.target, p.deadline, p.weight, p.norm]; })) + '|' + JSON.stringify(zoneWeights(DATA.byId[taId].regionId)[DATA.byId[taId].zoneId] || null);
+    return taId + '|' + S.day + '|' + JSON.stringify(l.map(function (p) { return [p.id, p.metric, p.target, p.deadline, p.weight, p.norm]; })) + '|' + JSON.stringify(zoneWeights(DATA.byId[taId].regionId, DATA.byId[taId].role === 'DA' ? 'duka' : null)[DATA.byId[taId].zoneId] || null);
   }
   function peekPlan(taId) { return S.plans[planKey(taId)] || null; }
   function getPlan(taId) {
@@ -1006,14 +1006,21 @@
   }
 
   /* accepting or modifying the RM's priorities at area and zone level */
-  function accKey(unitId) { return unitId + '|' + JSON.stringify(S.prios[DATA.byId[unitId].regionId].map(function (p) { return [p.id, p.metric, p.target, p.deadline, p.weight]; })); }
+  /* weight acceptance runs per set: 'ta' for the TA set, 'duka' for the Duka Assistants' set */
+  var ACC_SET = 'ta';
+  function withSet(set, f) { var o = ACC_SET; ACC_SET = set; try { return f(); } finally { ACC_SET = o; } }
+  function accList(regId) { return ACC_SET === 'duka' ? S.dprios[regId || S.region] : S.prios[regId || S.region]; }
+  function eKey(unitId) { return unitId + '|' + ACC_SET; }
+  function accKey(unitId) { return ACC_SET + '|' + unitId + '|' + JSON.stringify(accList(DATA.byId[unitId].regionId).map(function (p) { return [p.id, p.metric, p.target, p.deadline, p.weight]; })); }
   function peekAcc(unitId) { return S.acc[accKey(unitId)] || null; }
   function getAcc(unitId) {
     var k = accKey(unitId);
-    if (!S.acc[k]) S.acc[k] = { key: k, unit: unitId, status: 'proposed', weights: null, proposed: null, draft: null, reason: '', comment: '', log: [] };
+    if (!S.acc[k]) S.acc[k] = { key: k, set: ACC_SET, unit: unitId, status: 'proposed', weights: null, proposed: null, draft: null, reason: '', comment: '', log: [] };
     return S.acc[k];
   }
-  function zoneWeights(regId) {
+  function zoneWeights(regId, set) {
+    if (set !== 'duka' && ACC_SET !== 'ta') return withSet('ta', function () { return zoneWeights(regId); });
+    if (set === 'duka' && ACC_SET !== 'duka') return withSet('duka', function () { return zoneWeights(regId, 'duka'); });
     var out = {}, reg = DATA.byId[regId];
     reg.areas.forEach(function (a) {
       var aa = peekAcc(a.id), aw = aa && aa.status === 'active' && aa.weights ? aa.weights : null;
@@ -1025,7 +1032,7 @@
     var out = [];
     Object.keys(S.acc).forEach(function (k) {
       var a = S.acc[k]; if (a.status !== 'pending') return;
-      var u = DATA.byId[a.unit]; if (!u || u.regionId !== regId || accKey(a.unit) !== a.key) return;
+      var u = DATA.byId[a.unit]; if (!u || u.regionId !== regId || a.set !== ACC_SET || accKey(a.unit) !== a.key) return;
       out.push(a);
     });
     return out;
@@ -1036,7 +1043,7 @@
     var a = peekAcc(unitId);
     if (!a || a.status === 'proposed') return '<span class="muted">Not accepted yet</span>';
     if (a.status === 'active') return '<span class="chip c-done">' + (a.weights ? 'Modified' : 'Accepted') + '</span>';
-    return '<span class="chip ' + PLAN_LABEL[a.status][1] + '">' + PLAN_LABEL[a.status][0] + '</span>';
+    return '<span class="chip ' + PLAN_LABEL[a.status][1] + '">' + (a.status === 'pending' ? 'Waiting for ' + (approverOf(DATA.byId[unitId]).role === 'rm' ? 'RM' : 'AC') : PLAN_LABEL[a.status][0]) + '</span>';
   }
   function accFlags(l, ids, w) {
     var out = [];
@@ -1050,27 +1057,27 @@
     return out;
   }
   function unitAcceptHTML(unit) {
-    var reg = region(), l = prios(), isArea = !!unit.zones, ids = isArea ? idsOf(unit.zones) : unit.tas.map(function (t) { return t.id; });
-    var acc = getAcc(unit.id), ap = approverOf(unit), editing = S.accEdit === unit.id && !!acc.draft;
-    var res = comp(S.region), rows = ids.map(function (id) { return res.byTA[id]; }), fo = WP.focusOf(rows, l);
+    var reg = region(), dk = ACC_SET === 'duka', l = accList(), isArea = !!unit.zones, ids = isArea ? idsOf(unit.zones) : unit.tas.map(function (t) { return t.id; });
+    var acc = getAcc(unit.id), ap = approverOf(unit), editing = S.accEdit === eKey(unit.id) && !!acc.draft, sa = ' data-set="' + ACC_SET + '"';
+    var res = comp(S.region), rows = dk ? dasUnder(unit).map(function (o) { return res.byDA[o.id]; }) : ids.map(function (id) { return res.byTA[id]; }), fo = WP.focusOf(rows, l);
     var cur = acc.status === 'active' && acc.weights ? acc.weights : l.map(function (p) { return p.weight; });
     var show = editing ? acc.draft : (acc.status === 'pending' || acc.status === 'returned') ? acc.proposed : cur;
-    var st = editing ? 'Editing' : acc.status === 'proposed' ? 'Not accepted' : acc.status === 'active' ? (acc.weights ? 'Modified' : 'Accepted') : PLAN_LABEL[acc.status][0];
+    var st = editing ? 'Editing' : acc.status === 'proposed' ? 'Not accepted' : acc.status === 'active' ? (acc.weights ? 'Modified' : 'Accepted') : acc.status === 'pending' ? 'Waiting for ' + (ap.role === 'rm' ? 'RM' : 'AC') : PLAN_LABEL[acc.status][0];
     var cls = editing ? 'c-slip' : acc.status === 'proposed' ? 'c-on' : PLAN_LABEL[acc.status][1];
     var msg, btns = '';
-    if (editing) { msg = 'Shift the weights, say why, and send them to ' + ap.who + '. They only apply once approved.'; btns = '<button class="btn small" data-act="accCancel">Cancel</button> <button class="btn small" data-act="accReset">Reset to the RM’s weights</button>'; }
-    else if (acc.status === 'proposed') { msg = 'The RM’s priorities apply as set until you accept them or change the time split.'; btns = '<button class="btn solid" data-act="accAccept">Accept as set</button> <button class="btn" data-act="accEdit">Modify the weights</button>'; }
-    else if (acc.status === 'active') { msg = acc.weights ? 'Approved by ' + (acc.approvedBy || ap.who) + '. The TAs’ plans now use these weights.' : 'You accepted the priorities as the RM set them.'; btns = '<button class="btn" data-act="accEdit">Modify the weights</button>'; }
-    else if (acc.status === 'pending') { msg = 'Sent to ' + ap.who + '. The RM’s weights still apply until it is approved.'; btns = '<button class="btn" data-act="accWithdraw">Withdraw and edit</button>'; }
-    else { msg = ap.who + ' returned it' + (acc.comment ? ': “' + acc.comment + '”' : '.') + ' Change it and send it again, or accept the RM’s weights.'; btns = '<button class="btn solid" data-act="accEdit">Edit again</button> <button class="btn" data-act="accAccept">Accept as set</button>'; }
-    var h = '<div class="panel"><h3>' + esc(unit.name) + ' · ' + esc(ownerOf(unit)) + '</h3><p class="sub" style="margin-bottom:10px">' + ids.length + ' TAs. Weights decide how a TA’s time is split between the priorities. You can move each weight by up to 20 points. Targets and deadlines stay the RM’s, and scores are still measured against the RM’s weights.</p>';
+    if (editing) { msg = 'Shift the weights, say why, and send them to ' + ap.who + '. They only apply once approved.'; btns = '<button class="btn small" data-act="accCancel"' + sa + '>Cancel</button> <button class="btn small" data-act="accReset"' + sa + '>Reset to the RM’s weights</button>'; }
+    else if (acc.status === 'proposed') { msg = 'The RM’s priorities apply as set until you accept them or change the time split.'; btns = '<button class="btn solid" data-act="accAccept"' + sa + '>Accept as set</button> <button class="btn" data-act="accEdit"' + sa + '>Adjust the weights</button>'; }
+    else if (acc.status === 'active') { msg = acc.weights ? 'Approved by ' + (acc.approvedBy || ap.who) + '. The ' + (dk ? 'Duka Assistants’' : 'TAs’') + ' plans now use these weights.' : 'You accepted the priorities as the RM set them.'; btns = '<button class="btn" data-act="accEdit"' + sa + '>Adjust the weights</button>'; }
+    else if (acc.status === 'pending') { msg = 'Sent to ' + ap.who + '. The RM’s weights still apply until it is approved.'; btns = '<button class="btn" data-act="accWithdraw"' + sa + '>Withdraw and edit</button>'; }
+    else { msg = ap.who + ' returned it' + (acc.comment ? ': “' + acc.comment + '”' : '.') + ' Change it and send it again, or accept the RM’s weights.'; btns = '<button class="btn solid" data-act="accEdit"' + sa + '>Edit again</button> <button class="btn" data-act="accAccept"' + sa + '>Accept as set</button>'; }
+    var h = '<div class="panel' + (dk ? ' sec' : '') + '"><h3>' + (dk ? 'Duka priorities for ' : 'TA priorities for ') + esc(unit.name) + ' · ' + esc(ownerOf(unit)) + '</h3><p class="sub" style="margin-bottom:10px">' + (dk ? rows.length + ' Duka Assistants. Weights decide how a Duka Assistant’s time is split between the duka priorities.' : ids.length + ' TAs. Weights decide how a TA’s time is split between the priorities.') + ' You can move each weight by up to 20 points. Targets and deadlines stay the RM’s, and scores are still measured against the RM’s weights.</p>';
     h += '<div class="banner ' + (editing ? 'pending' : acc.status) + '"><div class="bhead"><span class="chip ' + cls + '">' + st + '</span><span class="sub">' + esc(msg) + '</span></div><div class="bact">' + btns + '</div></div>';
-    if (S.accErr[unit.id]) h += '<p class="note warn" role="alert" style="margin-top:10px">' + esc(S.accErr[unit.id]) + '</p>';
+    if (S.accErr[eKey(unit.id)]) h += '<p class="note warn" role="alert" style="margin-top:10px">' + esc(S.accErr[eKey(unit.id)]) + '</p>';
     h += '<div class="scroll" style="margin-top:12px"><table><thead><tr><th>Priority</th><th class="r">RM’s weight</th><th>Where the unit stands</th><th class="r">Time the data calls for</th><th class="r">' + (editing ? 'Your weight' : (acc.status === 'pending' || acc.status === 'returned') ? 'Proposed' : 'Weight in use') + '</th></tr></thead><tbody>';
     l.forEach(function (p, i) {
       var sc = scoreAt(ids, p, S.day), sst = statusFromScore(sc), it = fo.items[i];
       h += '<tr><td>' + esc(p.title) + '<div class="muted" style="font-size:12px">' + esc(targetText(p)) + '</div></td><td class="r n">' + p.weight + '%</td><td><span class="chip ' + ST[sst][1] + '">' + SC_LABEL[sst] + '</span> <span class="num">' + Math.round(sc) + '</span></td><td class="r n">' + (it.share == null ? '–' : Math.round(it.share) + '%') + '</td><td class="r n">' +
-        (editing ? '<input type="number" min="0" max="100" step="5" class="awin" data-aw="' + i + '" value="' + acc.draft[i] + '" aria-label="Weight for ' + esc(p.title) + '">' : '<b>' + show[i] + '%</b>' + (show[i] !== p.weight ? ' <span class="muted">(' + (show[i] > p.weight ? '+' : '−') + Math.abs(show[i] - p.weight) + ')</span>' : '')) + '</td></tr>';
+        (editing ? '<input type="number" min="0" max="100" step="5" class="awin" data-set="' + ACC_SET + '" data-aw="' + i + '" value="' + acc.draft[i] + '" aria-label="Weight for ' + esc(p.title) + '">' : '<b>' + show[i] + '%</b>' + (show[i] !== p.weight ? ' <span class="muted">(' + (show[i] > p.weight ? '+' : '−') + Math.abs(show[i] - p.weight) + ')</span>' : '')) + '</td></tr>';
     });
     var tot = sum(show, function (x) { return x; });
     h += '<tr><td><b>Total</b></td><td class="r n">100%</td><td></td><td></td><td class="r n"><b class="' + (tot === 100 ? '' : 'bad') + '">' + tot + '%</b></td></tr></tbody></table></div>';
@@ -1078,27 +1085,27 @@
       var fl = accFlags(l, ids, show);
       h += fl.length ? '<ul class="flags">' + fl.map(function (f) { return '<li class="' + f.level + '">' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '<p class="sub" style="margin-top:8px">No flags. The change fits where the unit stands.</p>';
     }
-    if (editing) h += '<label class="field" style="margin-top:12px"><span>Why are you changing it?</span><textarea id="accReason" rows="3" placeholder="For example: most farmers here are already enrolled, so repayment needs the time.">' + esc(acc.reason) + '</textarea></label><div style="margin-top:10px"><button class="btn solid" data-act="accSend">Send to ' + esc(ap.who) + '</button></div>';
+    if (editing) h += '<label class="field" style="margin-top:12px"><span>Why are you changing it?</span><textarea id="accReason" data-set="' + ACC_SET + '" rows="3" placeholder="For example: most farmers here are already enrolled, so repayment needs the time.">' + esc(acc.reason) + '</textarea></label><div style="margin-top:10px"><button class="btn solid" data-act="accSend"' + sa + '>Send to ' + esc(ap.who) + '</button></div>';
     else if (acc.reason && acc.status !== 'proposed') h += '<p class="sub" style="margin-top:10px"><b>Reason:</b> ' + esc(acc.reason) + '</p>';
     if (acc.log.length) h += '<p class="sub" style="margin-top:10px"><b>History:</b> ' + acc.log.map(esc).join(' · ') + '</p>';
     return h + '</div>';
   }
   function proposalsHTML(list, title, lead) {
-    var l = prios(), h = '<div class="panel sec"><h3>' + esc(title) + '</h3><p class="sub" style="margin-bottom:8px">' + esc(lead) + '</p>';
+    var l = accList(), sa = ' data-set="' + ACC_SET + '"', h = '<div class="panel sec"><h3>' + esc(title) + (ACC_SET === 'duka' ? ' (duka priorities)' : '') + '</h3><p class="sub" style="margin-bottom:8px">' + esc(lead) + '</p>';
     if (!list.length) return h + '<p class="empty">Nothing is waiting.</p></div>';
     list.forEach(function (a) {
       var u = DATA.byId[a.unit], ids = u.zones ? idsOf(u.zones) : u.tas.map(function (t) { return t.id; }), fl = accFlags(l, ids, a.proposed);
       h += '<div class="appr"><div class="ahead"><b>' + esc(u.name) + '</b><span class="muted">' + esc(ownerOf(u)) + '</span><span class="chip c-slip">Waiting</span></div><p><b>Reason:</b> ' + esc(a.reason) + '</p>' +
         '<p class="sub">' + l.map(function (p, i) { return esc(p.title) + ' ' + p.weight + '% → <b>' + a.proposed[i] + '%</b>'; }).join(' · ') + '</p>' +
         (fl.length ? '<ul class="flags">' + fl.map(function (f) { return '<li class="' + f.level + '">' + esc(f.text) + '</li>'; }).join('') + '</ul>' : '') +
-        '<div class="arow"><button class="btn solid small" data-act="accApprove" data-id="' + a.unit + '">Approve</button><label class="sr" for="acm' + a.unit + '">Comment</label><input type="text" id="acm' + a.unit + '" placeholder="Comment (needed to return it)" data-acm="' + a.unit + '" value="' + esc(a.draftComment || '') + '"><button class="btn small" data-act="accReturn" data-id="' + a.unit + '">Return</button></div>' +
-        (S.accErr[a.unit] ? '<p class="note warn" role="alert" style="margin-top:6px">' + esc(S.accErr[a.unit]) + '</p>' : '') + '</div>';
+        '<div class="arow"><button class="btn solid small" data-act="accApprove"' + sa + ' data-id="' + a.unit + '">Approve</button><label class="sr" for="acm' + eKey(a.unit) + '">Comment</label><input type="text" id="acm' + eKey(a.unit) + '" placeholder="Comment (needed to return it)" data-set="' + ACC_SET + '" data-acm="' + a.unit + '" value="' + esc(a.draftComment || '') + '"><button class="btn small" data-act="accReturn"' + sa + ' data-id="' + a.unit + '">Return</button></div>' +
+        (S.accErr[eKey(a.unit)] ? '<p class="note warn" role="alert" style="margin-top:6px">' + esc(S.accErr[eKey(a.unit)]) + '</p>' : '') + '</div>';
     });
     return h + '</div>';
   }
   function statusTable(reg, onlyArea) {
-    var h = '<div class="panel sec"><h3>Acceptance across ' + (onlyArea ? esc(onlyArea.name) : 'the region') + '</h3><div class="scroll" style="margin-top:8px"><table><thead><tr><th>Unit</th><th>Owner</th><th>Status</th><th>Weights in use</th></tr></thead><tbody>';
-    var l = prios();
+    var h = '<div class="panel sec"><h3>' + (ACC_SET === 'duka' ? 'Duka priorities: acceptance' : 'TA priorities: acceptance') + ' across ' + (onlyArea ? esc(onlyArea.name) : 'the region') + '</h3><div class="scroll" style="margin-top:8px"><table><thead><tr><th>Unit</th><th>Owner</th><th>Status</th><th>Weights in use</th></tr></thead><tbody>';
+    var l = accList();
     function row(u, ind) {
       var a = peekAcc(u.id), w = a && a.status === 'active' && a.weights ? a.weights : null;
       return '<tr><td class="' + ind + '">' + esc(u.name) + '</td><td>' + esc(ownerOf(u)) + '</td><td>' + accStatusChip(u.id) + '</td><td class="n">' + (w ? w.map(function (x) { return x + '%'; }).join(' / ') : '<span class="muted">' + l.map(function (p) { return p.weight + '%'; }).join(' / ') + ' (RM)</span>') + '</td></tr>';
@@ -1276,8 +1283,9 @@
     if (na) out.push('<button class="btn solid" data-tab="priorities">' + na + (na === 1 ? ' weight change' : ' weight changes') + ' to approve</button>');
     return out.length ? '<div class="waiting"><b>Waiting for you</b>' + out.join('') + '</div>' : '';
   }
-  function waitingAcc() {
-    return pendingAcc(S.region).filter(function (a) { var u = DATA.byId[a.unit]; return S.role === 'rm' ? !!u.zones : S.role === 'ac' ? !u.zones && u.areaId === sArea().id : false; });
+  function waitingAcc(set) {
+    if (!set) return waitingAcc('ta').concat(waitingAcc('duka'));
+    return withSet(set, function () { return pendingAcc(S.region); }).filter(function (a) { var u = DATA.byId[a.unit]; return S.role === 'rm' ? !!u.zones : S.role === 'ac' ? !u.zones && u.areaId === sArea().id : false; });
   }
   function dayBlocks(days) {
     if (!days.length) return '<p class="empty">The week is over, so there is nothing left to plan.</p>';
@@ -1325,15 +1333,17 @@
     return h + '</section>';
   }
   function viewPrioMerged() {
+    function waits(lead) {
+      return ['ta', 'duka'].map(function (set) { var l = waitingAcc(set); return l.length ? withSet(set, function () { return proposalsHTML(l, 'Weight changes waiting for you', lead); }) : ''; }).join('');
+    }
     if (S.role === 'rm') {
-      var l = waitingAcc();
-      return (l.length ? proposalsHTML(l, 'Weight changes waiting for you', 'An AC has asked to change the time split for their area.') : '') + viewPriorities() + dukaSetHTML() +
-        '<details class="sec"><summary>Who has accepted the priorities</summary>' + statusTable(region(), null) + '</details>';
+      return waits('An AC has asked to change the time split for their area.') + viewPriorities() + dukaSetHTML() +
+        '<details class="sec"><summary>Who has accepted the priorities</summary>' + statusTable(region(), null) + withSet('duka', function () { return statusTable(region(), null); }) + '</details>';
     }
     if (S.role === 'ac' || S.role === 'zs') {
-      var unit = S.role === 'ac' ? sArea() : sZone(), h = unitAcceptHTML(unit);
-      if (S.role === 'ac') { var zl = waitingAcc(); if (zl.length) h += proposalsHTML(zl, 'Weight changes waiting for you', 'A ZS in ' + unit.name + ' has asked to change the time split for their zone.'); }
-      return h + '<details class="sec"><summary>Each TA priority in full</summary>' + viewPriorities() + '</details>' + dukaSetHTML();
+      var unit = S.role === 'ac' ? sArea() : sZone(), h = unitAcceptHTML(unit) + (dprios().length ? withSet('duka', function () { return unitAcceptHTML(unit); }) : '');
+      if (S.role === 'ac') h += waits('A ZS in ' + unit.name + ' has asked to change the time split for their zone.');
+      return h + '<details class="sec"><summary>Each priority in full</summary>' + viewPriorities() + dukaSetHTML() + '</details>';
     }
     return S.role === 'da' ? dukaSetHTML() : viewPriorities();
   }
@@ -1397,6 +1407,7 @@
   }
 
   function render() {
+    ACC_SET = 'ta';
     ensure();
     $('roleSel').value = S.role;
     var ws = $('whoSel'); ws.innerHTML = whoOptions();
@@ -1467,35 +1478,36 @@
       S.role = nr; S.accEdit = null; S.tu = null; S.rvArea = null; S.rvZone = null; S.level = 'region'; S.rlevel = null; S.tlevel = null; S.zone = null; S.ta = null; S.open = {};
       return render();
     }
-    var au = S.accRole === 'ac' ? S.accArea : S.zone, ac0 = null;
-    if (act === 'accAccept') { ac0 = getAcc(au); ac0.status = 'active'; ac0.weights = null; ac0.draft = null; ac0.proposed = null; ac0.reason = ''; ac0.comment = ''; ac0.log.push('Accepted as set'); S.accEdit = null; S.accErr[au] = ''; return render(); }
+    if (/^acc/.test(act)) ACC_SET = b.dataset.set || 'ta';
+    var au = S.accRole === 'ac' ? S.accArea : S.zone, ac0 = null, ek = eKey(au);
+    if (act === 'accAccept') { ac0 = getAcc(au); ac0.status = 'active'; ac0.weights = null; ac0.draft = null; ac0.proposed = null; ac0.reason = ''; ac0.comment = ''; ac0.log.push('Accepted as set'); S.accEdit = null; S.accErr[ek] = ''; return render(); }
     if (act === 'accEdit' || act === 'accWithdraw') {
       ac0 = getAcc(au);
       if (act === 'accWithdraw') { ac0.status = 'proposed'; ac0.log.push('Withdrawn'); }
-      ac0.draft = (ac0.proposed && (act === 'accWithdraw' || ac0.status === 'returned') ? ac0.proposed : ac0.weights || prios().map(function (p) { return p.weight; })).slice();
-      S.accEdit = au; S.accErr[au] = ''; return render();
+      ac0.draft = (ac0.proposed && (act === 'accWithdraw' || ac0.status === 'returned') ? ac0.proposed : ac0.weights || accList().map(function (p) { return p.weight; })).slice();
+      S.accEdit = ek; S.accErr[ek] = ''; return render();
     }
-    if (act === 'accCancel') { ac0 = getAcc(au); ac0.draft = null; S.accEdit = null; S.accErr[au] = ''; return render(); }
-    if (act === 'accReset') { ac0 = getAcc(au); ac0.draft = prios().map(function (p) { return p.weight; }); return render(); }
+    if (act === 'accCancel') { ac0 = getAcc(au); ac0.draft = null; S.accEdit = null; S.accErr[ek] = ''; return render(); }
+    if (act === 'accReset') { ac0 = getAcc(au); ac0.draft = accList().map(function (p) { return p.weight; }); return render(); }
     if (act === 'accSend') {
-      ac0 = getAcc(au); var rmw = prios().map(function (p) { return p.weight; }), dr = ac0.draft || rmw, totw = sum(dr, function (x) { return x; });
+      ac0 = getAcc(au); var rmw = accList().map(function (p) { return p.weight; }), dr = ac0.draft || rmw, totw = sum(dr, function (x) { return x; });
       var tooFar = dr.some(function (x, i) { return Math.abs(x - rmw[i]) > 20; });
       var ap0 = approverOf(DATA.byId[au]);
-      if (totw !== 100) S.accErr[au] = 'The weights total ' + totw + '%. They must total 100.';
-      else if (tooFar) S.accErr[au] = 'A weight can move by at most 20 points from the RM’s.';
-      else if (dr.join() === rmw.join()) S.accErr[au] = 'The weights are the same as the RM’s. Accept them as set instead.';
-      else if (!(ac0.reason || '').trim()) S.accErr[au] = 'Say why you are changing the weights. ' + ap0.who + ' needs it to decide.';
-      else { ac0.proposed = dr.slice(); ac0.status = 'pending'; ac0.comment = ''; ac0.draft = null; ac0.log.push('Sent to ' + ap0.who); S.accEdit = null; S.accErr[au] = ''; }
+      if (totw !== 100) S.accErr[ek] = 'The weights total ' + totw + '%. They must total 100.';
+      else if (tooFar) S.accErr[ek] = 'A weight can move by at most 20 points from the RM’s.';
+      else if (dr.join() === rmw.join()) S.accErr[ek] = 'The weights are the same as the RM’s. Accept them as set instead.';
+      else if (!(ac0.reason || '').trim()) S.accErr[ek] = 'Say why you are changing the weights. ' + ap0.who + ' needs it to decide.';
+      else { ac0.proposed = dr.slice(); ac0.status = 'pending'; ac0.comment = ''; ac0.draft = null; ac0.log.push('Sent to ' + ap0.who); S.accEdit = null; S.accErr[ek] = ''; }
       return render();
     }
     if (act === 'accApprove' || act === 'accReturn') {
       var uid = b.dataset.id; ac0 = peekAcc(uid); if (!ac0) return;
       var ap1 = approverOf(DATA.byId[uid]);
-      if (act === 'accApprove') { ac0.status = 'active'; ac0.weights = ac0.proposed.slice(); ac0.approvedBy = ap1.who; ac0.log.push(ap1.who + ' approved'); S.accErr[uid] = ''; }
+      if (act === 'accApprove') { ac0.status = 'active'; ac0.weights = ac0.proposed.slice(); ac0.approvedBy = ap1.who; ac0.log.push(ap1.who + ' approved'); S.accErr[eKey(uid)] = ''; }
       else {
-        var cm2 = ($('acm' + uid).value || '').trim();
-        if (!cm2) { S.accErr[uid] = 'Add a comment so they know what to change.'; return render(); }
-        ac0.status = 'returned'; ac0.comment = cm2; ac0.draftComment = ''; ac0.log.push(ap1.who + ' returned it'); S.accErr[uid] = '';
+        var cm2 = ($('acm' + eKey(uid)).value || '').trim();
+        if (!cm2) { S.accErr[eKey(uid)] = 'Add a comment so they know what to change.'; return render(); }
+        ac0.status = 'returned'; ac0.comment = cm2; ac0.draftComment = ''; ac0.log.push(ap1.who + ' returned it'); S.accErr[eKey(uid)] = '';
       }
       return render();
     }
@@ -1571,8 +1583,8 @@
   }
 
   function onInput(e) {
-    if (e.target.id === 'accReason') { var unitR = S.accRole === 'ac' ? S.accArea : S.zone; getAcc(unitR).reason = e.target.value; return; }
-    if (e.target.dataset.acm) { var pa = peekAcc(e.target.dataset.acm); if (pa) pa.draftComment = e.target.value; return; }
+    if (e.target.id === 'accReason') { var unitR = S.accRole === 'ac' ? S.accArea : S.zone; withSet(e.target.dataset.set || 'ta', function () { getAcc(unitR).reason = e.target.value; }); return; }
+    if (e.target.dataset.acm) { withSet(e.target.dataset.set || 'ta', function () { var pa = peekAcc(e.target.dataset.acm); if (pa) pa.draftComment = e.target.value; }); return; }
     if (e.target.dataset.aw !== undefined) return;
     if (e.target.id === 'planReason') { getPlan(S.ta).reason = e.target.value; return; }
     if (e.target.dataset.cm) { var pc = peekPlan(e.target.dataset.cm); if (pc) pc.draftComment = e.target.value; return; }
@@ -1600,7 +1612,7 @@
       if (dayHours(td) + fb2.block.hours > td.cap + 1e-9) { S.err[S.ta] = td.label + ' does not have ' + fmtH(fb2.block.hours) + ' h free. Shorten something there first.'; return render(); }
       fb2.day.blocks.splice(fb2.j, 1); fb2.block.edited = true; td.blocks.push(fb2.block); S.err[S.ta] = ''; return render();
     }
-    if (t.dataset.aw !== undefined) { var unitW = S.accRole === 'ac' ? S.accArea : S.zone, aw = getAcc(unitW); if (aw.draft) { aw.draft[+t.dataset.aw] = Math.max(0, Math.round(Number(t.value) || 0)); } return render(); }
+    if (t.dataset.aw !== undefined) { ACC_SET = t.dataset.set || 'ta'; var unitW = S.accRole === 'ac' ? S.accArea : S.zone, aw = getAcc(unitW); if (aw.draft) { aw.draft[+t.dataset.aw] = Math.max(0, Math.round(Number(t.value) || 0)); } return render(); }
     if (t.id === 'roleSel') {
       leaveEdit(); var cu = curUnit(); S.role = t.value; S.at = null; S.accEdit = null; S.tu = null; S.rvArea = null; S.rvZone = null; S.level = 'region'; S.rlevel = null; S.tlevel = null; S.open = {};
       if (cu.zoneId) { S.sZone = cu.zoneId; S.sArea = cu.areaId; if (cu.role === 'DA') S.sDa = cu.id; else S.sTa = cu.id; } else if (cu.tas) { S.sZone = cu.id; S.sArea = cu.areaId; } else if (cu.zones) S.sArea = cu.id;

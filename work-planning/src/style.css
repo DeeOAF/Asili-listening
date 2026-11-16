@@ -627,3 +627,12 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   .hd .who select { flex: 1 1 100%; }
   .tabs button, .more > summary { padding: 7px 10px; font-size: 15px; }
 }
+.ou-scores { display: flex; flex-wrap: wrap; gap: 10px 28px; }
+.ou-score { flex-direction: row; }
+.sbl { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; writing-mode: horizontal-tb; align-self: center; }
+.cr-two { display: flex; gap: 14px; align-items: baseline; }
+.cr-two small { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+.cr-two b { font-family: var(--font-head); font-weight: 800; font-size: 20px; }
+.dset input[type=text] { min-width: 160px; }
+.dset td { vertical-align: top; }
+@media (max-width: 720px) { .cr-two { gap: 8px; } .cr-two b { font-size: 17px; } }

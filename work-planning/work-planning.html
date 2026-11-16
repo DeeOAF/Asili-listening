@@ -638,6 +638,15 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   .hd .who select { flex: 1 1 100%; }
   .tabs button, .more > summary { padding: 7px 10px; font-size: 15px; }
 }
+.ou-scores { display: flex; flex-wrap: wrap; gap: 10px 28px; }
+.ou-score { flex-direction: row; }
+.sbl { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; writing-mode: horizontal-tb; align-self: center; }
+.cr-two { display: flex; gap: 14px; align-items: baseline; }
+.cr-two small { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; }
+.cr-two b { font-family: var(--font-head); font-weight: 800; font-size: 20px; }
+.dset input[type=text] { min-width: 160px; }
+.dset td { vertical-align: top; }
+@media (max-width: 720px) { .cr-two { gap: 8px; } .cr-two b { font-size: 17px; } }
 
 </style>
 <div id="app"></div>
@@ -665,7 +674,12 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     hvc:      { label: 'HVC client visits',       unit: 'visits',  kind: 'count',  hrs: 0.5,       mean: 5.7 },
     training: { label: 'Training modules passed', unit: 'modules', kind: 'count',  hrs: 1.5,       mean: 0.42 },
     glcalls:  { label: 'GL validation calls',     unit: 'calls',   kind: 'count',  hrs: 0.25,      mean: 4.1 },
-    duka:     { label: 'Duka compliance visits',  unit: 'dukas',   kind: 'count',  hrs: 1,         mean: 5, owner: 'DA' }
+    // Duka Assistants: a separate workforce selling for cash at the dukas (TAs sell on credit and do extension)
+    dsales:   { label: 'Duka cash sales',          unit: 'KES',        kind: 'count', hrs: 1 / 25000, mean: 38000, owner: 'DA' },
+    tms:      { label: 'TMS validations',          unit: 'validations', kind: 'count', hrs: 0.4,      mean: 4.2,   owner: 'DA' },
+    invvar:   { label: 'Inventory variances resolved', unit: 'variances', kind: 'count', hrs: 1.25,  mean: 1.1,   owner: 'DA' },
+    expiry:   { label: 'Seed expiry risks cleared', unit: 'SKUs',      kind: 'count', hrs: 0.75,      mean: 1.4,   owner: 'DA' },
+    duka:     { label: 'Duka compliance visits',   unit: 'dukas',      kind: 'count', hrs: 1,         mean: 2.2,   owner: 'DA' }
   };
   /* the pillar each measure serves, so a priority can be read as a push on enrolment, repayment, HVC, extension or the duka network */
   var PILLARS = {
@@ -673,7 +687,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     repayment: { label: 'Repayment', short: 'Repay', metrics: ['repaid'] },
     hvc:       { label: 'HVC', short: 'HVC', metrics: ['hvc'] },
     extension: { label: 'Extension', short: 'Ext', metrics: ['training', 'scoped', 'glcalls'] },
-    duka:      { label: 'Duka', short: 'Duka', metrics: ['duka'] }
+    duka:      { label: 'Duka', short: 'Duka', metrics: ['dsales', 'tms', 'invvar', 'expiry', 'duka'] }
   };
   function ownedByDA(metric) { return METRICS[metric].owner === 'DA'; }
   function pillarOf(metric) { for (var k in PILLARS) if (PILLARS[k].metrics.indexOf(metric) >= 0) return k; return null; }
@@ -694,14 +708,22 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
       also: { AC: ['Review the Healthy Path with your ZSs and agree an execution plan for each zone.', 'Check progress every morning and support the lagging zones first.'],
               ZS: ['Help each TA build a workplan and pick the clients and GLs to start with.', 'Review progress with every TA each day.'] },
       prios: [
-        P('p1', 'groups', 'Group enrolment', 'Reach 8% of our group target by Friday and 35% by 30 November. Every TA enrols at least 3 groups a day, starting with last season finishers and GLs already scoped.', 8, 4, 45, { norm: 3,
+        P('p1', 'groups', 'Group enrolment', 'Reach 8% of our group target by Friday and 35% by 30 November. Every TA enrols at least 3 groups a day, starting with last season finishers and GLs already scoped.', 8, 4, 50, { norm: 3,
           aud: { AC: 'Rank zones by gap and support the furthest behind first.', ZS: 'Sit with the TAs carrying most of the gap and fix their week.', TA: 'Enrol groups daily, finishers and scoped GLs first.' } }),
-        P('p2', 'repaid', 'Repayment', 'Lift portfolio repayment to 66% by Friday. Chase the biggest arrears first.', 66, 4, 25, {
+        P('p2', 'repaid', 'Repayment', 'Lift portfolio repayment to 66% by Friday. Chase the biggest arrears first.', 66, 4, 30, {
           aud: { AC: 'Watch zone repayment each morning.', ZS: 'Pair TAs with the biggest arrears for joint visits.', TA: 'Collect from the largest arrears first.' } }),
-        P('p3', 'glcalls', 'GL validation calls', 'Finish 12 GL validation calls each by Wednesday 11am.', 12, 2, 15, {
-          aud: { AC: 'Confirm every ZS has the call list.', ZS: 'Check calls are done before the Wednesday deadline.', TA: 'Call your GLs before any group visit.' } }),
-        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 25 dukas for compliance by Friday, the dukas with the most farmer orders first.', 25, 4, 15, {
-          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
+        P('p3', 'glcalls', 'GL validation calls', 'Finish 12 GL validation calls each by Wednesday 11am.', 12, 2, 20, {
+          aud: { AC: 'Confirm every ZS has the call list.', ZS: 'Check calls are done before the Wednesday deadline.', TA: 'Call your GLs before any group visit.' } })
+      ],
+      duka: [
+        P('d1', 'dsales', 'Duka cash sales', 'Each Duka Assistant sells KES 180,000 for cash by Friday, seed and fertiliser first.', 180000, 4, 40, {
+          aud: { AC: 'Compare duka sales by zone each morning.', ZS: 'Review each DA\'s sales against target daily.', DA: 'Sell for cash, seed and fertiliser first.' } }),
+        P('d2', 'tms', 'TMS validations', 'Validate every inventory transfer in TMS within a day: 20 each by Friday.', 20, 4, 25, {
+          aud: { AC: 'Check no transfer waits more than a day.', ZS: 'Confirm transfers are validated the same day.', DA: 'Validate each transfer in TMS the day it arrives.' } }),
+        P('d3', 'invvar', 'Inventory variances', 'Resolve 5 inventory variances each by Friday, the largest first.', 5, 4, 20, {
+          aud: { AC: 'Follow up the largest variances in your area.', ZS: 'Check variances with the DA before Friday.', DA: 'Recount and resolve the largest variance first.' } }),
+        P('d4', 'expiry', 'Seed expiry risk', 'Clear 6 seed SKUs at risk of expiry each, by sale or transfer, by Friday.', 6, 4, 15, {
+          aud: { AC: 'Agree transfers between zones for expiring seed.', ZS: 'Agree which SKUs to move or sell first.', DA: 'Sell or transfer the SKUs closest to expiry first.' } })
       ]
     },
     {
@@ -709,14 +731,20 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
       areas: [['Rift North', 'Jepkoech Langat'], ['Rift South', 'Mutai Kiprop']],
       also: { AC: ['Plan HVC visits by zone so no zone is left for Friday.'], ZS: ['Book training slots for your TAs on Monday.'] },
       prios: [
-        P('p1', 'hvc', 'HVC visits', 'Every TA visits 30 HVC clients this week, soya and sunflower first.', 30, 4, 35, {
+        P('p1', 'hvc', 'HVC visits', 'Every TA visits 30 HVC clients this week, soya and sunflower first.', 30, 4, 40, {
           aud: { AC: 'Make sure each zone has a visit plan by Tuesday.', ZS: 'Cluster HVC visits by village.', TA: 'Visit 6 HVC clients a day, soya and sunflower first.' } }),
-        P('p2', 'clients', 'Client enrolment', 'Reach 9% of clients enrolled by Friday.', 9, 4, 30, {
+        P('p2', 'clients', 'Client enrolment', 'Reach 9% of clients enrolled by Friday.', 9, 4, 35, {
           aud: { AC: 'Support zones below the Healthy Path.', ZS: 'Agree each TA\'s enrolment list.', TA: 'Enrol within groups you already know.' } }),
-        P('p3', 'training', 'Training', 'All TAs and ZSs complete 4 training modules and pass at 80%.', 4, 4, 20, {
-          aud: { AC: 'Block training time in your zones.', ZS: 'Complete your own modules first.', TA: 'Finish one module each day.' } }),
-        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 20 dukas for compliance by Friday, starting with dukas not visited this month.', 20, 4, 15, {
-          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
+        P('p3', 'training', 'Training', 'All TAs and ZSs complete 4 training modules and pass at 80%.', 4, 4, 25, {
+          aud: { AC: 'Block training time in your zones.', ZS: 'Complete your own modules first.', TA: 'Finish one module each day.' } })
+      ],
+      duka: [
+        P('d1', 'dsales', 'Duka cash sales', 'Each Duka Assistant sells KES 160,000 for cash by Friday.', 160000, 4, 45, {
+          aud: { AC: 'Compare duka sales by zone each morning.', ZS: 'Review each DA\'s sales against target daily.', DA: 'Sell for cash, seed and fertiliser first.' } }),
+        P('d2', 'tms', 'TMS validations', 'Validate 18 inventory transfers each in TMS by Friday.', 18, 4, 30, {
+          aud: { AC: 'Check no transfer waits more than a day.', ZS: 'Confirm transfers are validated the same day.', DA: 'Validate each transfer in TMS the day it arrives.' } }),
+        P('d3', 'duka', 'Duka compliance', 'Visit 10 dukas each for compliance by Friday.', 10, 4, 25, {
+          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Visit the dukas not seen this month first.' } })
       ]
     },
     {
@@ -724,14 +752,20 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
       areas: [['Upper Western East', 'Simiyu Barasa'], ['Upper Western West', 'Nekesa Wanyama']],
       also: { AC: ['Review GL scoping lists with each ZS on Tuesday.'], ZS: ['Confirm scoped GLs with a call before enrolment.'] },
       prios: [
-        P('p1', 'repaid', 'Repayment', 'Reach 68% repayment by Friday. Every TA works their own arrears list.', 68, 4, 40, {
+        P('p1', 'repaid', 'Repayment', 'Reach 68% repayment by Friday. Every TA works their own arrears list.', 68, 4, 45, {
           aud: { AC: 'Compare zone repayment daily.', ZS: 'Joint visits for the three largest arrears per TA.', TA: 'Work your arrears list from the largest.' } }),
-        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by the end of the week.', 70, 4, 30, {
+        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by the end of the week.', 70, 4, 35, {
           aud: { AC: 'Track scoping by zone.', ZS: 'Review each TA\'s scoped list.', TA: 'Scope the GLs with the most farmers first.' } }),
-        P('p3', 'hvc', 'HVC visits', 'Each TA visits 20 HVC clients, groundnut and soya first.', 20, 4, 15, {
-          aud: { AC: 'No action beyond monitoring.', ZS: 'Cluster visits by village.', TA: 'About 4 HVC visits a day.' } }),
-        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 25 dukas for compliance by Friday.', 25, 4, 15, {
-          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
+        P('p3', 'hvc', 'HVC visits', 'Each TA visits 20 HVC clients, groundnut and soya first.', 20, 4, 20, {
+          aud: { AC: 'No action beyond monitoring.', ZS: 'Cluster visits by village.', TA: 'About 4 HVC visits a day.' } })
+      ],
+      duka: [
+        P('d1', 'dsales', 'Duka cash sales', 'Each Duka Assistant sells KES 170,000 for cash by Friday.', 170000, 4, 40, {
+          aud: { AC: 'Compare duka sales by zone each morning.', ZS: 'Review each DA\'s sales against target daily.', DA: 'Sell for cash, seed and fertiliser first.' } }),
+        P('d2', 'invvar', 'Inventory variances', 'Resolve 5 inventory variances each by Friday.', 5, 4, 30, {
+          aud: { AC: 'Follow up the largest variances in your area.', ZS: 'Check variances with the DA before Friday.', DA: 'Recount and resolve the largest variance first.' } }),
+        P('d3', 'expiry', 'Seed expiry risk', 'Clear 6 seed SKUs at risk of expiry each by Friday.', 6, 4, 30, {
+          aud: { AC: 'Agree transfers between zones for expiring seed.', ZS: 'Agree which SKUs to move or sell first.', DA: 'Sell or transfer the SKUs closest to expiry first.' } })
       ]
     },
     {
@@ -739,14 +773,20 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
       areas: [['Lower Western North', 'Atieno Opiyo'], ['Lower Western South', 'Awino Onyango']],
       also: { AC: ['Support the lagging zones on repayment first.'], ZS: ['Stawi Station: finish socketing by Thursday.', 'Send the weekly KPI form by Friday noon.'] },
       prios: [
-        P('p1', 'repaid', 'Repayment completion', 'Lift repayment to 70% by Friday. Every TA reaches 70% on their own portfolio.', 70, 4, 40, {
+        P('p1', 'repaid', 'Repayment completion', 'Lift repayment to 70% by Friday. Every TA reaches 70% on their own portfolio.', 70, 4, 45, {
           aud: { AC: 'Support lagging zones on repayment.', ZS: 'Joint visits for the largest arrears.', TA: 'Collect from the largest arrears first.' } }),
-        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by Friday.', 70, 4, 25, {
+        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by Friday.', 70, 4, 30, {
           aud: { AC: 'Track scoping by zone.', ZS: 'Check scoped lists with each TA.', TA: 'Scope the biggest GLs first.' } }),
-        P('p3', 'glcalls', 'GL validation calls', 'Complete GL validation calls by Wednesday 11am, 10 each.', 10, 2, 20, {
-          aud: { AC: 'Confirm ZS call lists.', ZS: 'Check calls before the deadline.', TA: 'Call before visiting.' } }),
-        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 25 dukas for compliance by Friday, Stawi Station dukas first.', 25, 4, 15, {
-          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
+        P('p3', 'glcalls', 'GL validation calls', 'Complete GL validation calls by Wednesday 11am, 10 each.', 10, 2, 25, {
+          aud: { AC: 'Confirm ZS call lists.', ZS: 'Check calls before the deadline.', TA: 'Call before visiting.' } })
+      ],
+      duka: [
+        P('d1', 'dsales', 'Duka cash sales', 'Each Duka Assistant sells KES 180,000 for cash by Friday, Stawi Station dukas first.', 180000, 4, 35, {
+          aud: { AC: 'Compare duka sales by zone each morning.', ZS: 'Review each DA\'s sales against target daily.', DA: 'Sell for cash, seed and fertiliser first.' } }),
+        P('d2', 'tms', 'TMS validations', 'Validate every transfer within a day: 20 each by Friday.', 20, 4, 35, {
+          aud: { AC: 'Check no transfer waits more than a day.', ZS: 'Confirm transfers are validated the same day.', DA: 'Validate each transfer in TMS the day it arrives.' } }),
+        P('d3', 'expiry', 'Seed expiry risk', 'Clear 6 seed SKUs at risk of expiry each by Friday.', 6, 4, 30, {
+          aud: { AC: 'Agree transfers between zones for expiring seed.', ZS: 'Agree which SKUs to move or sell first.', DA: 'Sell or transfer the SKUs closest to expiry first.' } })
       ]
     },
     {
@@ -754,14 +794,20 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
       areas: [['Nyanza North', 'Auma Odhiambo'], ['Nyanza South', 'Omondi Okoth']],
       also: { AC: ['Keep one training day free in every zone.'], ZS: ['Share the enrolment list with TAs on Monday.'] },
       prios: [
-        P('p1', 'clients', 'Client enrolment', 'Reach 10% of clients enrolled by Friday.', 10, 4, 35, {
+        P('p1', 'clients', 'Client enrolment', 'Reach 10% of clients enrolled by Friday.', 10, 4, 40, {
           aud: { AC: 'Support zones below the Healthy Path.', ZS: 'Agree enrolment lists with TAs.', TA: 'Enrol within groups you already know.' } }),
-        P('p2', 'repaid', 'Repayment', 'Lift repayment to 66% by Friday.', 66, 4, 30, {
+        P('p2', 'repaid', 'Repayment', 'Lift repayment to 66% by Friday.', 66, 4, 35, {
           aud: { AC: 'Watch zone repayment daily.', ZS: 'Joint visits for the largest arrears.', TA: 'Collect from the largest arrears first.' } }),
-        P('p3', 'training', 'Training', 'All TAs and ZSs complete 3 training modules with an 80% pass rate.', 3, 4, 20, {
-          aud: { AC: 'Protect training time.', ZS: 'Complete your own modules first.', TA: 'Finish a module a day.' } }),
-        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 20 dukas for compliance by Friday.', 20, 4, 15, {
-          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
+        P('p3', 'training', 'Training', 'All TAs and ZSs complete 3 training modules with an 80% pass rate.', 3, 4, 25, {
+          aud: { AC: 'Protect training time.', ZS: 'Complete your own modules first.', TA: 'Finish a module a day.' } })
+      ],
+      duka: [
+        P('d1', 'dsales', 'Duka cash sales', 'Each Duka Assistant sells KES 150,000 for cash by Friday.', 150000, 4, 50, {
+          aud: { AC: 'Compare duka sales by zone each morning.', ZS: 'Review each DA\'s sales against target daily.', DA: 'Sell for cash, seed and fertiliser first.' } }),
+        P('d2', 'tms', 'TMS validations', 'Validate 18 inventory transfers each in TMS by Friday.', 18, 4, 25, {
+          aud: { AC: 'Check no transfer waits more than a day.', ZS: 'Confirm transfers are validated the same day.', DA: 'Validate each transfer in TMS the day it arrives.' } }),
+        P('d3', 'invvar', 'Inventory variances', 'Resolve 5 inventory variances each by Friday.', 5, 4, 25, {
+          aud: { AC: 'Follow up the largest variances in your area.', ZS: 'Check variances with the DA before Friday.', DA: 'Recount and resolve the largest variance first.' } })
       ]
     }
   ];
@@ -834,7 +880,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
             };
             var daily = {};
             Object.keys(METRICS).forEach(function (mk) {
-              if (mk === 'duka') return;
+              if (ownedByDA(mk)) return;
               var arr = [];
               for (var di = 0; di < 6; di++) {
                 var dayF = di === 5 ? 0.4 : 1;
@@ -847,7 +893,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
               }
               daily[mk] = arr;
             });
-            daily.duka = [0, 0, 0, 0, 0, 0]; // Duka compliance belongs to the zone's Duka Assistants
+            Object.keys(METRICS).forEach(function (mk) { if (ownedByDA(mk)) daily[mk] = [0, 0, 0, 0, 0, 0]; }); // duka work belongs to the zone's Duka Assistants
             // training can never pass 4 modules in total
             var tcap = 4 - A0.training, ts = 0;
             daily.training = daily.training.map(function (v) { var k = Math.min(v, Math.max(0, tcap - ts)); ts += k; return k; });
@@ -889,12 +935,18 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     var dn = 0;
     data.regions.forEach(function (rg) { rg.areas.forEach(function (ar) { ar.zones.forEach(function (zn) {
       zn.das = [0, 1].map(function (k) {
-        var id = 'da' + (++dn), f = clip((1 + 0.18 * gauss('dof|' + id)) * zn.effect, 0.35, 1.6), arr = [], hr = hashRng('dod|' + id);
-        for (var di = 0; di < 6; di++) {
-          var x = METRICS.duka.mean * f * DAYF[di] * clip(1 + 0.3 * gauss('dd|' + id + '|' + di), 0.3, 2), fl = Math.floor(x);
-          arr.push(fl + (hr() < x - fl ? 1 : 0));
-        }
-        var o = { id: id, name: personName(), role: 'DA', regionId: rg.id, areaId: ar.id, zoneId: zn.id, territory: null, f: f, season: {}, due: 0, A0: { duka: 0 }, pool: {}, daily: { duka: arr }, groups: [], dukas: [] };
+        var id = 'da' + (++dn), f = clip((1 + 0.18 * gauss('dof|' + id)) * zn.effect, 0.35, 1.6), hr = hashRng('dod|' + id), dd = {}, a0 = {};
+        Object.keys(METRICS).forEach(function (mk) {
+          if (!ownedByDA(mk)) return;
+          var arr = [], mf = clip(1 + 0.2 * gauss('dm|' + id + '|' + mk), 0.5, 1.5);
+          for (var di = 0; di < 6; di++) {
+            var x = METRICS[mk].mean * f * mf * DAYF[di] * clip(1 + 0.3 * gauss('dd|' + id + '|' + mk + '|' + di), 0.3, 2);
+            if (METRICS[mk].unit === 'KES') arr.push(Math.round(x / 500) * 500);
+            else { var fl = Math.floor(x); arr.push(fl + (hr() < x - fl ? 1 : 0)); }
+          }
+          dd[mk] = arr; a0[mk] = 0;
+        });
+        var o = { id: id, name: personName(), role: 'DA', regionId: rg.id, areaId: ar.id, zoneId: zn.id, territory: null, f: f, season: {}, due: 0, A0: a0, pool: {}, daily: dd, groups: [], dukas: [] };
         var dk = ['Agrovet', 'Farm Shop', 'Stores', 'Duka', 'Agro Centre', 'Traders'];
         for (var j = 0; j < 6; j++) { var vv = village(); o.dukas.push({ name: vv + ' ' + dk[(j + k) % dk.length], village: vv }); }
         o.patch = o.dukas[0].village + ' to ' + o.dukas[5].village;
@@ -907,6 +959,11 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   function defaultPriorities(regionId) {
     var rd = REGION_DEFS.filter(function (r) { return r.id === regionId; })[0];
     return JSON.parse(JSON.stringify(rd.prios));
+  }
+  /* the Duka Assistants' own set: separate measures, separate weights totalling 100 */
+  function defaultDukaPriorities(regionId) {
+    var rd = REGION_DEFS.filter(function (r) { return r.id === regionId; })[0];
+    return JSON.parse(JSON.stringify(rd.duka || []));
   }
 
   /* ---------- per-TA, per-priority calculation ---------- */
@@ -996,13 +1053,14 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     for (var i = d + 1; i <= 5; i++) days.push(i);
     var Hrem = sum(days, function (i) { return DAY_CAP[i]; });
 
-    var wTA = sum(prios, function (p) { return ownedByDA(p.metric) ? 0 : p.weight; }) || 100;
+    var lane = !!row.isDA, inLane = function (p) { return ownedByDA(p.metric) === lane; };
+    var wTA = sum(prios, function (p) { return inLane(p) ? p.weight : 0; }) || 100;
     // 1. what each priority still needs, in hours
     var items = prios.map(function (p) {
       var c = row.calcs[p.id];
       var ask = opts.met === p.id ? 0 : c.ask;
       var needH = hrsFor(p.metric, ask);
-      return { pid: p.id, p: p, weight: p.weight, ask: ask, needH: needH, met: needH < 0.05, daOwned: ownedByDA(p.metric), baseBudget: ownedByDA(p.metric) ? 0 : Hrem * p.weight / wTA, budget: 0, alloc: 0, overdue: false };
+      return { pid: p.id, p: p, weight: p.weight, ask: ask, needH: needH, met: needH < 0.05, daOwned: ownedByDA(p.metric), baseBudget: inLane(p) ? Hrem * p.weight / wTA : 0, budget: 0, alloc: 0, overdue: false };
     });
 
     // 2. weights share the time, but only among priorities that still have work:
@@ -1135,10 +1193,14 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
       var mod = Math.min(4, ta.A0.training + calc.gain + 1 + k);
       ptr[p.id] = k + 1;
       text = 'Training module ' + mod + ' and its assessment (80% to pass)';
-    } else if (m === 'duka') {
-      var dl = ta.dukas && ta.dukas.length ? ta.dukas : ta.groups, d1 = dl[k % dl.length];
+    } else if (ownedByDA(m)) {
+      var dl = ta.dukas && ta.dukas.length ? ta.dukas : ta.groups, d1 = dl[k % dl.length], d2 = dl[(k + 1) % dl.length], n2 = Math.max(1, Math.round(units));
       ptr[p.id] = k + 1;
-      text = 'Check ' + Math.max(1, Math.round(units)) + ' dukas for compliance around ' + d1.village + (ta.dukas ? ', starting with ' + d1.name : ', nearest first');
+      text = m === 'dsales' ? 'Sell about KES ' + (Math.round(units / 1000) * 1000).toLocaleString('en-US') + ' for cash at ' + d1.name + ' and ' + d2.name + ', seed and fertiliser first'
+        : m === 'tms' ? 'Validate ' + n2 + ' inventory ' + (n2 === 1 ? 'transfer' : 'transfers') + ' in TMS for ' + d1.name + ', oldest first'
+        : m === 'invvar' ? 'Recount stock at ' + d1.name + ' and resolve ' + n2 + (n2 === 1 ? ' variance' : ' variances') + ', largest first'
+        : m === 'expiry' ? 'Clear ' + n2 + ' seed ' + (n2 === 1 ? 'SKU' : 'SKUs') + ' near expiry at ' + d1.name + ', by sale or transfer'
+        : 'Check ' + n2 + ' dukas for compliance around ' + d1.village + ', starting with ' + d1.name;
     } else {
       var l4 = ranked(ta, 'calls', function (a, b) { return b.members - a.members; });
       var c1 = l4[k % l4.length];
@@ -1152,12 +1214,14 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   function computeRegion(region, prios, d, opts) {
     opts = opts || {};
     var rows = [], byTA = {}, zoneAlloc = {}, dRows = [], byDA = {};
-    var taP = prios.filter(function (p) { return !ownedByDA(p.metric); }), daP = prios.filter(function (p) { return ownedByDA(p.metric); });
+    // TAs work to the field set; Duka Assistants work to their own duka set (opts.duka), with its own weights
+    var taP = prios.filter(function (p) { return !ownedByDA(p.metric); }), daP = (opts.duka || []).concat(prios.filter(function (p) { return ownedByDA(p.metric); }));
+    prios = taP;
     region.areas.forEach(function (area) {
       area.zones.forEach(function (zone) {
         var zrows = zone.tas.map(function (ta) {
           var calcs = {};
-          prios.forEach(function (p) { calcs[p.id] = ownedByDA(p.metric) ? naCalc(p) : calcTA(ta, p, d); });
+          prios.forEach(function (p) { calcs[p.id] = calcTA(ta, p, d); });
           return { ta: ta, zone: zone, area: area, calcs: calcs };
         });
         var zd = (zone.das || []).map(function (o) {
@@ -1186,7 +1250,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
         });
       });
     });
-    return { rows: rows, byTA: byTA, dRows: dRows, byDA: byDA, zoneAlloc: zoneAlloc, d: d, prios: prios };
+    return { rows: rows, byTA: byTA, dRows: dRows, byDA: byDA, zoneAlloc: zoneAlloc, d: d, prios: prios, duka: daP };
   }
 
   /* roll a list of TA rows up into one line for a priority */
@@ -1282,7 +1346,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
       v = isMet ? (up ? 'met-up' : 'met-flat') : (up ? 'short-up' : 'short-flat');
       return { pid: p.id, p: p, weight: p.weight, need: need, gain: gain, prior: prior, met: met, n: rr.length, achieved: achieved, change: change, verdict: v };
     });
-    var others = Object.keys(METRICS).filter(function (k) { return !ids[k]; }).map(function (k) {
+    var others = Object.keys(METRICS).filter(function (k) { return !ids[k] && !ownedByDA(k); }).map(function (k) {
       var gain = 0, prior = 0;
       (ownedByDA(k) ? daRowsFor(rows) : rows).forEach(function (r) { gain += weekGain(r.ta, k, d) * NONPRIO; prior += priorAvg(r.ta, k, false) * share; });
       return { metric: k, gain: gain, prior: prior, change: prior > 0 ? (gain - prior) / prior : null };
@@ -1311,7 +1375,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     sets[7] = cur;
     for (var w = 6; w >= 0; w--) {
       var s = sets[w + 1].slice();
-      if (r() < 0.55) { var i = Math.floor(r() * s.length), pool = keys.filter(function (k) { return s.indexOf(k) < 0; }); s[i] = pool[Math.floor(r() * pool.length)]; }
+      if (r() < 0.55) { var i = Math.floor(r() * s.length), pool = keys.filter(function (k) { return s.indexOf(k) < 0 && !ownedByDA(k); }); s[i] = pool[Math.floor(r() * pool.length)]; }
       sets[w] = s;
     }
     var tas = [], struct = [];
@@ -1427,7 +1491,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   }
 
   root.WP = {
-    DAYS: DAYS, DAY_DATES: DAY_DATES, DAY_CAP: DAY_CAP, WEEK_HOURS: WEEK_HOURS, METRICS: METRICS, PILLARS: PILLARS, pillarOf: pillarOf, ownedByDA: ownedByDA, daRowsFor: daRowsFor, KIND_LABEL: KIND_LABEL,
+    DAYS: DAYS, DAY_DATES: DAY_DATES, DAY_CAP: DAY_CAP, WEEK_HOURS: WEEK_HOURS, METRICS: METRICS, PILLARS: PILLARS, pillarOf: pillarOf, ownedByDA: ownedByDA, defaultDukaPriorities: defaultDukaPriorities, daRowsFor: daRowsFor, KIND_LABEL: KIND_LABEL,
     REGION_DEFS: REGION_DEFS, generateData: generateData, defaultPriorities: defaultPriorities,
     calcTA: calcTA, computeRegion: computeRegion, aggregate: aggregate, focusOf: focusOf, reviewUnit: reviewUnit, history: history, histUnit: histUnit, weekCheck: weekCheck, normCheck: normCheck,
     allocateZone: allocateZone, planTA: planTA, paceAt: paceAt, sum: sum
@@ -1443,7 +1507,9 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   var sum = WP.sum;
 
   var S = { role: 'rm', sArea: null, sZone: null, sTa: null, sDa: null, at: null, showWk: false, tab: 'home', region: 'mkc', day: 2, prio: null, zone: null, ta: null, open: {}, prios: {}, uid: 10, wk: 1, acc: {}, accRole: 'zs', accArea: null, accEdit: null, accErr: {}, tu: null, tlevel: 'area', rvArea: null, rvZone: null, wkPrios: {}, wkPub: {}, plans: {}, edit: false, editTa: null, whatif: null, level: 'region', err: {} };
-  DATA.regions.forEach(function (r) { S.prios[r.id] = WP.defaultPriorities(r.id); });
+  S.dprios = {};
+  DATA.regions.forEach(function (r) { S.prios[r.id] = WP.defaultPriorities(r.id); S.dprios[r.id] = WP.defaultDukaPriorities(r.id); });
+  function dprios(regId) { return S.dprios[regId || S.region]; }
 
   var SHORT = { clients: 'Clients', groups: 'Groups', scoped: 'Scoping', repaid: 'Repay', hvc: 'HVC', training: 'Training', glcalls: 'Calls', duka: 'Duka' };
   var TABS = [['overview', 'Regions'], ['priorities', 'RM priorities'], ['accept', 'Accept priorities'], ['cascade', 'Cascade'], ['review', 'Scorecards'], ['trend', 'Week on week'], ['team', 'Zone team'], ['week', 'TA week'], ['data', 'Data spec']];
@@ -1513,8 +1579,8 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
 
   var cache = {};
   function comp(regId) {
-    var zw = zoneWeights(regId), key = regId + '|' + S.day + '|' + JSON.stringify(S.prios[regId]) + '|' + JSON.stringify(zw);
-    if (!cache[key]) { var k = Object.keys(cache); if (k.length > 40) cache = {}; cache[key] = WP.computeRegion(DATA.byId[regId], S.prios[regId], S.day, { zoneWeights: zw }); }
+    var zw = zoneWeights(regId), key = regId + '|' + S.day + '|' + JSON.stringify(S.prios[regId]) + '|' + JSON.stringify(S.dprios[regId]) + '|' + JSON.stringify(zw);
+    if (!cache[key]) { var k = Object.keys(cache); if (k.length > 40) cache = {}; cache[key] = WP.computeRegion(DATA.byId[regId], S.prios[regId], S.day, { zoneWeights: zw, duka: S.dprios[regId] }); }
     return cache[key];
   }
 
@@ -1583,9 +1649,10 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   /* ---------- plan approval workflow ---------- */
   var PLAN_LABEL = { proposed: ['Recommended', 'c-on'], active: ['Active', 'c-done'], pending: ['Waiting for ZS', 'c-slip'], returned: ['Returned', 'c-behind'] };
   function fmtH(h) { return (Math.round(h * 100) / 100).toFixed(2).replace(/\.?0+$/, ''); }
-  function rowOf(taId) { return comp(DATA.byId[taId].regionId).byTA[taId]; }
+  function rowOf(taId) { var c = comp(DATA.byId[taId].regionId); return c.byTA[taId] || c.byDA[taId]; }
+  function setOf(id) { return DATA.byId[id].role === 'DA' ? dprios(DATA.byId[id].regionId) : S.prios[DATA.byId[id].regionId]; }
   function planKey(taId) {
-    var l = S.prios[DATA.byId[taId].regionId];
+    var l = setOf(taId);
     return taId + '|' + S.day + '|' + JSON.stringify(l.map(function (p) { return [p.id, p.metric, p.target, p.deadline, p.weight, p.norm]; })) + '|' + JSON.stringify(zoneWeights(DATA.byId[taId].regionId)[DATA.byId[taId].zoneId] || null);
   }
   function peekPlan(taId) { return S.plans[planKey(taId)] || null; }
@@ -1861,11 +1928,11 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   }
   function approvalsHTML(reg, z, res) {
     var list = pendingIn(reg.id, z.id), all = pendingIn(reg.id), others = all.length - list.length;
-    var h = '<div class="panel sec"><h3>Plans waiting for your approval</h3><p class="sub" style="margin-bottom:8px">A TA who changes the recommended plan sends it to the ZS. It stays inactive until you approve it. You are seeing this as ' + esc(z.zs) + '.</p>';
+    var h = '<div class="panel sec"><h3>Plans waiting for your approval</h3><p class="sub" style="margin-bottom:8px">A TA or Duka Assistant who changes the recommended plan sends it to the ZS. It stays inactive until you approve it. You are seeing this as ' + esc(z.zs) + '.</p>';
     if (!list.length) h += '<p class="empty">Nothing is waiting in this zone.' + (others > 0 ? ' ' + others + ' plan' + (others > 1 ? 's are' : ' is') + ' waiting in other zones of this region: ' + zoneButtons(all, z.id) : ' When a TA edits a plan and sends it, it appears here.') + '</p>';
     list.forEach(function (p) {
-      var row = res.byTA[p.taId], im = impactOf(row, p.days), cut = im.rows.filter(function (x) { return x.now < x.rec - 0.05; }), more = im.rows.filter(function (x) { return x.now > x.rec + 0.05; });
-      h += '<div class="appr"><div class="ahead"><b>' + esc(row.ta.name) + '</b><span class="muted">' + esc(row.ta.territory) + '</span>' + chip(row.status) + '</div>' +
+      var row = rowOf(p.taId), im = impactOf(row, p.days), cut = im.rows.filter(function (x) { return x.now < x.rec - 0.05; }), more = im.rows.filter(function (x) { return x.now > x.rec + 0.05; });
+      h += '<div class="appr"><div class="ahead"><b>' + esc(row.ta.name) + '</b><span class="muted">' + esc(row.isDA ? 'Duka Assistant' : 'Territory ' + row.ta.territory) + '</span>' + chip(row.status) + '</div>' +
         '<p><b>Reason:</b> ' + esc(p.reason) + '</p>' +
         '<p class="sub">' + (cut.length ? 'Less time on ' + cut.map(function (x) { return esc(x.it.p.title) + ' (' + fmtH(x.rec) + ' → ' + fmtH(x.now) + ' h)'; }).join(', ') + '. ' : '') + (more.length ? 'More time on ' + more.map(function (x) { return esc(x.it.p.title) + ' (' + fmtH(x.rec) + ' → ' + fmtH(x.now) + ' h)'; }).join(', ') + '. ' : '') + 'Coverage of the RM’s targets goes from ' + Math.round(im.recCov) + ' to ' + Math.round(im.cov) + '.</p>';
       if (im.flags.length) h += '<ul class="flags">' + im.flags.map(function (f) { return '<li class="' + f.level + '">' + esc(f.text) + '</li>'; }).join('') + '</ul>';
@@ -2085,7 +2152,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     }
     h += '<div class="banner ' + (editing ? 'pending' : draft ? 'pending' : plan.status) + '"><div class="bhead"><span class="chip ' + cls + '">' + st + '</span><span class="sub">' + esc(msg) + '</span></div>' + (btns ? '<div class="bact">' + btns + '</div>' : '') + '</div>';
     if (S.err[r.ta.id]) h += '<p class="note warn" role="alert" style="margin-top:10px">' + esc(S.err[r.ta.id]) + '</p>';
-    h += '<p class="sub" style="margin-top:10px">Blocks, not a clock. The order follows the rules: deadlines that have passed, then weight. Group choices come from the ranking and the six-week ageing rule.</p><div class="days" style="margin-top:10px">';
+    h += '<p class="sub" style="margin-top:10px">Blocks, not a clock. The order follows the rules: deadlines that have passed, then weight. ' + (r.isDA ? 'Dukas are taken in turn from your list.' : 'Group choices come from the ranking and the six-week ageing rule.') + '</p><div class="days" style="margin-top:10px">';
     days.forEach(function (day) {
       var used = dayHours(day);
       h += '<article class="panel day"><h4><span>' + day.label + ' ' + day.date + '</span><span class="muted num">' + fmtH(used) + ' of ' + day.cap + ' h</span></h4>';
@@ -2174,7 +2241,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
         var a = it.agg;
         h += '<tr><td><span class="sw pc' + Math.min(i, 4) + '"></span>' + esc(it.p.title) + '</td><td class="r n">' + it.weight + '%</td><td class="r n">' + (it.share == null ? '–' : Math.round(it.share) + '%') + '</td><td class="r n"><b>' + (it.delta == null ? '–' : (it.delta > 0.5 ? '+' : it.delta < -0.5 ? '−' : '') + Math.abs(Math.round(it.delta)) + ' pts') + '</b></td><td class="r n">' + (it.daOwned ? '–' : fmtH(it.needH) + ' h') + '</td><td class="r n">' + (it.daOwned ? 'Duka Assistants' : it.metCount + ' of ' + fo.n) + '</td><td>' + chip(a.status) + ' <span class="sub">' + withUnit(it.p.metric, a.distance, true) + '</span></td></tr>';
       });
-      h += '</tbody></table></div><p class="sub" style="margin-top:8px">“Time the data calls for” is each TA’s planned hours for the rest of the week, added up and shown as a share. It is the weights, adjusted for who is ahead, who is behind and what is already met.' + (l.some(isDA) ? ' Duka compliance is carried by Duka Assistants, so it takes no TA time and the shares are worked out over the other priorities.' : '') + '</p></div>';
+      h += '</tbody></table></div><p class="sub" style="margin-top:8px">“Time the data calls for” is each TA’s planned hours for the rest of the week, added up and shown as a share. It is the weights, adjusted for who is ahead, who is behind and what is already met.' + (l.some(isDA) ? ' Duka work belongs to the Duka Assistants’ own set, so it takes no TA time.' : '') + '</p></div>';
       return h;
     }
 
@@ -2203,8 +2270,8 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   /* scorecards: one card per priority at every level, with the score building through the week */
   var rvDay = {};
   function resDay(d) {
-    var key = S.region + '|' + d + '|' + JSON.stringify(S.prios[S.region]);
-    if (!rvDay[key]) { var k = Object.keys(rvDay); if (k.length > 40) rvDay = {}; rvDay[key] = WP.computeRegion(region(), S.prios[S.region], d); }
+    var key = S.region + '|' + d + '|' + JSON.stringify(S.prios[S.region]) + '|' + JSON.stringify(dprios());
+    if (!rvDay[key]) { var k = Object.keys(rvDay); if (k.length > 40) rvDay = {}; rvDay[key] = WP.computeRegion(region(), S.prios[S.region], d, { duka: dprios() }); }
     return rvDay[key];
   }
   var SC_LABEL = { on: 'On track', slip: 'Slipping', behind: 'Behind', critical: 'Well behind' };
@@ -2246,7 +2313,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   }
   function idsOf(zones) { var o = []; zones.forEach(function (z) { z.tas.forEach(function (t) { o.push(t.id); }); }); return o; }
   function scorecardsHTML(reg, l, selId) {
-    if (S.role === 'ta') { var tt = sTa(); return '<div class="sec"><h2>Scorecards</h2><p class="sub" style="margin:4px 0 12px">One card per priority for your territory. The score is how much of the pace line you delivered; the bars show it at the end of each day so far. Duka compliance is carried by Duka Assistants and is not part of your score.</p>' + unitBlock('Territory', tt.territory, 'TA ' + tt.name, [tt.id], l, selId) + '</div>'; }
+    if (S.role === 'ta') { var tt = sTa(); return '<div class="sec"><h2>Scorecards</h2><p class="sub" style="margin:4px 0 12px">One card per priority for your territory. The score is how much of the pace line you delivered; the bars show it at the end of each day so far. Duka work belongs to the Duka Assistants’ own set and is not part of your score.</p>' + unitBlock('Territory', tt.territory, 'TA ' + tt.name, [tt.id], l, selId) + '</div>'; }
     var area = S.rvArea && DATA.byId[S.rvArea] && DATA.byId[S.rvArea].regionId === reg.id ? DATA.byId[S.rvArea] : null;
     var zone = area && S.rvZone && DATA.byId[S.rvZone] && DATA.byId[S.rvZone].areaId === area.id ? DATA.byId[S.rvZone] : null;
     if (S.role === 'ac') { area = reg.areas[0]; if (zone && zone.areaId !== area.id) zone = null; }
@@ -2396,7 +2463,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
       h += '<tr><td>' + w.label + (w.live ? ' <span class="chip c-on">' + (S.day < 5 ? 'in progress' : 'latest') + '</span>' : '') + '</td><td>' + w.prios.map(function (p) { return '<span class="wchip">' + pTag(p.metric) + esc(p.title) + ' ' + p.weight + '%</span>'; }).join(' ') + '</td>' +
         '<td><div class="prog" style="margin:0"><div class="fill ' + fcls(statusFromScore(w.score)) + '" style="width:' + w.score + '%"></div></div><span class="sub"><b>' + Math.round(w.score) + '</b></span></td>' + lvCell(w.lv.areas) + lvCell(w.lv.zones) + lvCell(w.lv.tas) + '<td class="r n">' + w.hits + ' of ' + w.n + '</td><td class="r n"><b>' + (prev == null ? '–' : ptsTxt(w.score - prev)) + '</b></td></tr>';
     }
-    h += '</tbody></table></div><p class="sub" style="margin-top:8px"><b>Met</b> means the unit reached 95% of the pace line on every priority it is accountable for that week. A territory is not accountable for Duka compliance; zones, areas and the region are, through their Duka Assistants. A dash means that level is not part of this view.</p></div>';
+    h += '</tbody></table></div><p class="sub" style="margin-top:8px"><b>Met</b> means the unit reached 95% of the pace line on every priority it is accountable for that week. A territory is not accountable for duka work, which has its own set for the Duka Assistants. A dash means that level is not part of this view.</p></div>';
     h += '<div class="panel sec"><h3>Pillars each week’s priorities targeted</h3><p class="sub" style="margin-bottom:8px">Each priority belongs to a pillar. A cell shows the unit’s score on the priorities that targeted that pillar in that week (weight-averaged if there were two). An empty cell means the pillar was not a priority that week. Output lift compares the pillar’s output in the weeks it was targeted against the weeks it was not.</p><div class="scroll"><table class="pgrid"><thead><tr><th>Pillar</th>' + U.weeks.map(function (w) { return '<th class="c">' + esc(w.label) + (w.live ? '<span class="live">now</span>' : '') + '</th>'; }).join('') + '<th class="r">Weeks targeted</th><th class="r">Avg score</th><th class="r">Output lift</th></tr></thead><tbody>';
     U.pillars.forEach(function (pl) {
       h += '<tr' + (pl.weeksPrio === 0 ? ' class="muted"' : '') + '><td><span class="ptag pt-' + pl.key + '">' + esc(WP.PILLARS[pl.key].label) + '</span>' + (pl.owner === 'DA' ? ' <span class="muted" style="font-size:12px">Duka Assistants</span>' : '') + '</td>';
@@ -2591,7 +2658,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
       '<li><b>Status</b><span>Distance as a share of need: 8% or more above is ahead, within 8% on pace, to 25% below slipping, to 50% behind, beyond that critical.</span></li>' +
       '<li><b>Assigned</b><span>For trajectory priorities, the zone’s remaining gap is shared between TAs who are behind in proportion to headroom, capped by each TA’s own shortfall. Rate and per-person priorities are not shared.</span></li>' +
       '<li><b>Score</b><span>Sum of weight times progress against pace, capped at 100% per priority.</span></li>' +
-      '<li><b>Time</b><span>38 productive hours a week (7 a day, 3 on Saturday). Budget is hours times weight. Hours per unit: client 0.6, group 4.5, GL scoped 1.1, KES 20,000 collected 1, HVC visit 0.5, module 1.5, call 0.25. Duka compliance visits take no TA time: they belong to the zone’s Duka Assistants (two per zone in this prototype, about 5 visits a day each), who are a separate branch under the ZS.</span></li></ul></div>' +
+      '<li><b>Time</b><span>38 productive hours a week (7 a day, 3 on Saturday). Budget is hours times weight. Hours per unit: client 0.6, group 4.5, GL scoped 1.1, KES 20,000 collected 1, HVC visit 0.5, module 1.5, call 0.25. Duka work takes no TA time. Duka Assistants (two per zone, a separate branch under the ZS) sell for cash and look after duka stock. They have their own priority set with its own weights: cash sales (KES 25,000 an hour), TMS validations (0.4 h each), inventory variances (1.25 h each), seed expiry risks (0.75 h each) and compliance visits (1 h each). Their plans go to the ZS for approval like a TA’s.</span></li></ul></div>' +
       '<div class="panel"><h3>Sample record: ' + esc(ta.name) + '</h3><p class="sub">One TA as the engine reads it.</p><pre><code>' + esc(compactJSON({ id: ta.id, name: ta.name, zone: ta.zoneId, territory: ta.territory, season: ta.season, due: ta.due, startOfWeek: ta.A0, headroom: ta.pool, dailyClients: ta.daily.clients, dailyRepaid: ta.daily.repaid, groups: ta.groups.slice(0, 2) })) + '</code></pre></div></div>' +
       '<p class="footer">All names, places and figures here are made up for the prototype. Regional priorities for Mount Kenya and Coast and Lower Western follow the style of the weekly notes; the other three regions are illustrative.</p>';
     return h;
@@ -2621,23 +2688,31 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     if (u.tas) return idsOf([u]);
     return [u.id];
   }
+  /* two workforces, two scores: TAs (credit sales and extension) on the TA set, Duka Assistants (cash sales) on the duka set */
   function scoreOf(u) {
     if (u.role === 'DA') return comp(S.region).byDA[u.id].score;
     return unitScore(idsUnder(u), S.day);
   }
+  function dasUnder(u) { var z = u.areas ? allZones(u) : u.zones ? u.zones : u.tas ? [u] : []; var o = []; z.forEach(function (x) { x.das.forEach(function (d) { o.push(d); }); }); return o; }
+  function dukaScoreOf(u) {
+    if (u.role === 'DA') return comp(S.region).byDA[u.id].score;
+    var d = dasUnder(u), c = comp(S.region); if (!d.length || !dprios().length) return null;
+    return sum(d, function (x) { return c.byDA[x.id].score; }) / d.length;
+  }
   function prioScore(u, p) {
     if (u.role === 'DA') return isDA(p) ? comp(S.region).byDA[u.id].calcs[p.id].paceProg * 100 : null;
+    if (isDA(p)) { var d = dasUnder(u), c = comp(S.region); return d.length ? sum(d, function (x) { return c.byDA[x.id].calcs[p.id].paceProg; }) / d.length * 100 : null; }
     return scoreAt(idsUnder(u), p, S.day);
   }
   function childrenOf(u) {
     if (u.areas) return u.areas;
     if (u.zones) return u.zones;
-    if (u.tas) return u.tas.concat(prios().some(isDA) ? u.das : []);
+    if (u.tas) return u.tas.concat(dprios().length ? u.das : []);
     return [];
   }
-  function weakest(u) {
+  function weakest(u, set) {
     var w = null, ws = 1e9;
-    prios().forEach(function (p) { var v = prioScore(u, p); if (v != null && v < ws) { ws = v; w = p; } });
+    (set || (u.role === 'DA' ? dprios() : prios())).forEach(function (p) { var v = prioScore(u, p); if (v != null && v < ws) { ws = v; w = p; } });
     return w ? { p: w, v: ws } : null;
   }
   function amt(metric, x) { return M[metric].unit === 'KES' ? withUnit(metric, x) : Math.round(x).toLocaleString('en-GB') + ' ' + (Math.round(x) === 1 ? M[metric].unit.replace(/s$/, '') : M[metric].unit); }
@@ -2645,48 +2720,55 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   function upTo() { return 'up to ' + DAYS_LONG[S.day]; }
   var DAYS_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+  function sayOf(v) { var st = statusFromScore(v); return st === 'on' ? 'on track' : st === 'slip' ? 'a little behind' : st === 'behind' ? 'behind' : 'well behind'; }
+  function scoreBox(label, v) { return '<div class="ou-score"><span class="sbl">' + label + '</span><span class="scn num">' + Math.round(v) + '</span>' + stateLine(v) + '</div>'; }
   function unitCard(u) {
-    var v = scoreOf(u), st = statusFromScore(v), w = weakest(u);
-    var say = st === 'on' ? 'On track for this week' : st === 'slip' ? 'A little behind this week' : st === 'behind' ? 'Behind this week' : 'Well behind this week';
+    var unitLv = !!(u.areas || u.zones || u.tas), v = scoreOf(u), dv = unitLv ? dukaScoreOf(u) : null, w = weakest(u), dw = unitLv && dv != null ? weakest(u, dprios()) : null;
+    var who = u.role === 'DA' ? 'Duka work is ' : unitLv ? 'TA work is ' : 'This territory is ';
+    var say = who + sayOf(v) + ', ' + upTo() + '.' + (w && w.v < 95 ? ' Most help needed on <b>' + esc(w.p.title) + '</b>.' : '');
+    if (dv != null) say += '<br>Duka work is ' + sayOf(dv) + '.' + (dw && dw.v < 95 ? ' Most help needed on <b>' + esc(dw.p.title) + '</b>.' : '');
     var h = '<section class="ou" aria-label="' + esc(levelOf(u)) + '"><div class="ou-main"><div class="ou-id"><span class="ou-lv">' + esc(levelOf(u)) + '</span><h2>' + esc(unitName(u)) + '</h2>' +
-      '<div class="ou-meta"><span><b>' + esc(personOf(u)) + '</b></span></div></div>' +
-      '<div class="ou-score"><span class="scn num">' + Math.round(v) + '</span>' + stateLine(v) + '</div></div>' +
-      '<p class="answer">' + say + ', ' + upTo() + '.' + (w && w.v < 95 ? ' Most help needed on <b>' + esc(w.p.title) + '</b>.' : '') + '</p></section>';
+      '<div class="ou-meta"><span><b>' + esc(personOf(u)) + '</b></span></div></div><div class="ou-scores">' +
+      scoreBox(u.role === 'DA' ? 'Duka' : 'TAs', v) + (dv != null ? scoreBox('Duka', dv) : '') + '</div></div>' +
+      '<p class="answer">' + say + '</p></section>';
     return h;
   }
   function prioLine(u, p) {
     var v = prioScore(u, p), m = M[p.metric];
     if (v == null) {
-      var z = DATA.byId[u.zoneId];
+      var z = DATA.byId[u.zoneId] || u;
       return '<li class="pl na"><div class="pl-t">' + pTag(p.metric) + '<b>' + esc(p.title) + '</b></div><p class="pl-s">Done by the Duka Assistants in ' + esc(z.name) + ': ' + z.das.map(function (o) { return esc(o.name); }).join(' and ') + '. Not part of this territory’s score.</p></li>';
     }
     var rows = u.role === 'DA' ? [comp(S.region).byDA[u.id]] : idsUnder(u).map(function (id) { return comp(S.region).byTA[id]; });
     var a = WP.aggregate(rows, p), st = statusFromScore(v);
-    var who = isDA(p) && u.role !== 'DA' ? ' Done by Duka Assistants.' : '';
+    var who = '';
     var left = rows.length === 1 ? Math.max(0, a.need - a.gain) : a.ask, by = ' by ' + DAYS_LONG[p.deadline];
     var sofar = (a.gain > a.need ? 'Done so far: ' + amt(p.metric, a.gain) + ', more than the ' + amt(p.metric, a.need) + ' needed in total.' : 'Done so far: ' + amt(p.metric, a.gain) + ' of ' + amt(p.metric, a.need) + '.') +
       (left <= 0.5 ? ' Nothing more is needed.' : rows.length === 1 ? ' Still to do' + by + ': ' + amt(p.metric, left) + '.' : ' Still owed' + by + ' by those behind: ' + amt(p.metric, left) + '.');
     return '<li class="pl"><div class="pl-t">' + pTag(p.metric) + '<b>' + esc(p.title) + '</b><span class="pl-n num">' + Math.round(v) + '</span>' + stateLine(v) + '</div>' +
       '<div class="oup-bar"><i class="' + fcls(st) + '" style="width:' + Math.min(100, v) + '%"></i></div>' +
       '<p class="pl-s">' + sofar + who + '</p>' +
-      '<details><summary>How is this worked out?</summary><p>' + esc(p.text) + '</p><p>Target: ' + esc(targetText(p)) + '. Weight ' + p.weight + '% of the plan.</p>' +
+      '<details><summary>How is this worked out?</summary><p>' + esc(p.text) + '</p><p>Target: ' + esc(targetText(p)) + '. Weight ' + p.weight + '% of the ' + (isDA(p) ? 'duka' : 'TA') + ' set.</p>' +
       '<p>By ' + DAYS_LONG[S.day] + ' about ' + amt(p.metric, a.expected) + ' should be done to keep pace for the deadline. The number (' + Math.round(v) + ') is how much of that is done, out of 100.</p></details></li>';
   }
   function prioList(u) {
-    var l = prios().filter(function (p) { return u.role === 'DA' ? isDA(p) : true; });
-    return '<section class="sec"><h2>This week’s priorities</h2><ul class="plist2">' + l.map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
+    var ta = '<section class="sec"><h2>' + (u.role === 'DA' ? 'Duka priorities' : 'TA priorities') + '</h2><p class="sub">' + (u.role === 'DA' ? 'Cash sales and stock at the dukas. Weights total 100.' : 'Credit sales and extension. Weights total 100.') + '</p><ul class="plist2">' +
+      (u.role === 'DA' ? dprios() : prios()).map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
+    if (u.role === 'DA' || !(u.areas || u.zones || u.tas) || !dprios().length) return ta;
+    return ta + '<section class="sec"><h2>Duka priorities</h2><p class="sub">Done by the Duka Assistants: cash sales and stock at the dukas. A separate set with its own weights.</p><ul class="plist2">' + dprios().map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
   }
   function childRow(c) {
-    var v = scoreOf(c), w = weakest(c);
-    return '<li><button class="crow" data-act="goto" data-id="' + c.id + '"><span class="cr-n"><b>' + esc(unitName(c)) + '</b><small>' + esc(personOf(c)) + (w && w.v < 82 ? ' · most behind on ' + esc(w.p.title) : '') + '</small></span><span class="cr-s num">' + Math.round(v) + '</span>' + stateLine(v) + '<span class="cr-go" aria-hidden="true">›</span></button></li>';
+    var v = scoreOf(c), w = weakest(c), dv = c.areas || c.zones || c.tas ? dukaScoreOf(c) : null;
+    var two = dv != null ? '<span class="cr-two"><span><small>TAs</small> <b class="num">' + Math.round(v) + '</b></span><span><small>Duka</small> <b class="num">' + Math.round(dv) + '</b></span></span>' + stateLine(Math.min(v, dv)) : '<span class="cr-s num">' + Math.round(v) + '</span>' + stateLine(v);
+    return '<li><button class="crow" data-act="goto" data-id="' + c.id + '"><span class="cr-n"><b>' + esc(unitName(c)) + '</b><small>' + esc(personOf(c)) + (w && w.v < 82 ? ' · most behind on ' + esc(w.p.title) : '') + '</small></span>' + two + '<span class="cr-go" aria-hidden="true">›</span></button></li>';
   }
   function childList(u) {
     var kids = childrenOf(u); if (!kids.length) return '';
     var terr = kids.filter(function (c) { return c.role !== 'DA'; }), das = kids.filter(function (c) { return c.role === 'DA'; });
     var lv = u.areas ? 'Areas' : u.zones ? 'Zones' : 'Territories';
     var h = '<section class="sec"><h2>' + lv + ' in ' + esc(u.name) + '</h2><p class="sub">Lowest first. Tap one to open it.</p><ul class="clist">' +
-      terr.slice().sort(function (a, b) { return scoreOf(a) - scoreOf(b); }).map(childRow).join('') + '</ul>';
-    if (das.length) h += '<h3 class="sec2">Duka Assistants in ' + esc(u.name) + '</h3><ul class="clist">' + das.map(childRow).join('') + '</ul>';
+      terr.slice().sort(function (a, b) { var da = dukaScoreOf(a), db = dukaScoreOf(b); return Math.min(scoreOf(a), da == null ? 1e9 : da) - Math.min(scoreOf(b), db == null ? 1e9 : db); }).map(childRow).join('') + '</ul>';
+    if (das.length) h += '<h3 class="sec2">Duka Assistants in ' + esc(u.name) + '</h3><ul class="clist">' + das.slice().sort(function (a, b) { return scoreOf(a) - scoreOf(b); }).map(childRow).join('') + '</ul>';
     return h + '</section>';
   }
   function waitingHTML() {
@@ -2715,9 +2797,9 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     return h;
   }
   function daHome(o) {
-    var r = comp(S.region).byDA[o.id];
-    var h = unitCard(o) + prioList(o);
-    h += '<section class="sec"><h2>' + (S.role === 'da' ? 'Your plan' : 'The plan') + ' for the rest of the week</h2>' + dayBlocks(r.plan.days) + '</section>';
+    S.ta = o.id; S.zone = o.zoneId;
+    var r = comp(S.region).byDA[o.id], h = unitCard(o) + prioList(o);
+    h += S.role === 'da' ? planSection(r, dprios()) : '<section class="sec"><h2>The plan for the rest of the week</h2><div class="planhd">' + planChip(o.id) + '</div>' + dayBlocks(effDays(peekPlan(o.id) || {}, r)) + '</section>';
     h += '<section class="sec"><h2>' + (S.role === 'da' ? 'Your dukas' : 'Dukas') + '</h2><ul class="clist">' + o.dukas.map(function (d) { return '<li class="crow static"><span class="cr-n"><b>' + esc(d.name) + '</b><small>' + esc(d.village) + '</small></span></li>'; }).join('') + '</ul></section>';
     return h;
   }
@@ -2728,18 +2810,34 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     if (!u.areas && !u.zones && !u.tas) return territoryHome(u);
     return unitCard(u) + waitingHTML() + prioList(u) + childList(u);
   }
+  function dukaSetHTML() {
+    var l = dprios(), ro = S.role !== 'rm', tot = sum(l, function (p) { return p.weight; });
+    var h = '<section class="panel sec dset"><h2>Duka priorities</h2><p class="sub" style="margin:4px 0 12px">For the Duka Assistants, a separate workforce that sells for cash at the dukas. Its weights total 100 on their own and split a Duka Assistant’s time. ' + (ro ? 'Set by the RM.' : 'Change a measure, target, deadline or weight.') + '</p>';
+    h += '<div class="scroll"><table><thead><tr><th>Priority</th><th>Measure</th><th class="r">Target each</th><th>By</th><th class="r">Weight</th>' + (ro ? '' : '<th></th>') + '</tr></thead><tbody>';
+    l.forEach(function (p, i) {
+      if (ro) { h += '<tr><td>' + pTag(p.metric) + esc(p.title) + '<div class="muted" style="font-size:13px">' + esc(p.text) + '</div></td><td>' + esc(M[p.metric].label) + '</td><td class="r n">' + amt(p.metric, p.target) + '</td><td>' + DAYS[p.deadline] + '</td><td class="r n">' + p.weight + '%</td></tr>'; return; }
+      h += '<tr><td><input type="text" data-df="title" data-di="' + i + '" value="' + esc(p.title) + '" aria-label="Priority name"></td><td><select data-df="metric" data-di="' + i + '" aria-label="Measure">' +
+        Object.keys(M).filter(function (k) { return M[k].owner === 'DA'; }).map(function (k) { return '<option value="' + k + '"' + (k === p.metric ? ' selected' : '') + '>' + esc(M[k].label) + '</option>'; }).join('') + '</select></td>' +
+        '<td class="r"><input type="number" min="0" data-df="target" data-di="' + i + '" value="' + p.target + '" aria-label="Target each" style="width:110px"></td>' +
+        '<td><select data-df="deadline" data-di="' + i + '" aria-label="Deadline">' + DAYS.map(function (d, j) { return '<option value="' + j + '"' + (j === p.deadline ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></td>' +
+        '<td class="r"><input type="number" min="0" max="100" data-df="weight" data-di="' + i + '" value="' + p.weight + '" aria-label="Weight" style="width:70px"></td><td><button class="btn small" data-act="dremove" data-i="' + i + '"' + (l.length <= 1 ? ' disabled' : '') + '>Remove</button></td></tr>';
+    });
+    h += '</tbody><tfoot><tr><td colspan="4"><b>Total</b></td><td class="r n"><span class="total ' + (tot === 100 ? 'good' : 'bad') + '">' + tot + '%</span></td>' + (ro ? '' : '<td></td>') + '</tr></tfoot></table></div>';
+    if (!ro) h += '<div class="planhd" style="margin-top:10px">' + (tot !== 100 ? '<span class="note warn">The duka weights total ' + tot + '%. They must total 100.</span>' : '') + '<button class="btn small" data-act="dbalance">Balance to 100</button><button class="btn small" data-act="dadd"' + (l.length >= 5 ? ' disabled' : '') + '>Add a duka priority</button><button class="btn small" data-act="dreset">Reset</button></div>';
+    return h + '</section>';
+  }
   function viewPrioMerged() {
     if (S.role === 'rm') {
       var l = waitingAcc();
-      return (l.length ? proposalsHTML(l, 'Weight changes waiting for you', 'An AC has asked to change the time split for their area.') : '') + viewPriorities() +
+      return (l.length ? proposalsHTML(l, 'Weight changes waiting for you', 'An AC has asked to change the time split for their area.') : '') + viewPriorities() + dukaSetHTML() +
         '<details class="sec"><summary>Who has accepted the priorities</summary>' + statusTable(region(), null) + '</details>';
     }
     if (S.role === 'ac' || S.role === 'zs') {
       var unit = S.role === 'ac' ? sArea() : sZone(), h = unitAcceptHTML(unit);
       if (S.role === 'ac') { var zl = waitingAcc(); if (zl.length) h += proposalsHTML(zl, 'Weight changes waiting for you', 'A ZS in ' + unit.name + ' has asked to change the time split for their zone.'); }
-      return h + '<details class="sec"><summary>Each priority in full</summary>' + viewPriorities() + '</details>';
+      return h + '<details class="sec"><summary>Each TA priority in full</summary>' + viewPriorities() + '</details>' + dukaSetHTML();
     }
-    return viewPriorities();
+    return S.role === 'da' ? dukaSetHTML() : viewPriorities();
   }
 
   var VIEWS = { home: viewHome, overview: viewOverview, priorities: viewPrioMerged, cascade: viewCascade, review: viewReview, trend: viewTrend, accept: viewAccept, team: viewTeam, week: viewWeek, data: viewData };
@@ -2833,7 +2931,7 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   }
   function setTab(t) { leaveEdit(); S.tab = t; render(); window.scrollTo(0, 0); }
 
-  function defaultTarget(k) { return { clients: 8, groups: 8, scoped: 70, repaid: 66, hvc: 20, training: 3, glcalls: 10, duka: 25 }[k]; }
+  function defaultTarget(k) { return { clients: 8, groups: 8, scoped: 70, repaid: 66, hvc: 20, training: 3, glcalls: 10, duka: 10, dsales: 150000, tms: 18, invvar: 5, expiry: 6 }[k]; }
 
   function onClick(e) {
     var b = e.target.closest('button'); if (!b) return;
@@ -2842,6 +2940,11 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     var act = b.dataset.act; if (!act) return;
     if (act === 'goto') { leaveEdit(); S.at = b.dataset.id; var gu = DATA.byId[S.at]; if (gu.zoneId) S.zone = gu.zoneId; if (gu.tas) S.zone = gu.id; S.tab = 'home'; render(); window.scrollTo(0, 0); return; }
     if (act === 'wkToggle') { S.showWk = !S.showWk; return render(); }
+    var dl0 = dprios();
+    if (act === 'dremove') { dl0.splice(+b.dataset.i, 1); return render(); }
+    if (act === 'dbalance') { var dt = sum(dl0, function (p) { return p.weight; }); dl0.forEach(function (p) { p.weight = dt ? Math.round(p.weight / dt * 100) : Math.round(100 / dl0.length); }); dl0[0].weight += 100 - sum(dl0, function (p) { return p.weight; }); return render(); }
+    if (act === 'dadd') { var used = dl0.map(function (p) { return p.metric; }), nk = Object.keys(M).filter(function (k) { return M[k].owner === 'DA' && used.indexOf(k) < 0; })[0] || 'duka'; S.uid++; dl0.push({ id: 'dn' + S.uid, metric: nk, title: M[nk].label, text: 'New duka priority for the week.', target: defaultTarget(nk), deadline: 4, weight: 0, norm: 0, aud: {} }); return render(); }
+    if (act === 'dreset') { S.dprios[S.region] = WP.defaultDukaPriorities(S.region); return render(); }
     if (act === 'goRegion') { S.region = b.dataset.id; S.zone = null; S.ta = null; S.prio = null; return setTab('cascade'); }
     if (act === 'goPrios') { S.region = b.dataset.id; S.zone = null; S.ta = null; S.prio = null; return setTab('priorities'); }
     if (act === 'goAccept') return setTab('accept');
@@ -2934,11 +3037,11 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     }
     if (act === 'addBlock') {
       pl = getPlan(ta0); if (!pl.days) return;
-      var apid = $('addPid').value, aday = +$('addDay').value, ap = pById(apid), dd = pl.days.filter(function (x) { return x.i === aday; })[0];
+      var apid = $('addPid').value, aday = +$('addDay').value, ap = pById(apid, setOf(ta0)), dd = pl.days.filter(function (x) { return x.i === aday; })[0];
       if (!dd) return;
       if (dayHours(dd) + 0.5 > dd.cap + 1e-9) { S.err[ta0] = dd.label + ' is full. Remove or shorten something there first.'; return render(); }
       S.uid++;
-      dd.blocks.push({ bid: 'b' + S.uid, pid: apid, title: ap.title, metric: ap.metric, hours: 0.5, units: 0.5 / M[ap.metric].hrs, text: 'Your own addition: time on ' + ap.title + '.', reasons: ['Added by the TA'], part: 'Added', overdue: false, added: true, edited: false, rec: 0 });
+      dd.blocks.push({ bid: 'b' + S.uid, pid: apid, title: ap.title, metric: ap.metric, hours: 0.5, units: 0.5 / M[ap.metric].hrs, text: 'Your own addition: time on ' + ap.title + '.', reasons: [DATA.byId[ta0].role === 'DA' ? 'Added by the Duka Assistant' : 'Added by the TA'], part: 'Added', overdue: false, added: true, edited: false, rec: 0 });
       S.err[ta0] = ''; return render();
     }
     if (act === 'approve' || act === 'return') {
@@ -2985,6 +3088,13 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   }
   function onChange(e) {
     var t = e.target;
+    if (t.dataset.df) {
+      var dp = dprios()[+t.dataset.di], df = t.dataset.df;
+      if (df === 'metric') { if (dp.title === M[dp.metric].label) dp.title = M[t.value].label; dp.metric = t.value; dp.target = defaultTarget(t.value); }
+      else if (df === 'title') dp.title = t.value || M[dp.metric].label;
+      else dp[df] = Math.max(0, Math.round(Number(t.value) || 0));
+      return render();
+    }
     if (t.dataset.move) {
       var pl2 = getPlan(S.ta), fb2 = pl2.days ? findBlock(pl2, t.dataset.move) : null, to = t.value === '' ? null : +t.value;
       if (!fb2 || to === null) return render();

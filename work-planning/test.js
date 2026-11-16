@@ -101,7 +101,7 @@ ok(Math.abs(d2.plan.items[0].budget - res.rows.find(r => r.ta.name === 'Doreen A
   const reg = data.regions[0], pr = WP.defaultPriorities(reg.id), r5 = WP.computeRegion(reg, pr, 5);
   const a = WP.reviewUnit(r5.rows, pr), b = WP.reviewUnit(r5.rows, pr);
   ok(JSON.stringify(a.items.map(i => i.change)) === JSON.stringify(b.items.map(i => i.change)), 'review is deterministic');
-  ok(a.items.length === pr.length && a.others.length === Object.keys(WP.METRICS).length - new Set(pr.map(p => p.metric)).size, 'review covers priorities and the other measures');
+  ok(a.items.length === pr.length && a.others.length === Object.keys(WP.METRICS).filter(k => !WP.ownedByDA(k)).length - new Set(pr.map(p => p.metric)).size, 'review covers priorities and the other measures');
   console.log('   review', a.items.map(i => i.p.title + ' ' + (i.achieved * 100).toFixed(0) + '% of need, met ' + i.met + '/' + i.n + ', change ' + (i.change * 100).toFixed(0) + '% ' + i.verdict).join(' | '), '| prio avg ' + (a.prioChange * 100).toFixed(0) + '% other avg ' + (a.otherChange * 100).toFixed(0) + '%');
   const sums = WP.reviewUnit(r5.rows.slice(0, 5), pr);
   ok(sums.items.every(i => i.met <= i.n), 'met counts are within the unit size');
@@ -126,17 +126,26 @@ ok(Math.abs(d2.plan.items[0].budget - res.rows.find(r => r.ta.name === 'Doreen A
   ok(a.byTA[other].plan.items[0].budget === b.byTA[other].plan.items[0].budget, 'other zones are unaffected');
 }
 
-// hierarchy and Duka Assistants
+// hierarchy and Duka Assistants: their own priority set, weights, score and plan
 {
-  const reg = data.regions[0], pr = WP.defaultPriorities(reg.id), r2 = WP.computeRegion(reg, pr, 2);
+  const reg = data.regions[0], pr = WP.defaultPriorities(reg.id), dk = WP.defaultDukaPriorities(reg.id), r2 = WP.computeRegion(reg, pr, 2, { duka: dk });
   ok(data.tas.every(t => t.territory && t.zoneId && t.areaId && t.regionId), 'every TA holds one territory inside a zone, area and region');
   ok(data.regions.every(rg => rg.areas.every(a => a.zones.every(z => z.das.length === 2 && z.das.every(d => d.role === 'DA' && d.dukas.length === 6)))), 'two Duka Assistants per zone, each with their dukas');
-  ok(data.regions.every(rg => WP.defaultPriorities(rg.id).some(p => WP.ownedByDA(p.metric))), 'every region has a duka priority by default');
+  for (const rg of data.regions) {
+    const f = WP.defaultPriorities(rg.id), d = WP.defaultDukaPriorities(rg.id);
+    ok(f.every(p => !WP.ownedByDA(p.metric)) && d.length >= 3 && d.every(p => WP.ownedByDA(p.metric)), rg.name + ': TA and duka sets are separate');
+    ok(WP.sum(d, p => p.weight) === 100, rg.name + ': duka weights sum to 100');
+  }
   const da = r2.dRows[0];
+  ok(dk.every(p => da.calcs[p.id]) && Object.keys(da.calcs).length === dk.length, 'a Duka Assistant is scored on the duka set only');
+  const exp = WP.sum(dk, p => p.weight * da.calcs[p.id].paceProg) / 100 * 100;
+  ok(Math.abs(da.score - exp) < 1e-9, 'Duka Assistant score uses the duka weights');
   ok(da.plan && da.plan.days.length === 3 && da.plan.days.every(d => d.used <= d.cap + 0.51), 'a Duka Assistant gets a week plan within capacity');
-  ok(da.plan.days.some(d => d.blocks.some(b => b.metric === 'duka' && /starting with/.test(b.text))), 'Duka Assistant blocks name a duka');
+  ok(da.plan.days.some(d => d.blocks.some(b => b.metric === 'dsales' && /for cash/.test(b.text))), 'Duka Assistant plans include cash sales at named dukas');
   const doreenRow = r2.rows.find(r => r.ta.name === 'Doreen Achieng');
-  ok(doreenRow.plan.days.every(d => d.blocks.every(b => b.metric !== 'duka')), 'TAs are never planned duka work');
+  ok(Object.keys(doreenRow.calcs).length === pr.length && doreenRow.plan.days.every(d => d.blocks.every(b => !b.metric || !WP.ownedByDA(b.metric))), 'TAs are never scored or planned on duka work');
+  const base = WP.computeRegion(reg, pr, 2);
+  ok(Math.abs(base.rows[0].score - r2.rows[0].score) < 1e-9, 'the duka set does not change TA scores');
 }
 
 console.log(fails ? '\n' + fails + ' FAILED' : '\nall passed');

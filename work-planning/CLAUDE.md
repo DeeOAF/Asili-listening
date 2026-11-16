@@ -8,7 +8,9 @@ Single-file HTML prototype. `node build.js` stitches src/template.html + style.c
 - DRMs are treated as RMs. YFOs are excluded. Duka Assistants (DAs, 2 per zone) are a separate branch under the ZS, beside the territories.
 - Order of work in the engine: (1) per TA and priority: requirement, delivered, pace line, distance (calcTA); (2) share a zone gap among TAs who are behind for season targets (allocateZone); (3) areas and zones are sums of TA numbers (aggregate); (4) only then turn each TA's ask into hours (planTA): weights over unmet priorities, spare hours to ageing check-ins.
 - Score = per TA min(1, delivered / pace-line expectation), weighted by the RM's weights over the priorities that unit is accountable for. Bands: on track >= 95, slipping >= 82, behind >= 60, critical < 60.
-- Duka pillar priorities are owned by Duka Assistants. Every region has one by default. A DA gets a score and a week plan from the duka priorities only. A territory's score and plan exclude them; zone, area and region include them at the RM's weight.
+- Two workforces, two priority sets. TAs (credit sales and extension) work to the RM's TA set; Duka Assistants (cash sales at the dukas) work to the RM's separate duka set (S.dprios, WP.defaultDukaPriorities, passed as computeRegion opts.duka). Each set's weights total 100 on their own. Duka measures: dsales (cash sales, KES), tms (TMS validations), invvar (inventory variances resolved), expiry (seed expiry risks cleared), duka (compliance visits).
+- Units above a territory show two scores, TAs and Duka, never one blended number. A territory has only the TA score; a DA only the duka score.
+- DA plans use the same accept / edit / send-to-ZS approval flow as TA plans. AC/ZS weight changes apply to the TA set only.
 - "Met target" for areas, zones and territories = 95% of the pace line on every priority the unit is accountable for.
 - AC (area) and ZS (zone) may change weights only: +/-20 points, total 100, reason required, approved one level up. Scores stay on the RM's weights.
 - Roles: Viewing as RM / AC / ZS / TA / DA scopes every view; priorities are read-only below the RM.

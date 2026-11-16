@@ -5,7 +5,9 @@
   var sum = WP.sum;
 
   var S = { role: 'rm', sArea: null, sZone: null, sTa: null, sDa: null, at: null, showWk: false, tab: 'home', region: 'mkc', day: 2, prio: null, zone: null, ta: null, open: {}, prios: {}, uid: 10, wk: 1, acc: {}, accRole: 'zs', accArea: null, accEdit: null, accErr: {}, tu: null, tlevel: 'area', rvArea: null, rvZone: null, wkPrios: {}, wkPub: {}, plans: {}, edit: false, editTa: null, whatif: null, level: 'region', err: {} };
-  DATA.regions.forEach(function (r) { S.prios[r.id] = WP.defaultPriorities(r.id); });
+  S.dprios = {};
+  DATA.regions.forEach(function (r) { S.prios[r.id] = WP.defaultPriorities(r.id); S.dprios[r.id] = WP.defaultDukaPriorities(r.id); });
+  function dprios(regId) { return S.dprios[regId || S.region]; }
 
   var SHORT = { clients: 'Clients', groups: 'Groups', scoped: 'Scoping', repaid: 'Repay', hvc: 'HVC', training: 'Training', glcalls: 'Calls', duka: 'Duka' };
   var TABS = [['overview', 'Regions'], ['priorities', 'RM priorities'], ['accept', 'Accept priorities'], ['cascade', 'Cascade'], ['review', 'Scorecards'], ['trend', 'Week on week'], ['team', 'Zone team'], ['week', 'TA week'], ['data', 'Data spec']];
@@ -75,8 +77,8 @@
 
   var cache = {};
   function comp(regId) {
-    var zw = zoneWeights(regId), key = regId + '|' + S.day + '|' + JSON.stringify(S.prios[regId]) + '|' + JSON.stringify(zw);
-    if (!cache[key]) { var k = Object.keys(cache); if (k.length > 40) cache = {}; cache[key] = WP.computeRegion(DATA.byId[regId], S.prios[regId], S.day, { zoneWeights: zw }); }
+    var zw = zoneWeights(regId), key = regId + '|' + S.day + '|' + JSON.stringify(S.prios[regId]) + '|' + JSON.stringify(S.dprios[regId]) + '|' + JSON.stringify(zw);
+    if (!cache[key]) { var k = Object.keys(cache); if (k.length > 40) cache = {}; cache[key] = WP.computeRegion(DATA.byId[regId], S.prios[regId], S.day, { zoneWeights: zw, duka: S.dprios[regId] }); }
     return cache[key];
   }
 
@@ -145,9 +147,10 @@
   /* ---------- plan approval workflow ---------- */
   var PLAN_LABEL = { proposed: ['Recommended', 'c-on'], active: ['Active', 'c-done'], pending: ['Waiting for ZS', 'c-slip'], returned: ['Returned', 'c-behind'] };
   function fmtH(h) { return (Math.round(h * 100) / 100).toFixed(2).replace(/\.?0+$/, ''); }
-  function rowOf(taId) { return comp(DATA.byId[taId].regionId).byTA[taId]; }
+  function rowOf(taId) { var c = comp(DATA.byId[taId].regionId); return c.byTA[taId] || c.byDA[taId]; }
+  function setOf(id) { return DATA.byId[id].role === 'DA' ? dprios(DATA.byId[id].regionId) : S.prios[DATA.byId[id].regionId]; }
   function planKey(taId) {
-    var l = S.prios[DATA.byId[taId].regionId];
+    var l = setOf(taId);
     return taId + '|' + S.day + '|' + JSON.stringify(l.map(function (p) { return [p.id, p.metric, p.target, p.deadline, p.weight, p.norm]; })) + '|' + JSON.stringify(zoneWeights(DATA.byId[taId].regionId)[DATA.byId[taId].zoneId] || null);
   }
   function peekPlan(taId) { return S.plans[planKey(taId)] || null; }
@@ -423,11 +426,11 @@
   }
   function approvalsHTML(reg, z, res) {
     var list = pendingIn(reg.id, z.id), all = pendingIn(reg.id), others = all.length - list.length;
-    var h = '<div class="panel sec"><h3>Plans waiting for your approval</h3><p class="sub" style="margin-bottom:8px">A TA who changes the recommended plan sends it to the ZS. It stays inactive until you approve it. You are seeing this as ' + esc(z.zs) + '.</p>';
+    var h = '<div class="panel sec"><h3>Plans waiting for your approval</h3><p class="sub" style="margin-bottom:8px">A TA or Duka Assistant who changes the recommended plan sends it to the ZS. It stays inactive until you approve it. You are seeing this as ' + esc(z.zs) + '.</p>';
     if (!list.length) h += '<p class="empty">Nothing is waiting in this zone.' + (others > 0 ? ' ' + others + ' plan' + (others > 1 ? 's are' : ' is') + ' waiting in other zones of this region: ' + zoneButtons(all, z.id) : ' When a TA edits a plan and sends it, it appears here.') + '</p>';
     list.forEach(function (p) {
-      var row = res.byTA[p.taId], im = impactOf(row, p.days), cut = im.rows.filter(function (x) { return x.now < x.rec - 0.05; }), more = im.rows.filter(function (x) { return x.now > x.rec + 0.05; });
-      h += '<div class="appr"><div class="ahead"><b>' + esc(row.ta.name) + '</b><span class="muted">' + esc(row.ta.territory) + '</span>' + chip(row.status) + '</div>' +
+      var row = rowOf(p.taId), im = impactOf(row, p.days), cut = im.rows.filter(function (x) { return x.now < x.rec - 0.05; }), more = im.rows.filter(function (x) { return x.now > x.rec + 0.05; });
+      h += '<div class="appr"><div class="ahead"><b>' + esc(row.ta.name) + '</b><span class="muted">' + esc(row.isDA ? 'Duka Assistant' : 'Territory ' + row.ta.territory) + '</span>' + chip(row.status) + '</div>' +
         '<p><b>Reason:</b> ' + esc(p.reason) + '</p>' +
         '<p class="sub">' + (cut.length ? 'Less time on ' + cut.map(function (x) { return esc(x.it.p.title) + ' (' + fmtH(x.rec) + ' → ' + fmtH(x.now) + ' h)'; }).join(', ') + '. ' : '') + (more.length ? 'More time on ' + more.map(function (x) { return esc(x.it.p.title) + ' (' + fmtH(x.rec) + ' → ' + fmtH(x.now) + ' h)'; }).join(', ') + '. ' : '') + 'Coverage of the RM’s targets goes from ' + Math.round(im.recCov) + ' to ' + Math.round(im.cov) + '.</p>';
       if (im.flags.length) h += '<ul class="flags">' + im.flags.map(function (f) { return '<li class="' + f.level + '">' + esc(f.text) + '</li>'; }).join('') + '</ul>';
@@ -647,7 +650,7 @@
     }
     h += '<div class="banner ' + (editing ? 'pending' : draft ? 'pending' : plan.status) + '"><div class="bhead"><span class="chip ' + cls + '">' + st + '</span><span class="sub">' + esc(msg) + '</span></div>' + (btns ? '<div class="bact">' + btns + '</div>' : '') + '</div>';
     if (S.err[r.ta.id]) h += '<p class="note warn" role="alert" style="margin-top:10px">' + esc(S.err[r.ta.id]) + '</p>';
-    h += '<p class="sub" style="margin-top:10px">Blocks, not a clock. The order follows the rules: deadlines that have passed, then weight. Group choices come from the ranking and the six-week ageing rule.</p><div class="days" style="margin-top:10px">';
+    h += '<p class="sub" style="margin-top:10px">Blocks, not a clock. The order follows the rules: deadlines that have passed, then weight. ' + (r.isDA ? 'Dukas are taken in turn from your list.' : 'Group choices come from the ranking and the six-week ageing rule.') + '</p><div class="days" style="margin-top:10px">';
     days.forEach(function (day) {
       var used = dayHours(day);
       h += '<article class="panel day"><h4><span>' + day.label + ' ' + day.date + '</span><span class="muted num">' + fmtH(used) + ' of ' + day.cap + ' h</span></h4>';
@@ -736,7 +739,7 @@
         var a = it.agg;
         h += '<tr><td><span class="sw pc' + Math.min(i, 4) + '"></span>' + esc(it.p.title) + '</td><td class="r n">' + it.weight + '%</td><td class="r n">' + (it.share == null ? '–' : Math.round(it.share) + '%') + '</td><td class="r n"><b>' + (it.delta == null ? '–' : (it.delta > 0.5 ? '+' : it.delta < -0.5 ? '−' : '') + Math.abs(Math.round(it.delta)) + ' pts') + '</b></td><td class="r n">' + (it.daOwned ? '–' : fmtH(it.needH) + ' h') + '</td><td class="r n">' + (it.daOwned ? 'Duka Assistants' : it.metCount + ' of ' + fo.n) + '</td><td>' + chip(a.status) + ' <span class="sub">' + withUnit(it.p.metric, a.distance, true) + '</span></td></tr>';
       });
-      h += '</tbody></table></div><p class="sub" style="margin-top:8px">“Time the data calls for” is each TA’s planned hours for the rest of the week, added up and shown as a share. It is the weights, adjusted for who is ahead, who is behind and what is already met.' + (l.some(isDA) ? ' Duka compliance is carried by Duka Assistants, so it takes no TA time and the shares are worked out over the other priorities.' : '') + '</p></div>';
+      h += '</tbody></table></div><p class="sub" style="margin-top:8px">“Time the data calls for” is each TA’s planned hours for the rest of the week, added up and shown as a share. It is the weights, adjusted for who is ahead, who is behind and what is already met.' + (l.some(isDA) ? ' Duka work belongs to the Duka Assistants’ own set, so it takes no TA time.' : '') + '</p></div>';
       return h;
     }
 
@@ -765,8 +768,8 @@
   /* scorecards: one card per priority at every level, with the score building through the week */
   var rvDay = {};
   function resDay(d) {
-    var key = S.region + '|' + d + '|' + JSON.stringify(S.prios[S.region]);
-    if (!rvDay[key]) { var k = Object.keys(rvDay); if (k.length > 40) rvDay = {}; rvDay[key] = WP.computeRegion(region(), S.prios[S.region], d); }
+    var key = S.region + '|' + d + '|' + JSON.stringify(S.prios[S.region]) + '|' + JSON.stringify(dprios());
+    if (!rvDay[key]) { var k = Object.keys(rvDay); if (k.length > 40) rvDay = {}; rvDay[key] = WP.computeRegion(region(), S.prios[S.region], d, { duka: dprios() }); }
     return rvDay[key];
   }
   var SC_LABEL = { on: 'On track', slip: 'Slipping', behind: 'Behind', critical: 'Well behind' };
@@ -808,7 +811,7 @@
   }
   function idsOf(zones) { var o = []; zones.forEach(function (z) { z.tas.forEach(function (t) { o.push(t.id); }); }); return o; }
   function scorecardsHTML(reg, l, selId) {
-    if (S.role === 'ta') { var tt = sTa(); return '<div class="sec"><h2>Scorecards</h2><p class="sub" style="margin:4px 0 12px">One card per priority for your territory. The score is how much of the pace line you delivered; the bars show it at the end of each day so far. Duka compliance is carried by Duka Assistants and is not part of your score.</p>' + unitBlock('Territory', tt.territory, 'TA ' + tt.name, [tt.id], l, selId) + '</div>'; }
+    if (S.role === 'ta') { var tt = sTa(); return '<div class="sec"><h2>Scorecards</h2><p class="sub" style="margin:4px 0 12px">One card per priority for your territory. The score is how much of the pace line you delivered; the bars show it at the end of each day so far. Duka work belongs to the Duka Assistants’ own set and is not part of your score.</p>' + unitBlock('Territory', tt.territory, 'TA ' + tt.name, [tt.id], l, selId) + '</div>'; }
     var area = S.rvArea && DATA.byId[S.rvArea] && DATA.byId[S.rvArea].regionId === reg.id ? DATA.byId[S.rvArea] : null;
     var zone = area && S.rvZone && DATA.byId[S.rvZone] && DATA.byId[S.rvZone].areaId === area.id ? DATA.byId[S.rvZone] : null;
     if (S.role === 'ac') { area = reg.areas[0]; if (zone && zone.areaId !== area.id) zone = null; }
@@ -958,7 +961,7 @@
       h += '<tr><td>' + w.label + (w.live ? ' <span class="chip c-on">' + (S.day < 5 ? 'in progress' : 'latest') + '</span>' : '') + '</td><td>' + w.prios.map(function (p) { return '<span class="wchip">' + pTag(p.metric) + esc(p.title) + ' ' + p.weight + '%</span>'; }).join(' ') + '</td>' +
         '<td><div class="prog" style="margin:0"><div class="fill ' + fcls(statusFromScore(w.score)) + '" style="width:' + w.score + '%"></div></div><span class="sub"><b>' + Math.round(w.score) + '</b></span></td>' + lvCell(w.lv.areas) + lvCell(w.lv.zones) + lvCell(w.lv.tas) + '<td class="r n">' + w.hits + ' of ' + w.n + '</td><td class="r n"><b>' + (prev == null ? '–' : ptsTxt(w.score - prev)) + '</b></td></tr>';
     }
-    h += '</tbody></table></div><p class="sub" style="margin-top:8px"><b>Met</b> means the unit reached 95% of the pace line on every priority it is accountable for that week. A territory is not accountable for Duka compliance; zones, areas and the region are, through their Duka Assistants. A dash means that level is not part of this view.</p></div>';
+    h += '</tbody></table></div><p class="sub" style="margin-top:8px"><b>Met</b> means the unit reached 95% of the pace line on every priority it is accountable for that week. A territory is not accountable for duka work, which has its own set for the Duka Assistants. A dash means that level is not part of this view.</p></div>';
     h += '<div class="panel sec"><h3>Pillars each week’s priorities targeted</h3><p class="sub" style="margin-bottom:8px">Each priority belongs to a pillar. A cell shows the unit’s score on the priorities that targeted that pillar in that week (weight-averaged if there were two). An empty cell means the pillar was not a priority that week. Output lift compares the pillar’s output in the weeks it was targeted against the weeks it was not.</p><div class="scroll"><table class="pgrid"><thead><tr><th>Pillar</th>' + U.weeks.map(function (w) { return '<th class="c">' + esc(w.label) + (w.live ? '<span class="live">now</span>' : '') + '</th>'; }).join('') + '<th class="r">Weeks targeted</th><th class="r">Avg score</th><th class="r">Output lift</th></tr></thead><tbody>';
     U.pillars.forEach(function (pl) {
       h += '<tr' + (pl.weeksPrio === 0 ? ' class="muted"' : '') + '><td><span class="ptag pt-' + pl.key + '">' + esc(WP.PILLARS[pl.key].label) + '</span>' + (pl.owner === 'DA' ? ' <span class="muted" style="font-size:12px">Duka Assistants</span>' : '') + '</td>';
@@ -1153,7 +1156,7 @@
       '<li><b>Status</b><span>Distance as a share of need: 8% or more above is ahead, within 8% on pace, to 25% below slipping, to 50% behind, beyond that critical.</span></li>' +
       '<li><b>Assigned</b><span>For trajectory priorities, the zone’s remaining gap is shared between TAs who are behind in proportion to headroom, capped by each TA’s own shortfall. Rate and per-person priorities are not shared.</span></li>' +
       '<li><b>Score</b><span>Sum of weight times progress against pace, capped at 100% per priority.</span></li>' +
-      '<li><b>Time</b><span>38 productive hours a week (7 a day, 3 on Saturday). Budget is hours times weight. Hours per unit: client 0.6, group 4.5, GL scoped 1.1, KES 20,000 collected 1, HVC visit 0.5, module 1.5, call 0.25. Duka compliance visits take no TA time: they belong to the zone’s Duka Assistants (two per zone in this prototype, about 5 visits a day each), who are a separate branch under the ZS.</span></li></ul></div>' +
+      '<li><b>Time</b><span>38 productive hours a week (7 a day, 3 on Saturday). Budget is hours times weight. Hours per unit: client 0.6, group 4.5, GL scoped 1.1, KES 20,000 collected 1, HVC visit 0.5, module 1.5, call 0.25. Duka work takes no TA time. Duka Assistants (two per zone, a separate branch under the ZS) sell for cash and look after duka stock. They have their own priority set with its own weights: cash sales (KES 25,000 an hour), TMS validations (0.4 h each), inventory variances (1.25 h each), seed expiry risks (0.75 h each) and compliance visits (1 h each). Their plans go to the ZS for approval like a TA’s.</span></li></ul></div>' +
       '<div class="panel"><h3>Sample record: ' + esc(ta.name) + '</h3><p class="sub">One TA as the engine reads it.</p><pre><code>' + esc(compactJSON({ id: ta.id, name: ta.name, zone: ta.zoneId, territory: ta.territory, season: ta.season, due: ta.due, startOfWeek: ta.A0, headroom: ta.pool, dailyClients: ta.daily.clients, dailyRepaid: ta.daily.repaid, groups: ta.groups.slice(0, 2) })) + '</code></pre></div></div>' +
       '<p class="footer">All names, places and figures here are made up for the prototype. Regional priorities for Mount Kenya and Coast and Lower Western follow the style of the weekly notes; the other three regions are illustrative.</p>';
     return h;
@@ -1183,23 +1186,31 @@
     if (u.tas) return idsOf([u]);
     return [u.id];
   }
+  /* two workforces, two scores: TAs (credit sales and extension) on the TA set, Duka Assistants (cash sales) on the duka set */
   function scoreOf(u) {
     if (u.role === 'DA') return comp(S.region).byDA[u.id].score;
     return unitScore(idsUnder(u), S.day);
   }
+  function dasUnder(u) { var z = u.areas ? allZones(u) : u.zones ? u.zones : u.tas ? [u] : []; var o = []; z.forEach(function (x) { x.das.forEach(function (d) { o.push(d); }); }); return o; }
+  function dukaScoreOf(u) {
+    if (u.role === 'DA') return comp(S.region).byDA[u.id].score;
+    var d = dasUnder(u), c = comp(S.region); if (!d.length || !dprios().length) return null;
+    return sum(d, function (x) { return c.byDA[x.id].score; }) / d.length;
+  }
   function prioScore(u, p) {
     if (u.role === 'DA') return isDA(p) ? comp(S.region).byDA[u.id].calcs[p.id].paceProg * 100 : null;
+    if (isDA(p)) { var d = dasUnder(u), c = comp(S.region); return d.length ? sum(d, function (x) { return c.byDA[x.id].calcs[p.id].paceProg; }) / d.length * 100 : null; }
     return scoreAt(idsUnder(u), p, S.day);
   }
   function childrenOf(u) {
     if (u.areas) return u.areas;
     if (u.zones) return u.zones;
-    if (u.tas) return u.tas.concat(prios().some(isDA) ? u.das : []);
+    if (u.tas) return u.tas.concat(dprios().length ? u.das : []);
     return [];
   }
-  function weakest(u) {
+  function weakest(u, set) {
     var w = null, ws = 1e9;
-    prios().forEach(function (p) { var v = prioScore(u, p); if (v != null && v < ws) { ws = v; w = p; } });
+    (set || (u.role === 'DA' ? dprios() : prios())).forEach(function (p) { var v = prioScore(u, p); if (v != null && v < ws) { ws = v; w = p; } });
     return w ? { p: w, v: ws } : null;
   }
   function amt(metric, x) { return M[metric].unit === 'KES' ? withUnit(metric, x) : Math.round(x).toLocaleString('en-GB') + ' ' + (Math.round(x) === 1 ? M[metric].unit.replace(/s$/, '') : M[metric].unit); }
@@ -1207,48 +1218,55 @@
   function upTo() { return 'up to ' + DAYS_LONG[S.day]; }
   var DAYS_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+  function sayOf(v) { var st = statusFromScore(v); return st === 'on' ? 'on track' : st === 'slip' ? 'a little behind' : st === 'behind' ? 'behind' : 'well behind'; }
+  function scoreBox(label, v) { return '<div class="ou-score"><span class="sbl">' + label + '</span><span class="scn num">' + Math.round(v) + '</span>' + stateLine(v) + '</div>'; }
   function unitCard(u) {
-    var v = scoreOf(u), st = statusFromScore(v), w = weakest(u);
-    var say = st === 'on' ? 'On track for this week' : st === 'slip' ? 'A little behind this week' : st === 'behind' ? 'Behind this week' : 'Well behind this week';
+    var unitLv = !!(u.areas || u.zones || u.tas), v = scoreOf(u), dv = unitLv ? dukaScoreOf(u) : null, w = weakest(u), dw = unitLv && dv != null ? weakest(u, dprios()) : null;
+    var who = u.role === 'DA' ? 'Duka work is ' : unitLv ? 'TA work is ' : 'This territory is ';
+    var say = who + sayOf(v) + ', ' + upTo() + '.' + (w && w.v < 95 ? ' Most help needed on <b>' + esc(w.p.title) + '</b>.' : '');
+    if (dv != null) say += '<br>Duka work is ' + sayOf(dv) + '.' + (dw && dw.v < 95 ? ' Most help needed on <b>' + esc(dw.p.title) + '</b>.' : '');
     var h = '<section class="ou" aria-label="' + esc(levelOf(u)) + '"><div class="ou-main"><div class="ou-id"><span class="ou-lv">' + esc(levelOf(u)) + '</span><h2>' + esc(unitName(u)) + '</h2>' +
-      '<div class="ou-meta"><span><b>' + esc(personOf(u)) + '</b></span></div></div>' +
-      '<div class="ou-score"><span class="scn num">' + Math.round(v) + '</span>' + stateLine(v) + '</div></div>' +
-      '<p class="answer">' + say + ', ' + upTo() + '.' + (w && w.v < 95 ? ' Most help needed on <b>' + esc(w.p.title) + '</b>.' : '') + '</p></section>';
+      '<div class="ou-meta"><span><b>' + esc(personOf(u)) + '</b></span></div></div><div class="ou-scores">' +
+      scoreBox(u.role === 'DA' ? 'Duka' : 'TAs', v) + (dv != null ? scoreBox('Duka', dv) : '') + '</div></div>' +
+      '<p class="answer">' + say + '</p></section>';
     return h;
   }
   function prioLine(u, p) {
     var v = prioScore(u, p), m = M[p.metric];
     if (v == null) {
-      var z = DATA.byId[u.zoneId];
+      var z = DATA.byId[u.zoneId] || u;
       return '<li class="pl na"><div class="pl-t">' + pTag(p.metric) + '<b>' + esc(p.title) + '</b></div><p class="pl-s">Done by the Duka Assistants in ' + esc(z.name) + ': ' + z.das.map(function (o) { return esc(o.name); }).join(' and ') + '. Not part of this territory’s score.</p></li>';
     }
     var rows = u.role === 'DA' ? [comp(S.region).byDA[u.id]] : idsUnder(u).map(function (id) { return comp(S.region).byTA[id]; });
     var a = WP.aggregate(rows, p), st = statusFromScore(v);
-    var who = isDA(p) && u.role !== 'DA' ? ' Done by Duka Assistants.' : '';
+    var who = '';
     var left = rows.length === 1 ? Math.max(0, a.need - a.gain) : a.ask, by = ' by ' + DAYS_LONG[p.deadline];
     var sofar = (a.gain > a.need ? 'Done so far: ' + amt(p.metric, a.gain) + ', more than the ' + amt(p.metric, a.need) + ' needed in total.' : 'Done so far: ' + amt(p.metric, a.gain) + ' of ' + amt(p.metric, a.need) + '.') +
       (left <= 0.5 ? ' Nothing more is needed.' : rows.length === 1 ? ' Still to do' + by + ': ' + amt(p.metric, left) + '.' : ' Still owed' + by + ' by those behind: ' + amt(p.metric, left) + '.');
     return '<li class="pl"><div class="pl-t">' + pTag(p.metric) + '<b>' + esc(p.title) + '</b><span class="pl-n num">' + Math.round(v) + '</span>' + stateLine(v) + '</div>' +
       '<div class="oup-bar"><i class="' + fcls(st) + '" style="width:' + Math.min(100, v) + '%"></i></div>' +
       '<p class="pl-s">' + sofar + who + '</p>' +
-      '<details><summary>How is this worked out?</summary><p>' + esc(p.text) + '</p><p>Target: ' + esc(targetText(p)) + '. Weight ' + p.weight + '% of the plan.</p>' +
+      '<details><summary>How is this worked out?</summary><p>' + esc(p.text) + '</p><p>Target: ' + esc(targetText(p)) + '. Weight ' + p.weight + '% of the ' + (isDA(p) ? 'duka' : 'TA') + ' set.</p>' +
       '<p>By ' + DAYS_LONG[S.day] + ' about ' + amt(p.metric, a.expected) + ' should be done to keep pace for the deadline. The number (' + Math.round(v) + ') is how much of that is done, out of 100.</p></details></li>';
   }
   function prioList(u) {
-    var l = prios().filter(function (p) { return u.role === 'DA' ? isDA(p) : true; });
-    return '<section class="sec"><h2>This week’s priorities</h2><ul class="plist2">' + l.map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
+    var ta = '<section class="sec"><h2>' + (u.role === 'DA' ? 'Duka priorities' : 'TA priorities') + '</h2><p class="sub">' + (u.role === 'DA' ? 'Cash sales and stock at the dukas. Weights total 100.' : 'Credit sales and extension. Weights total 100.') + '</p><ul class="plist2">' +
+      (u.role === 'DA' ? dprios() : prios()).map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
+    if (u.role === 'DA' || !(u.areas || u.zones || u.tas) || !dprios().length) return ta;
+    return ta + '<section class="sec"><h2>Duka priorities</h2><p class="sub">Done by the Duka Assistants: cash sales and stock at the dukas. A separate set with its own weights.</p><ul class="plist2">' + dprios().map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
   }
   function childRow(c) {
-    var v = scoreOf(c), w = weakest(c);
-    return '<li><button class="crow" data-act="goto" data-id="' + c.id + '"><span class="cr-n"><b>' + esc(unitName(c)) + '</b><small>' + esc(personOf(c)) + (w && w.v < 82 ? ' · most behind on ' + esc(w.p.title) : '') + '</small></span><span class="cr-s num">' + Math.round(v) + '</span>' + stateLine(v) + '<span class="cr-go" aria-hidden="true">›</span></button></li>';
+    var v = scoreOf(c), w = weakest(c), dv = c.areas || c.zones || c.tas ? dukaScoreOf(c) : null;
+    var two = dv != null ? '<span class="cr-two"><span><small>TAs</small> <b class="num">' + Math.round(v) + '</b></span><span><small>Duka</small> <b class="num">' + Math.round(dv) + '</b></span></span>' + stateLine(Math.min(v, dv)) : '<span class="cr-s num">' + Math.round(v) + '</span>' + stateLine(v);
+    return '<li><button class="crow" data-act="goto" data-id="' + c.id + '"><span class="cr-n"><b>' + esc(unitName(c)) + '</b><small>' + esc(personOf(c)) + (w && w.v < 82 ? ' · most behind on ' + esc(w.p.title) : '') + '</small></span>' + two + '<span class="cr-go" aria-hidden="true">›</span></button></li>';
   }
   function childList(u) {
     var kids = childrenOf(u); if (!kids.length) return '';
     var terr = kids.filter(function (c) { return c.role !== 'DA'; }), das = kids.filter(function (c) { return c.role === 'DA'; });
     var lv = u.areas ? 'Areas' : u.zones ? 'Zones' : 'Territories';
     var h = '<section class="sec"><h2>' + lv + ' in ' + esc(u.name) + '</h2><p class="sub">Lowest first. Tap one to open it.</p><ul class="clist">' +
-      terr.slice().sort(function (a, b) { return scoreOf(a) - scoreOf(b); }).map(childRow).join('') + '</ul>';
-    if (das.length) h += '<h3 class="sec2">Duka Assistants in ' + esc(u.name) + '</h3><ul class="clist">' + das.map(childRow).join('') + '</ul>';
+      terr.slice().sort(function (a, b) { var da = dukaScoreOf(a), db = dukaScoreOf(b); return Math.min(scoreOf(a), da == null ? 1e9 : da) - Math.min(scoreOf(b), db == null ? 1e9 : db); }).map(childRow).join('') + '</ul>';
+    if (das.length) h += '<h3 class="sec2">Duka Assistants in ' + esc(u.name) + '</h3><ul class="clist">' + das.slice().sort(function (a, b) { return scoreOf(a) - scoreOf(b); }).map(childRow).join('') + '</ul>';
     return h + '</section>';
   }
   function waitingHTML() {
@@ -1277,9 +1295,9 @@
     return h;
   }
   function daHome(o) {
-    var r = comp(S.region).byDA[o.id];
-    var h = unitCard(o) + prioList(o);
-    h += '<section class="sec"><h2>' + (S.role === 'da' ? 'Your plan' : 'The plan') + ' for the rest of the week</h2>' + dayBlocks(r.plan.days) + '</section>';
+    S.ta = o.id; S.zone = o.zoneId;
+    var r = comp(S.region).byDA[o.id], h = unitCard(o) + prioList(o);
+    h += S.role === 'da' ? planSection(r, dprios()) : '<section class="sec"><h2>The plan for the rest of the week</h2><div class="planhd">' + planChip(o.id) + '</div>' + dayBlocks(effDays(peekPlan(o.id) || {}, r)) + '</section>';
     h += '<section class="sec"><h2>' + (S.role === 'da' ? 'Your dukas' : 'Dukas') + '</h2><ul class="clist">' + o.dukas.map(function (d) { return '<li class="crow static"><span class="cr-n"><b>' + esc(d.name) + '</b><small>' + esc(d.village) + '</small></span></li>'; }).join('') + '</ul></section>';
     return h;
   }
@@ -1290,18 +1308,34 @@
     if (!u.areas && !u.zones && !u.tas) return territoryHome(u);
     return unitCard(u) + waitingHTML() + prioList(u) + childList(u);
   }
+  function dukaSetHTML() {
+    var l = dprios(), ro = S.role !== 'rm', tot = sum(l, function (p) { return p.weight; });
+    var h = '<section class="panel sec dset"><h2>Duka priorities</h2><p class="sub" style="margin:4px 0 12px">For the Duka Assistants, a separate workforce that sells for cash at the dukas. Its weights total 100 on their own and split a Duka Assistant’s time. ' + (ro ? 'Set by the RM.' : 'Change a measure, target, deadline or weight.') + '</p>';
+    h += '<div class="scroll"><table><thead><tr><th>Priority</th><th>Measure</th><th class="r">Target each</th><th>By</th><th class="r">Weight</th>' + (ro ? '' : '<th></th>') + '</tr></thead><tbody>';
+    l.forEach(function (p, i) {
+      if (ro) { h += '<tr><td>' + pTag(p.metric) + esc(p.title) + '<div class="muted" style="font-size:13px">' + esc(p.text) + '</div></td><td>' + esc(M[p.metric].label) + '</td><td class="r n">' + amt(p.metric, p.target) + '</td><td>' + DAYS[p.deadline] + '</td><td class="r n">' + p.weight + '%</td></tr>'; return; }
+      h += '<tr><td><input type="text" data-df="title" data-di="' + i + '" value="' + esc(p.title) + '" aria-label="Priority name"></td><td><select data-df="metric" data-di="' + i + '" aria-label="Measure">' +
+        Object.keys(M).filter(function (k) { return M[k].owner === 'DA'; }).map(function (k) { return '<option value="' + k + '"' + (k === p.metric ? ' selected' : '') + '>' + esc(M[k].label) + '</option>'; }).join('') + '</select></td>' +
+        '<td class="r"><input type="number" min="0" data-df="target" data-di="' + i + '" value="' + p.target + '" aria-label="Target each" style="width:110px"></td>' +
+        '<td><select data-df="deadline" data-di="' + i + '" aria-label="Deadline">' + DAYS.map(function (d, j) { return '<option value="' + j + '"' + (j === p.deadline ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></td>' +
+        '<td class="r"><input type="number" min="0" max="100" data-df="weight" data-di="' + i + '" value="' + p.weight + '" aria-label="Weight" style="width:70px"></td><td><button class="btn small" data-act="dremove" data-i="' + i + '"' + (l.length <= 1 ? ' disabled' : '') + '>Remove</button></td></tr>';
+    });
+    h += '</tbody><tfoot><tr><td colspan="4"><b>Total</b></td><td class="r n"><span class="total ' + (tot === 100 ? 'good' : 'bad') + '">' + tot + '%</span></td>' + (ro ? '' : '<td></td>') + '</tr></tfoot></table></div>';
+    if (!ro) h += '<div class="planhd" style="margin-top:10px">' + (tot !== 100 ? '<span class="note warn">The duka weights total ' + tot + '%. They must total 100.</span>' : '') + '<button class="btn small" data-act="dbalance">Balance to 100</button><button class="btn small" data-act="dadd"' + (l.length >= 5 ? ' disabled' : '') + '>Add a duka priority</button><button class="btn small" data-act="dreset">Reset</button></div>';
+    return h + '</section>';
+  }
   function viewPrioMerged() {
     if (S.role === 'rm') {
       var l = waitingAcc();
-      return (l.length ? proposalsHTML(l, 'Weight changes waiting for you', 'An AC has asked to change the time split for their area.') : '') + viewPriorities() +
+      return (l.length ? proposalsHTML(l, 'Weight changes waiting for you', 'An AC has asked to change the time split for their area.') : '') + viewPriorities() + dukaSetHTML() +
         '<details class="sec"><summary>Who has accepted the priorities</summary>' + statusTable(region(), null) + '</details>';
     }
     if (S.role === 'ac' || S.role === 'zs') {
       var unit = S.role === 'ac' ? sArea() : sZone(), h = unitAcceptHTML(unit);
       if (S.role === 'ac') { var zl = waitingAcc(); if (zl.length) h += proposalsHTML(zl, 'Weight changes waiting for you', 'A ZS in ' + unit.name + ' has asked to change the time split for their zone.'); }
-      return h + '<details class="sec"><summary>Each priority in full</summary>' + viewPriorities() + '</details>';
+      return h + '<details class="sec"><summary>Each TA priority in full</summary>' + viewPriorities() + '</details>' + dukaSetHTML();
     }
-    return viewPriorities();
+    return S.role === 'da' ? dukaSetHTML() : viewPriorities();
   }
 
   var VIEWS = { home: viewHome, overview: viewOverview, priorities: viewPrioMerged, cascade: viewCascade, review: viewReview, trend: viewTrend, accept: viewAccept, team: viewTeam, week: viewWeek, data: viewData };
@@ -1395,7 +1429,7 @@
   }
   function setTab(t) { leaveEdit(); S.tab = t; render(); window.scrollTo(0, 0); }
 
-  function defaultTarget(k) { return { clients: 8, groups: 8, scoped: 70, repaid: 66, hvc: 20, training: 3, glcalls: 10, duka: 25 }[k]; }
+  function defaultTarget(k) { return { clients: 8, groups: 8, scoped: 70, repaid: 66, hvc: 20, training: 3, glcalls: 10, duka: 10, dsales: 150000, tms: 18, invvar: 5, expiry: 6 }[k]; }
 
   function onClick(e) {
     var b = e.target.closest('button'); if (!b) return;
@@ -1404,6 +1438,11 @@
     var act = b.dataset.act; if (!act) return;
     if (act === 'goto') { leaveEdit(); S.at = b.dataset.id; var gu = DATA.byId[S.at]; if (gu.zoneId) S.zone = gu.zoneId; if (gu.tas) S.zone = gu.id; S.tab = 'home'; render(); window.scrollTo(0, 0); return; }
     if (act === 'wkToggle') { S.showWk = !S.showWk; return render(); }
+    var dl0 = dprios();
+    if (act === 'dremove') { dl0.splice(+b.dataset.i, 1); return render(); }
+    if (act === 'dbalance') { var dt = sum(dl0, function (p) { return p.weight; }); dl0.forEach(function (p) { p.weight = dt ? Math.round(p.weight / dt * 100) : Math.round(100 / dl0.length); }); dl0[0].weight += 100 - sum(dl0, function (p) { return p.weight; }); return render(); }
+    if (act === 'dadd') { var used = dl0.map(function (p) { return p.metric; }), nk = Object.keys(M).filter(function (k) { return M[k].owner === 'DA' && used.indexOf(k) < 0; })[0] || 'duka'; S.uid++; dl0.push({ id: 'dn' + S.uid, metric: nk, title: M[nk].label, text: 'New duka priority for the week.', target: defaultTarget(nk), deadline: 4, weight: 0, norm: 0, aud: {} }); return render(); }
+    if (act === 'dreset') { S.dprios[S.region] = WP.defaultDukaPriorities(S.region); return render(); }
     if (act === 'goRegion') { S.region = b.dataset.id; S.zone = null; S.ta = null; S.prio = null; return setTab('cascade'); }
     if (act === 'goPrios') { S.region = b.dataset.id; S.zone = null; S.ta = null; S.prio = null; return setTab('priorities'); }
     if (act === 'goAccept') return setTab('accept');
@@ -1496,11 +1535,11 @@
     }
     if (act === 'addBlock') {
       pl = getPlan(ta0); if (!pl.days) return;
-      var apid = $('addPid').value, aday = +$('addDay').value, ap = pById(apid), dd = pl.days.filter(function (x) { return x.i === aday; })[0];
+      var apid = $('addPid').value, aday = +$('addDay').value, ap = pById(apid, setOf(ta0)), dd = pl.days.filter(function (x) { return x.i === aday; })[0];
       if (!dd) return;
       if (dayHours(dd) + 0.5 > dd.cap + 1e-9) { S.err[ta0] = dd.label + ' is full. Remove or shorten something there first.'; return render(); }
       S.uid++;
-      dd.blocks.push({ bid: 'b' + S.uid, pid: apid, title: ap.title, metric: ap.metric, hours: 0.5, units: 0.5 / M[ap.metric].hrs, text: 'Your own addition: time on ' + ap.title + '.', reasons: ['Added by the TA'], part: 'Added', overdue: false, added: true, edited: false, rec: 0 });
+      dd.blocks.push({ bid: 'b' + S.uid, pid: apid, title: ap.title, metric: ap.metric, hours: 0.5, units: 0.5 / M[ap.metric].hrs, text: 'Your own addition: time on ' + ap.title + '.', reasons: [DATA.byId[ta0].role === 'DA' ? 'Added by the Duka Assistant' : 'Added by the TA'], part: 'Added', overdue: false, added: true, edited: false, rec: 0 });
       S.err[ta0] = ''; return render();
     }
     if (act === 'approve' || act === 'return') {
@@ -1547,6 +1586,13 @@
   }
   function onChange(e) {
     var t = e.target;
+    if (t.dataset.df) {
+      var dp = dprios()[+t.dataset.di], df = t.dataset.df;
+      if (df === 'metric') { if (dp.title === M[dp.metric].label) dp.title = M[t.value].label; dp.metric = t.value; dp.target = defaultTarget(t.value); }
+      else if (df === 'title') dp.title = t.value || M[dp.metric].label;
+      else dp[df] = Math.max(0, Math.round(Number(t.value) || 0));
+      return render();
+    }
     if (t.dataset.move) {
       var pl2 = getPlan(S.ta), fb2 = pl2.days ? findBlock(pl2, t.dataset.move) : null, to = t.value === '' ? null : +t.value;
       if (!fb2 || to === null) return render();

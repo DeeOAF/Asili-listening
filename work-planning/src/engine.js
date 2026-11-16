@@ -21,7 +21,12 @@
     hvc:      { label: 'HVC client visits',       unit: 'visits',  kind: 'count',  hrs: 0.5,       mean: 5.7 },
     training: { label: 'Training modules passed', unit: 'modules', kind: 'count',  hrs: 1.5,       mean: 0.42 },
     glcalls:  { label: 'GL validation calls',     unit: 'calls',   kind: 'count',  hrs: 0.25,      mean: 4.1 },
-    duka:     { label: 'Duka compliance visits',  unit: 'dukas',   kind: 'count',  hrs: 1,         mean: 5, owner: 'DA' }
+    // Duka Assistants: a separate workforce selling for cash at the dukas (TAs sell on credit and do extension)
+    dsales:   { label: 'Duka cash sales',          unit: 'KES',        kind: 'count', hrs: 1 / 25000, mean: 38000, owner: 'DA' },
+    tms:      { label: 'TMS validations',          unit: 'validations', kind: 'count', hrs: 0.4,      mean: 4.2,   owner: 'DA' },
+    invvar:   { label: 'Inventory variances resolved', unit: 'variances', kind: 'count', hrs: 1.25,  mean: 1.1,   owner: 'DA' },
+    expiry:   { label: 'Seed expiry risks cleared', unit: 'SKUs',      kind: 'count', hrs: 0.75,      mean: 1.4,   owner: 'DA' },
+    duka:     { label: 'Duka compliance visits',   unit: 'dukas',      kind: 'count', hrs: 1,         mean: 2.2,   owner: 'DA' }
   };
   /* the pillar each measure serves, so a priority can be read as a push on enrolment, repayment, HVC, extension or the duka network */
   var PILLARS = {
@@ -29,7 +34,7 @@
     repayment: { label: 'Repayment', short: 'Repay', metrics: ['repaid'] },
     hvc:       { label: 'HVC', short: 'HVC', metrics: ['hvc'] },
     extension: { label: 'Extension', short: 'Ext', metrics: ['training', 'scoped', 'glcalls'] },
-    duka:      { label: 'Duka', short: 'Duka', metrics: ['duka'] }
+    duka:      { label: 'Duka', short: 'Duka', metrics: ['dsales', 'tms', 'invvar', 'expiry', 'duka'] }
   };
   function ownedByDA(metric) { return METRICS[metric].owner === 'DA'; }
   function pillarOf(metric) { for (var k in PILLARS) if (PILLARS[k].metrics.indexOf(metric) >= 0) return k; return null; }
@@ -50,14 +55,22 @@
       also: { AC: ['Review the Healthy Path with your ZSs and agree an execution plan for each zone.', 'Check progress every morning and support the lagging zones first.'],
               ZS: ['Help each TA build a workplan and pick the clients and GLs to start with.', 'Review progress with every TA each day.'] },
       prios: [
-        P('p1', 'groups', 'Group enrolment', 'Reach 8% of our group target by Friday and 35% by 30 November. Every TA enrols at least 3 groups a day, starting with last season finishers and GLs already scoped.', 8, 4, 45, { norm: 3,
+        P('p1', 'groups', 'Group enrolment', 'Reach 8% of our group target by Friday and 35% by 30 November. Every TA enrols at least 3 groups a day, starting with last season finishers and GLs already scoped.', 8, 4, 50, { norm: 3,
           aud: { AC: 'Rank zones by gap and support the furthest behind first.', ZS: 'Sit with the TAs carrying most of the gap and fix their week.', TA: 'Enrol groups daily, finishers and scoped GLs first.' } }),
-        P('p2', 'repaid', 'Repayment', 'Lift portfolio repayment to 66% by Friday. Chase the biggest arrears first.', 66, 4, 25, {
+        P('p2', 'repaid', 'Repayment', 'Lift portfolio repayment to 66% by Friday. Chase the biggest arrears first.', 66, 4, 30, {
           aud: { AC: 'Watch zone repayment each morning.', ZS: 'Pair TAs with the biggest arrears for joint visits.', TA: 'Collect from the largest arrears first.' } }),
-        P('p3', 'glcalls', 'GL validation calls', 'Finish 12 GL validation calls each by Wednesday 11am.', 12, 2, 15, {
-          aud: { AC: 'Confirm every ZS has the call list.', ZS: 'Check calls are done before the Wednesday deadline.', TA: 'Call your GLs before any group visit.' } }),
-        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 25 dukas for compliance by Friday, the dukas with the most farmer orders first.', 25, 4, 15, {
-          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
+        P('p3', 'glcalls', 'GL validation calls', 'Finish 12 GL validation calls each by Wednesday 11am.', 12, 2, 20, {
+          aud: { AC: 'Confirm every ZS has the call list.', ZS: 'Check calls are done before the Wednesday deadline.', TA: 'Call your GLs before any group visit.' } })
+      ],
+      duka: [
+        P('d1', 'dsales', 'Duka cash sales', 'Each Duka Assistant sells KES 180,000 for cash by Friday, seed and fertiliser first.', 180000, 4, 40, {
+          aud: { AC: 'Compare duka sales by zone each morning.', ZS: 'Review each DA\'s sales against target daily.', DA: 'Sell for cash, seed and fertiliser first.' } }),
+        P('d2', 'tms', 'TMS validations', 'Validate every inventory transfer in TMS within a day: 20 each by Friday.', 20, 4, 25, {
+          aud: { AC: 'Check no transfer waits more than a day.', ZS: 'Confirm transfers are validated the same day.', DA: 'Validate each transfer in TMS the day it arrives.' } }),
+        P('d3', 'invvar', 'Inventory variances', 'Resolve 5 inventory variances each by Friday, the largest first.', 5, 4, 20, {
+          aud: { AC: 'Follow up the largest variances in your area.', ZS: 'Check variances with the DA before Friday.', DA: 'Recount and resolve the largest variance first.' } }),
+        P('d4', 'expiry', 'Seed expiry risk', 'Clear 6 seed SKUs at risk of expiry each, by sale or transfer, by Friday.', 6, 4, 15, {
+          aud: { AC: 'Agree transfers between zones for expiring seed.', ZS: 'Agree which SKUs to move or sell first.', DA: 'Sell or transfer the SKUs closest to expiry first.' } })
       ]
     },
     {
@@ -65,14 +78,20 @@
       areas: [['Rift North', 'Jepkoech Langat'], ['Rift South', 'Mutai Kiprop']],
       also: { AC: ['Plan HVC visits by zone so no zone is left for Friday.'], ZS: ['Book training slots for your TAs on Monday.'] },
       prios: [
-        P('p1', 'hvc', 'HVC visits', 'Every TA visits 30 HVC clients this week, soya and sunflower first.', 30, 4, 35, {
+        P('p1', 'hvc', 'HVC visits', 'Every TA visits 30 HVC clients this week, soya and sunflower first.', 30, 4, 40, {
           aud: { AC: 'Make sure each zone has a visit plan by Tuesday.', ZS: 'Cluster HVC visits by village.', TA: 'Visit 6 HVC clients a day, soya and sunflower first.' } }),
-        P('p2', 'clients', 'Client enrolment', 'Reach 9% of clients enrolled by Friday.', 9, 4, 30, {
+        P('p2', 'clients', 'Client enrolment', 'Reach 9% of clients enrolled by Friday.', 9, 4, 35, {
           aud: { AC: 'Support zones below the Healthy Path.', ZS: 'Agree each TA\'s enrolment list.', TA: 'Enrol within groups you already know.' } }),
-        P('p3', 'training', 'Training', 'All TAs and ZSs complete 4 training modules and pass at 80%.', 4, 4, 20, {
-          aud: { AC: 'Block training time in your zones.', ZS: 'Complete your own modules first.', TA: 'Finish one module each day.' } }),
-        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 20 dukas for compliance by Friday, starting with dukas not visited this month.', 20, 4, 15, {
-          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
+        P('p3', 'training', 'Training', 'All TAs and ZSs complete 4 training modules and pass at 80%.', 4, 4, 25, {
+          aud: { AC: 'Block training time in your zones.', ZS: 'Complete your own modules first.', TA: 'Finish one module each day.' } })
+      ],
+      duka: [
+        P('d1', 'dsales', 'Duka cash sales', 'Each Duka Assistant sells KES 160,000 for cash by Friday.', 160000, 4, 45, {
+          aud: { AC: 'Compare duka sales by zone each morning.', ZS: 'Review each DA\'s sales against target daily.', DA: 'Sell for cash, seed and fertiliser first.' } }),
+        P('d2', 'tms', 'TMS validations', 'Validate 18 inventory transfers each in TMS by Friday.', 18, 4, 30, {
+          aud: { AC: 'Check no transfer waits more than a day.', ZS: 'Confirm transfers are validated the same day.', DA: 'Validate each transfer in TMS the day it arrives.' } }),
+        P('d3', 'duka', 'Duka compliance', 'Visit 10 dukas each for compliance by Friday.', 10, 4, 25, {
+          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Visit the dukas not seen this month first.' } })
       ]
     },
     {
@@ -80,14 +99,20 @@
       areas: [['Upper Western East', 'Simiyu Barasa'], ['Upper Western West', 'Nekesa Wanyama']],
       also: { AC: ['Review GL scoping lists with each ZS on Tuesday.'], ZS: ['Confirm scoped GLs with a call before enrolment.'] },
       prios: [
-        P('p1', 'repaid', 'Repayment', 'Reach 68% repayment by Friday. Every TA works their own arrears list.', 68, 4, 40, {
+        P('p1', 'repaid', 'Repayment', 'Reach 68% repayment by Friday. Every TA works their own arrears list.', 68, 4, 45, {
           aud: { AC: 'Compare zone repayment daily.', ZS: 'Joint visits for the three largest arrears per TA.', TA: 'Work your arrears list from the largest.' } }),
-        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by the end of the week.', 70, 4, 30, {
+        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by the end of the week.', 70, 4, 35, {
           aud: { AC: 'Track scoping by zone.', ZS: 'Review each TA\'s scoped list.', TA: 'Scope the GLs with the most farmers first.' } }),
-        P('p3', 'hvc', 'HVC visits', 'Each TA visits 20 HVC clients, groundnut and soya first.', 20, 4, 15, {
-          aud: { AC: 'No action beyond monitoring.', ZS: 'Cluster visits by village.', TA: 'About 4 HVC visits a day.' } }),
-        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 25 dukas for compliance by Friday.', 25, 4, 15, {
-          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
+        P('p3', 'hvc', 'HVC visits', 'Each TA visits 20 HVC clients, groundnut and soya first.', 20, 4, 20, {
+          aud: { AC: 'No action beyond monitoring.', ZS: 'Cluster visits by village.', TA: 'About 4 HVC visits a day.' } })
+      ],
+      duka: [
+        P('d1', 'dsales', 'Duka cash sales', 'Each Duka Assistant sells KES 170,000 for cash by Friday.', 170000, 4, 40, {
+          aud: { AC: 'Compare duka sales by zone each morning.', ZS: 'Review each DA\'s sales against target daily.', DA: 'Sell for cash, seed and fertiliser first.' } }),
+        P('d2', 'invvar', 'Inventory variances', 'Resolve 5 inventory variances each by Friday.', 5, 4, 30, {
+          aud: { AC: 'Follow up the largest variances in your area.', ZS: 'Check variances with the DA before Friday.', DA: 'Recount and resolve the largest variance first.' } }),
+        P('d3', 'expiry', 'Seed expiry risk', 'Clear 6 seed SKUs at risk of expiry each by Friday.', 6, 4, 30, {
+          aud: { AC: 'Agree transfers between zones for expiring seed.', ZS: 'Agree which SKUs to move or sell first.', DA: 'Sell or transfer the SKUs closest to expiry first.' } })
       ]
     },
     {
@@ -95,14 +120,20 @@
       areas: [['Lower Western North', 'Atieno Opiyo'], ['Lower Western South', 'Awino Onyango']],
       also: { AC: ['Support the lagging zones on repayment first.'], ZS: ['Stawi Station: finish socketing by Thursday.', 'Send the weekly KPI form by Friday noon.'] },
       prios: [
-        P('p1', 'repaid', 'Repayment completion', 'Lift repayment to 70% by Friday. Every TA reaches 70% on their own portfolio.', 70, 4, 40, {
+        P('p1', 'repaid', 'Repayment completion', 'Lift repayment to 70% by Friday. Every TA reaches 70% on their own portfolio.', 70, 4, 45, {
           aud: { AC: 'Support lagging zones on repayment.', ZS: 'Joint visits for the largest arrears.', TA: 'Collect from the largest arrears first.' } }),
-        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by Friday.', 70, 4, 25, {
+        P('p2', 'scoped', 'GL scoping', 'Scope 70% of target GLs by Friday.', 70, 4, 30, {
           aud: { AC: 'Track scoping by zone.', ZS: 'Check scoped lists with each TA.', TA: 'Scope the biggest GLs first.' } }),
-        P('p3', 'glcalls', 'GL validation calls', 'Complete GL validation calls by Wednesday 11am, 10 each.', 10, 2, 20, {
-          aud: { AC: 'Confirm ZS call lists.', ZS: 'Check calls before the deadline.', TA: 'Call before visiting.' } }),
-        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 25 dukas for compliance by Friday, Stawi Station dukas first.', 25, 4, 15, {
-          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
+        P('p3', 'glcalls', 'GL validation calls', 'Complete GL validation calls by Wednesday 11am, 10 each.', 10, 2, 25, {
+          aud: { AC: 'Confirm ZS call lists.', ZS: 'Check calls before the deadline.', TA: 'Call before visiting.' } })
+      ],
+      duka: [
+        P('d1', 'dsales', 'Duka cash sales', 'Each Duka Assistant sells KES 180,000 for cash by Friday, Stawi Station dukas first.', 180000, 4, 35, {
+          aud: { AC: 'Compare duka sales by zone each morning.', ZS: 'Review each DA\'s sales against target daily.', DA: 'Sell for cash, seed and fertiliser first.' } }),
+        P('d2', 'tms', 'TMS validations', 'Validate every transfer within a day: 20 each by Friday.', 20, 4, 35, {
+          aud: { AC: 'Check no transfer waits more than a day.', ZS: 'Confirm transfers are validated the same day.', DA: 'Validate each transfer in TMS the day it arrives.' } }),
+        P('d3', 'expiry', 'Seed expiry risk', 'Clear 6 seed SKUs at risk of expiry each by Friday.', 6, 4, 30, {
+          aud: { AC: 'Agree transfers between zones for expiring seed.', ZS: 'Agree which SKUs to move or sell first.', DA: 'Sell or transfer the SKUs closest to expiry first.' } })
       ]
     },
     {
@@ -110,14 +141,20 @@
       areas: [['Nyanza North', 'Auma Odhiambo'], ['Nyanza South', 'Omondi Okoth']],
       also: { AC: ['Keep one training day free in every zone.'], ZS: ['Share the enrolment list with TAs on Monday.'] },
       prios: [
-        P('p1', 'clients', 'Client enrolment', 'Reach 10% of clients enrolled by Friday.', 10, 4, 35, {
+        P('p1', 'clients', 'Client enrolment', 'Reach 10% of clients enrolled by Friday.', 10, 4, 40, {
           aud: { AC: 'Support zones below the Healthy Path.', ZS: 'Agree enrolment lists with TAs.', TA: 'Enrol within groups you already know.' } }),
-        P('p2', 'repaid', 'Repayment', 'Lift repayment to 66% by Friday.', 66, 4, 30, {
+        P('p2', 'repaid', 'Repayment', 'Lift repayment to 66% by Friday.', 66, 4, 35, {
           aud: { AC: 'Watch zone repayment daily.', ZS: 'Joint visits for the largest arrears.', TA: 'Collect from the largest arrears first.' } }),
-        P('p3', 'training', 'Training', 'All TAs and ZSs complete 3 training modules with an 80% pass rate.', 3, 4, 20, {
-          aud: { AC: 'Protect training time.', ZS: 'Complete your own modules first.', TA: 'Finish a module a day.' } }),
-        P('d1', 'duka', 'Duka compliance', 'Every Duka Assistant checks 20 dukas for compliance by Friday.', 20, 4, 15, {
-          aud: { AC: 'Check each zone\'s duka visits on Wednesday.', ZS: 'Agree the duka list with your Duka Assistants on Monday.', DA: 'Check about 5 dukas a day, nearest first.' } })
+        P('p3', 'training', 'Training', 'All TAs and ZSs complete 3 training modules with an 80% pass rate.', 3, 4, 25, {
+          aud: { AC: 'Protect training time.', ZS: 'Complete your own modules first.', TA: 'Finish a module a day.' } })
+      ],
+      duka: [
+        P('d1', 'dsales', 'Duka cash sales', 'Each Duka Assistant sells KES 150,000 for cash by Friday.', 150000, 4, 50, {
+          aud: { AC: 'Compare duka sales by zone each morning.', ZS: 'Review each DA\'s sales against target daily.', DA: 'Sell for cash, seed and fertiliser first.' } }),
+        P('d2', 'tms', 'TMS validations', 'Validate 18 inventory transfers each in TMS by Friday.', 18, 4, 25, {
+          aud: { AC: 'Check no transfer waits more than a day.', ZS: 'Confirm transfers are validated the same day.', DA: 'Validate each transfer in TMS the day it arrives.' } }),
+        P('d3', 'invvar', 'Inventory variances', 'Resolve 5 inventory variances each by Friday.', 5, 4, 25, {
+          aud: { AC: 'Follow up the largest variances in your area.', ZS: 'Check variances with the DA before Friday.', DA: 'Recount and resolve the largest variance first.' } })
       ]
     }
   ];
@@ -190,7 +227,7 @@
             };
             var daily = {};
             Object.keys(METRICS).forEach(function (mk) {
-              if (mk === 'duka') return;
+              if (ownedByDA(mk)) return;
               var arr = [];
               for (var di = 0; di < 6; di++) {
                 var dayF = di === 5 ? 0.4 : 1;
@@ -203,7 +240,7 @@
               }
               daily[mk] = arr;
             });
-            daily.duka = [0, 0, 0, 0, 0, 0]; // Duka compliance belongs to the zone's Duka Assistants
+            Object.keys(METRICS).forEach(function (mk) { if (ownedByDA(mk)) daily[mk] = [0, 0, 0, 0, 0, 0]; }); // duka work belongs to the zone's Duka Assistants
             // training can never pass 4 modules in total
             var tcap = 4 - A0.training, ts = 0;
             daily.training = daily.training.map(function (v) { var k = Math.min(v, Math.max(0, tcap - ts)); ts += k; return k; });
@@ -245,12 +282,18 @@
     var dn = 0;
     data.regions.forEach(function (rg) { rg.areas.forEach(function (ar) { ar.zones.forEach(function (zn) {
       zn.das = [0, 1].map(function (k) {
-        var id = 'da' + (++dn), f = clip((1 + 0.18 * gauss('dof|' + id)) * zn.effect, 0.35, 1.6), arr = [], hr = hashRng('dod|' + id);
-        for (var di = 0; di < 6; di++) {
-          var x = METRICS.duka.mean * f * DAYF[di] * clip(1 + 0.3 * gauss('dd|' + id + '|' + di), 0.3, 2), fl = Math.floor(x);
-          arr.push(fl + (hr() < x - fl ? 1 : 0));
-        }
-        var o = { id: id, name: personName(), role: 'DA', regionId: rg.id, areaId: ar.id, zoneId: zn.id, territory: null, f: f, season: {}, due: 0, A0: { duka: 0 }, pool: {}, daily: { duka: arr }, groups: [], dukas: [] };
+        var id = 'da' + (++dn), f = clip((1 + 0.18 * gauss('dof|' + id)) * zn.effect, 0.35, 1.6), hr = hashRng('dod|' + id), dd = {}, a0 = {};
+        Object.keys(METRICS).forEach(function (mk) {
+          if (!ownedByDA(mk)) return;
+          var arr = [], mf = clip(1 + 0.2 * gauss('dm|' + id + '|' + mk), 0.5, 1.5);
+          for (var di = 0; di < 6; di++) {
+            var x = METRICS[mk].mean * f * mf * DAYF[di] * clip(1 + 0.3 * gauss('dd|' + id + '|' + mk + '|' + di), 0.3, 2);
+            if (METRICS[mk].unit === 'KES') arr.push(Math.round(x / 500) * 500);
+            else { var fl = Math.floor(x); arr.push(fl + (hr() < x - fl ? 1 : 0)); }
+          }
+          dd[mk] = arr; a0[mk] = 0;
+        });
+        var o = { id: id, name: personName(), role: 'DA', regionId: rg.id, areaId: ar.id, zoneId: zn.id, territory: null, f: f, season: {}, due: 0, A0: a0, pool: {}, daily: dd, groups: [], dukas: [] };
         var dk = ['Agrovet', 'Farm Shop', 'Stores', 'Duka', 'Agro Centre', 'Traders'];
         for (var j = 0; j < 6; j++) { var vv = village(); o.dukas.push({ name: vv + ' ' + dk[(j + k) % dk.length], village: vv }); }
         o.patch = o.dukas[0].village + ' to ' + o.dukas[5].village;
@@ -263,6 +306,11 @@
   function defaultPriorities(regionId) {
     var rd = REGION_DEFS.filter(function (r) { return r.id === regionId; })[0];
     return JSON.parse(JSON.stringify(rd.prios));
+  }
+  /* the Duka Assistants' own set: separate measures, separate weights totalling 100 */
+  function defaultDukaPriorities(regionId) {
+    var rd = REGION_DEFS.filter(function (r) { return r.id === regionId; })[0];
+    return JSON.parse(JSON.stringify(rd.duka || []));
   }
 
   /* ---------- per-TA, per-priority calculation ---------- */
@@ -352,13 +400,14 @@
     for (var i = d + 1; i <= 5; i++) days.push(i);
     var Hrem = sum(days, function (i) { return DAY_CAP[i]; });
 
-    var wTA = sum(prios, function (p) { return ownedByDA(p.metric) ? 0 : p.weight; }) || 100;
+    var lane = !!row.isDA, inLane = function (p) { return ownedByDA(p.metric) === lane; };
+    var wTA = sum(prios, function (p) { return inLane(p) ? p.weight : 0; }) || 100;
     // 1. what each priority still needs, in hours
     var items = prios.map(function (p) {
       var c = row.calcs[p.id];
       var ask = opts.met === p.id ? 0 : c.ask;
       var needH = hrsFor(p.metric, ask);
-      return { pid: p.id, p: p, weight: p.weight, ask: ask, needH: needH, met: needH < 0.05, daOwned: ownedByDA(p.metric), baseBudget: ownedByDA(p.metric) ? 0 : Hrem * p.weight / wTA, budget: 0, alloc: 0, overdue: false };
+      return { pid: p.id, p: p, weight: p.weight, ask: ask, needH: needH, met: needH < 0.05, daOwned: ownedByDA(p.metric), baseBudget: inLane(p) ? Hrem * p.weight / wTA : 0, budget: 0, alloc: 0, overdue: false };
     });
 
     // 2. weights share the time, but only among priorities that still have work:
@@ -491,10 +540,14 @@
       var mod = Math.min(4, ta.A0.training + calc.gain + 1 + k);
       ptr[p.id] = k + 1;
       text = 'Training module ' + mod + ' and its assessment (80% to pass)';
-    } else if (m === 'duka') {
-      var dl = ta.dukas && ta.dukas.length ? ta.dukas : ta.groups, d1 = dl[k % dl.length];
+    } else if (ownedByDA(m)) {
+      var dl = ta.dukas && ta.dukas.length ? ta.dukas : ta.groups, d1 = dl[k % dl.length], d2 = dl[(k + 1) % dl.length], n2 = Math.max(1, Math.round(units));
       ptr[p.id] = k + 1;
-      text = 'Check ' + Math.max(1, Math.round(units)) + ' dukas for compliance around ' + d1.village + (ta.dukas ? ', starting with ' + d1.name : ', nearest first');
+      text = m === 'dsales' ? 'Sell about KES ' + (Math.round(units / 1000) * 1000).toLocaleString('en-US') + ' for cash at ' + d1.name + ' and ' + d2.name + ', seed and fertiliser first'
+        : m === 'tms' ? 'Validate ' + n2 + ' inventory ' + (n2 === 1 ? 'transfer' : 'transfers') + ' in TMS for ' + d1.name + ', oldest first'
+        : m === 'invvar' ? 'Recount stock at ' + d1.name + ' and resolve ' + n2 + (n2 === 1 ? ' variance' : ' variances') + ', largest first'
+        : m === 'expiry' ? 'Clear ' + n2 + ' seed ' + (n2 === 1 ? 'SKU' : 'SKUs') + ' near expiry at ' + d1.name + ', by sale or transfer'
+        : 'Check ' + n2 + ' dukas for compliance around ' + d1.village + ', starting with ' + d1.name;
     } else {
       var l4 = ranked(ta, 'calls', function (a, b) { return b.members - a.members; });
       var c1 = l4[k % l4.length];
@@ -508,12 +561,14 @@
   function computeRegion(region, prios, d, opts) {
     opts = opts || {};
     var rows = [], byTA = {}, zoneAlloc = {}, dRows = [], byDA = {};
-    var taP = prios.filter(function (p) { return !ownedByDA(p.metric); }), daP = prios.filter(function (p) { return ownedByDA(p.metric); });
+    // TAs work to the field set; Duka Assistants work to their own duka set (opts.duka), with its own weights
+    var taP = prios.filter(function (p) { return !ownedByDA(p.metric); }), daP = (opts.duka || []).concat(prios.filter(function (p) { return ownedByDA(p.metric); }));
+    prios = taP;
     region.areas.forEach(function (area) {
       area.zones.forEach(function (zone) {
         var zrows = zone.tas.map(function (ta) {
           var calcs = {};
-          prios.forEach(function (p) { calcs[p.id] = ownedByDA(p.metric) ? naCalc(p) : calcTA(ta, p, d); });
+          prios.forEach(function (p) { calcs[p.id] = calcTA(ta, p, d); });
           return { ta: ta, zone: zone, area: area, calcs: calcs };
         });
         var zd = (zone.das || []).map(function (o) {
@@ -542,7 +597,7 @@
         });
       });
     });
-    return { rows: rows, byTA: byTA, dRows: dRows, byDA: byDA, zoneAlloc: zoneAlloc, d: d, prios: prios };
+    return { rows: rows, byTA: byTA, dRows: dRows, byDA: byDA, zoneAlloc: zoneAlloc, d: d, prios: prios, duka: daP };
   }
 
   /* roll a list of TA rows up into one line for a priority */
@@ -638,7 +693,7 @@
       v = isMet ? (up ? 'met-up' : 'met-flat') : (up ? 'short-up' : 'short-flat');
       return { pid: p.id, p: p, weight: p.weight, need: need, gain: gain, prior: prior, met: met, n: rr.length, achieved: achieved, change: change, verdict: v };
     });
-    var others = Object.keys(METRICS).filter(function (k) { return !ids[k]; }).map(function (k) {
+    var others = Object.keys(METRICS).filter(function (k) { return !ids[k] && !ownedByDA(k); }).map(function (k) {
       var gain = 0, prior = 0;
       (ownedByDA(k) ? daRowsFor(rows) : rows).forEach(function (r) { gain += weekGain(r.ta, k, d) * NONPRIO; prior += priorAvg(r.ta, k, false) * share; });
       return { metric: k, gain: gain, prior: prior, change: prior > 0 ? (gain - prior) / prior : null };
@@ -667,7 +722,7 @@
     sets[7] = cur;
     for (var w = 6; w >= 0; w--) {
       var s = sets[w + 1].slice();
-      if (r() < 0.55) { var i = Math.floor(r() * s.length), pool = keys.filter(function (k) { return s.indexOf(k) < 0; }); s[i] = pool[Math.floor(r() * pool.length)]; }
+      if (r() < 0.55) { var i = Math.floor(r() * s.length), pool = keys.filter(function (k) { return s.indexOf(k) < 0 && !ownedByDA(k); }); s[i] = pool[Math.floor(r() * pool.length)]; }
       sets[w] = s;
     }
     var tas = [], struct = [];
@@ -783,7 +838,7 @@
   }
 
   root.WP = {
-    DAYS: DAYS, DAY_DATES: DAY_DATES, DAY_CAP: DAY_CAP, WEEK_HOURS: WEEK_HOURS, METRICS: METRICS, PILLARS: PILLARS, pillarOf: pillarOf, ownedByDA: ownedByDA, daRowsFor: daRowsFor, KIND_LABEL: KIND_LABEL,
+    DAYS: DAYS, DAY_DATES: DAY_DATES, DAY_CAP: DAY_CAP, WEEK_HOURS: WEEK_HOURS, METRICS: METRICS, PILLARS: PILLARS, pillarOf: pillarOf, ownedByDA: ownedByDA, defaultDukaPriorities: defaultDukaPriorities, daRowsFor: daRowsFor, KIND_LABEL: KIND_LABEL,
     REGION_DEFS: REGION_DEFS, generateData: generateData, defaultPriorities: defaultPriorities,
     calcTA: calcTA, computeRegion: computeRegion, aggregate: aggregate, focusOf: focusOf, reviewUnit: reviewUnit, history: history, histUnit: histUnit, weekCheck: weekCheck, normCheck: normCheck,
     allocateZone: allocateZone, planTA: planTA, paceAt: paceAt, sum: sum

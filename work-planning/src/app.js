@@ -99,7 +99,7 @@
     var k = M[p.metric].kind;
     if (k === 'season') return p.target + '% of the season target by ' + dl(p);
     if (k === 'rate') return p.target + '% repaid by ' + dl(p);
-    return p.target + ' ' + M[p.metric].unit + ' each by ' + dl(p);
+    return (M[p.metric].unit === 'KES' ? 'KES ' + Number(p.target).toLocaleString('en-GB') : p.target + ' ' + M[p.metric].unit) + ' each by ' + dl(p);
   }
   function readAs(p) { return WP.KIND_LABEL[M[p.metric].kind] + ' · ' + M[p.metric].label + ' · ' + targetText(p) + (p.norm ? ' · norm ' + p.norm + ' a day' : ''); }
   var ST = { done: ['Target met', 'c-done'], ahead: ['Ahead', 'c-ahead'], on: ['On track', 'c-on'], slip: ['Slipping', 'c-slip'], behind: ['Behind', 'c-behind'], critical: ['Well behind', 'c-crit'] };

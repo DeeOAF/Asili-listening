@@ -1194,7 +1194,7 @@
 
   /* ---------- shell ---------- */
   function shell() {
-    var h = '<header class="hd"><div class="hd-row"><div class="brand"><span class="mark" aria-hidden="true"></span><div><b>Work Planning</b><small>Asili field cascade · prototype, made-up data</small></div></div>' +
+    var h = '<header class="hd"><div class="hd-row"><div class="brand"><img class="logo" src="../tupande-farm-planner/assets/tupande-by-oaf-horizontal.png" alt="Tupande by One Acre Fund" width="900" height="267"><div class="prod"><b>Work Planning</b><small>Asili field cascade · prototype, made-up data</small></div></div>' +
       '<div class="ctl"><span class="lab" id="roleLab">View as</span><div class="seg roleseg" role="group" aria-labelledby="roleLab">';
     ROLES.forEach(function (r) { h += '<button data-act="role" data-id="' + r[0] + '" aria-pressed="false">' + r[1] + '</button>'; });
     h += '</div></div></div><div class="hd-row hd-sub"><div class="ctl"><label class="lab" for="regSel">Region</label><select id="regSel">';

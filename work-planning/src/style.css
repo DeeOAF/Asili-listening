@@ -722,3 +722,37 @@ body::before { background: var(--bg); }
 .clist li + li > .crow, .clist li + li.crow { box-shadow: inset 0 1px 0 var(--line-2); }
 .block .why { font-size: 12px; color: var(--ink-3); opacity: .85; }
 .day { box-shadow: none; }
+
+/* week picker in the header, always visible */
+.wkpick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.wkpick select { min-height: 40px; }
+#wkSel { max-width: 320px; }
+.dayctl { display: inline-flex; align-items: center; gap: 8px; }
+.dayctl[hidden] { display: none; }
+
+/* week calendar on the Priorities page */
+.cal { margin-bottom: 26px; }
+.cal-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+.cal-w { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; cursor: pointer; min-height: 44px; }
+.cal-w small { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink-3); }
+.cal-w b { font-family: var(--font-head); font-weight: 800; font-size: 20px; line-height: 1.1; }
+.cal-w .muted { font-size: 13px; }
+.cal-w .chip { margin-top: 6px; }
+.cal-w:hover { border-color: var(--t-green); }
+.cal-w[aria-current="true"] { border-color: var(--t-green); box-shadow: inset 0 0 0 2px var(--t-green); background: var(--t-green-20); }
+.c-none { color: var(--ink-3); background: var(--surface-2); }
+.c-none::before { background: var(--line); }
+.startwk { border-left: 4px solid var(--t-yellow); }
+
+/* back link when you have walked below your own level */
+.backlink { border: 0; background: none; color: var(--t-green-dark); font-weight: 700; cursor: pointer; padding: 6px 0; min-height: 40px; margin-bottom: 6px; display: inline-flex; gap: 6px; align-items: center; font-size: 15px; }
+.backlink:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* confirmation toast */
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 12px); max-width: min(560px, calc(100vw - 32px)); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 12px; box-shadow: 0 10px 30px rgba(34,48,45,.25); z-index: 40; opacity: 0; font-weight: 600; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: no-preference) { .toast { transition: opacity .18s, transform .18s; } }
+@media (max-width: 720px) {
+  .wkpick { width: 100%; } .wkpick > select, #wkSel { flex: 1 1 100%; max-width: none; }
+  .cal-strip { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 132px; overflow-x: auto; padding-bottom: 4px; }
+}

@@ -4,7 +4,7 @@
   var DATA = WP.generateData();
   var sum = WP.sum;
 
-  var S = { role: 'rm', sArea: null, sZone: null, sTa: null, sDa: null, at: null, showWk: false, tab: 'home', region: 'mkc', day: 2, prio: null, zone: null, ta: null, open: {}, prios: {}, uid: 10, wk: 1, acc: {}, accRole: 'zs', accArea: null, accEdit: null, accErr: {}, tu: null, tlevel: 'area', rvArea: null, rvZone: null, wkPrios: {}, wkPub: {}, plans: {}, edit: false, editTa: null, whatif: null, level: 'region', err: {} };
+  var S = { role: 'rm', sArea: null, sZone: null, sTa: null, sDa: null, at: null, showWk: false, tab: 'home', region: 'mkc', day: 2, prio: null, zone: null, ta: null, open: {}, prios: {}, uid: 10, wk: 1, acc: {}, accRole: 'zs', accArea: null, accEdit: null, accErr: {}, tu: null, tlevel: 'area', rvArea: null, rvZone: null, wkPrios: {}, wkDprios: {}, wkPub: {}, toast: null, plans: {}, edit: false, editTa: null, whatif: null, level: 'region', err: {} };
   S.dprios = {};
   DATA.regions.forEach(function (r) { S.prios[r.id] = WP.defaultPriorities(r.id); S.dprios[r.id] = WP.defaultDukaPriorities(r.id); });
   function dprios(regId) { return S.dprios[regId || S.region]; }
@@ -78,13 +78,31 @@
     if (!u && S.role === 'zs') u = sZone();
     return u;
   }
-  var WEEKS = [['2 Nov', 'week before'], ['9 Nov', 'last week, closed'], ['16 Nov', 'this week']];
-  function wkKey() { return S.region + '|' + S.wk; }
+  /* the week calendar: 0 closed (no data held), 1 last week with results (the live data), 2 this week, 3+ upcoming */
+  var WEEKS = [['2 Nov', '7 Nov', 'week before last'], ['9 Nov', '14 Nov', 'last week'], ['16 Nov', '21 Nov', 'this week'], ['23 Nov', '28 Nov', 'next week'], ['30 Nov', '5 Dec', 'in 2 weeks'], ['7 Dec', '12 Dec', 'in 3 weeks'], ['14 Dec', '19 Dec', 'in 4 weeks'], ['21 Dec', '26 Dec', 'in 5 weeks']];
+  function wkKey(i) { return S.region + '|' + (i == null ? S.wk : i); }
+  function planWeek(i) { return (i == null ? S.wk : i) >= 2; }
+  function wkStarted(i) { return !!S.wkPrios[wkKey(i)]; }
+  function wkStatus(i) {
+    if (i === 0) return 'Closed'; if (i === 1) return 'Results';
+    return S.wkPub[wkKey(i)] ? 'Published' : wkStarted(i) ? 'Draft' : 'Not started';
+  }
+  function wkLabel(i) { return WEEKS[i][0] + ' – ' + WEEKS[i][1]; }
+  /* the set a planning week starts from: the latest earlier week that has one, else last week's live set */
+  function prevSets(i) {
+    for (var j = i - 1; j >= 2; j--) if (S.wkPrios[wkKey(j)]) return [S.wkPrios[wkKey(j)], S.wkDprios[wkKey(j)], WEEKS[j][0]];
+    return [S.prios[S.region], S.dprios[S.region], WEEKS[1][0]];
+  }
+  function dpriosWk() {
+    if (S.wk === 1) return S.dprios[S.region];
+    if (S.wk === 0) return WP.defaultDukaPriorities(S.region);
+    return S.wkDprios[wkKey()] || prevSets(S.wk)[1];
+  }
   function prios() {
     if (S.wk === 1) return S.prios[S.region];
     var k = wkKey();
-    if (!S.wkPrios[k]) S.wkPrios[k] = S.wk === 0 ? WP.defaultPriorities(S.region) : JSON.parse(JSON.stringify(S.prios[S.region]));
-    return S.wkPrios[k];
+    if (S.wk === 0) return S.wkPrios[k] || (S.wkPrios[k] = WP.defaultPriorities(S.region));
+    return S.wkPrios[k] || prevSets(S.wk)[0];
   }
   function pById(id, list) { var l = list || prios(); for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return l[0]; }
   function pIndex(id) { var l = prios(); for (var i = 0; i < l.length; i++) if (l[i].id === id) return i; return 0; }
@@ -317,8 +335,9 @@
   function viewPriorities() {
     var reg = region(), l = prios();
     var ro = S.wk === 0 || S.role !== 'rm', pub = !!S.wkPub[wkKey()];
-    var banner = S.wk === 1 ? '' : S.wk === 0 ? '<div class="banner active" style="margin-top:12px"><div class="bhead"><span class="chip c-done">Closed</span><span class="sub">Published and closed. Read only.</span></div><div class="bact"><button class="btn small" data-act="copyTo">Copy to this week</button></div></div>' :
-      '<div class="banner ' + (pub ? 'active' : 'pending') + '" style="margin-top:12px"><div class="bhead"><span class="chip ' + (pub ? 'c-done' : 'c-slip') + '">' + (pub ? 'Published' : 'Draft') + '</span><span class="sub">' + (pub ? 'Sent to ACs, ZSs and TAs. Plans are generated from these priorities.' : 'This week’s priorities, not yet visible to the team. Publish when the weights total 100.') + '</span></div><div class="bact"><button class="btn small" data-act="copyCur">Copy last week’s priorities</button> <button class="btn solid small" data-act="publish"' + (pub || sum(l, function (p) { return p.weight; }) !== 100 ? ' disabled' : '') + '>Publish</button></div></div>';
+    var dtot = sum(dpriosWk(), function (p) { return p.weight; }), ttot = sum(l, function (p) { return p.weight; });
+    var banner = S.wk === 1 ? '' : S.wk === 0 ? '<div class="banner active" style="margin-top:12px"><div class="bhead"><span class="chip c-done">Closed</span><span class="sub">Published and closed. Read only.</span></div></div>' :
+      '<div class="banner ' + (pub ? 'active' : 'pending') + '" style="margin-top:12px"><div class="bhead"><span class="chip ' + (pub ? 'c-done' : 'c-slip') + '">' + (pub ? 'Published' : 'Draft') + '</span><span class="sub">' + (pub ? 'Sent to ACs, ZSs, TAs and Duka Assistants for the week of ' + wkLabel(S.wk) + '. You can still change it before the week starts.' : 'Not visible to the team yet. Publish when both sets of weights total 100.' + (ttot !== 100 ? ' TA weights total ' + ttot + '%.' : '') + (dtot !== 100 ? ' Duka weights total ' + dtot + '%.' : '')) + '</span></div><div class="bact">' + (pub ? '<button class="btn small" data-act="unpublish">Unpublish</button>' : '<button class="btn solid small" data-act="publish"' + (ttot !== 100 || dtot !== 100 ? ' disabled' : '') + '>Publish to the team</button>') + '</div></div>';
     if (S.role !== 'rm') banner = '<div class="banner active" style="margin-top:12px"><div class="bhead"><span class="chip c-on">Set by the RM</span><span class="sub">' + (S.role === 'ta' ? 'Read only for you. Your plan is on My week, where you can accept it or change it for your ZS to approve.' : S.role === 'da' ? 'Read only for you. Your duka plan is on My week.' : 'Read only for you. Accept them or change the time split for your ' + (S.role === 'ac' ? 'area' : 'zone') + ' above.') + '</span></div>' + (S.role === 'ta' || S.role === 'da' ? '<div class="bact"><button class="btn small solid" data-tab="home">My week</button></div>' : '') + '</div>';
     var h = '<div class="top-row"><h2 style="font-size:20px">Priorities set by ' + esc(reg.rm) + ' for the week of ' + WEEKS[S.wk][0] + ' 2026</h2>' + banner +
       '<p class="sub" style="margin-top:4px">' + (S.role === 'rm' ? 'Change a target, deadline or weight. Everything else recalculates. In the full tool the RM types the sentence and the structure below is read from it; here you set the numbers.' : 'These are the priorities your RM published. Each has a pillar, a target, a deadline and a weight. The right-hand column says what is asked of each level.') + '</p></div>' +
@@ -1326,12 +1345,14 @@
   function viewHome() {
     if (S.wk !== 1) return offWeek();
     var u = curUnit();
-    if (u.role === 'DA') return daHome(u);
-    if (!u.areas && !u.zones && !u.tas) return territoryHome(u);
-    return unitCard(u) + waitingHTML() + prioList(u) + childList(u);
+    var back = '';
+    if (u.id !== homeUnit().id) { var pp = pathOf(u), up = pp[pp.length - 2]; back = '<button class="backlink" data-act="goto" data-id="' + up.id + '"><span aria-hidden="true">‹</span> Back to ' + esc(unitName(up)) + '</button>'; }
+    if (u.role === 'DA') return back + daHome(u);
+    if (!u.areas && !u.zones && !u.tas) return back + territoryHome(u);
+    return back + unitCard(u) + waitingHTML() + prioList(u) + childList(u);
   }
   function dukaSetHTML() {
-    var l = dprios(), ro = S.role !== 'rm', tot = sum(l, function (p) { return p.weight; });
+    var l = dpriosWk(), ro = S.role !== 'rm' || S.wk === 0, tot = sum(l, function (p) { return p.weight; });
     var h = '<section class="panel sec dset"><h2>Duka priorities</h2><p class="sub" style="margin:4px 0 12px">For the Duka Assistants, a separate workforce that sells for cash at the dukas. Its weights total 100 on their own and split a Duka Assistant’s time. ' + (ro ? 'Set by the RM.' : 'Change a measure, target, deadline or weight.') + '</p>';
     h += '<div class="scroll"><table><thead><tr><th>Priority</th><th>Measure</th><th class="r">Target each</th><th>By</th><th class="r">Weight</th>' + (ro ? '' : '<th></th>') + '</tr></thead><tbody>';
     l.forEach(function (p, i) {
@@ -1346,7 +1367,32 @@
     if (!ro) h += '<div class="planhd" style="margin-top:10px">' + (tot !== 100 ? '<span class="note warn">The duka weights total ' + tot + '%. They must total 100.</span>' : '') + '<button class="btn small" data-act="dbalance">Balance to 100</button><button class="btn small" data-act="dadd"' + (l.length >= 5 ? ' disabled' : '') + '>Add a duka priority</button><button class="btn small" data-act="dreset">Reset</button></div>';
     return h + '</section>';
   }
+  /* calendar of weeks: pick one to see or set its priorities ahead of time */
+  function calendarHTML() {
+    var h = '<section class="cal" aria-label="Weeks"><div class="sh"><h2>Weeks</h2><p class="sub">' + (S.role === 'rm' ? 'Pick a week to see its results or set its priorities ahead of time.' : 'Pick a week to see its priorities.') + '</p></div><div class="cal-strip" role="list">';
+    WEEKS.forEach(function (w, i) {
+      var st = wkStatus(i), cls = st === 'Published' ? 'c-done' : st === 'Draft' ? 'c-slip' : st === 'Results' ? 'c-on' : st === 'Closed' ? 'c-done' : 'c-none';
+      h += '<button class="cal-w" role="listitem" data-act="pickWeek" data-wk="' + i + '" aria-current="' + (i === S.wk ? 'true' : 'false') + '"><small>' + esc(w[2]) + '</small><b>' + esc(w[0]) + '</b><span class="muted">to ' + esc(w[1]) + '</span><span class="chip ' + cls + '">' + st + '</span></button>';
+    });
+    return h + '</div></section>';
+  }
+  function planWeekHTML() {
+    var k = wkKey(), from = prevSets(S.wk), pub = !!S.wkPub[k];
+    if (S.role !== 'rm') {
+      if (!pub) return '<div class="panel sec"><h3>Not published yet</h3><p class="sub" style="margin-top:6px">' + esc(region().rm) + ' has not published the priorities for the week of ' + wkLabel(S.wk) + '. They will appear here once published.</p></div>';
+      return viewPriorities() + dukaSetHTML();
+    }
+    if (!wkStarted(S.wk)) return '<div class="panel sec startwk"><h3>Plan the week of ' + wkLabel(S.wk) + '</h3><p class="sub" style="margin:6px 0 14px">Start from the priorities you set for the week of ' + esc(from[2]) + ', then change what you need. Nothing reaches the team until you publish.</p>' +
+      '<div class="planhd"><button class="btn solid" data-act="wkStart">Copy the week of ' + esc(from[2]) + '</button><button class="btn" data-act="wkStartDefault">Start from the region’s usual priorities</button></div></div>';
+    return viewPriorities() + dukaSetHTML();
+  }
   function viewPrioMerged() {
+    var cal = calendarHTML();
+    if (planWeek()) return cal + planWeekHTML();
+    if (S.wk === 0) return cal + viewPriorities() + dukaSetHTML();
+    return cal + viewPrioMerged1();
+  }
+  function viewPrioMerged1() {
     function waits(lead) {
       return ['ta', 'duka'].map(function (set) { var l = waitingAcc(set); return l.length ? withSet(set, function () { return proposalsHTML(l, 'Weight changes waiting for you', lead); }) : ''; }).join('');
     }
@@ -1368,14 +1414,12 @@
   /* ---------- shell ---------- */
   function shell() {
     var h = '<header class="hd"><div class="hd-row"><div class="brand"><img class="logo" src="../tupande-farm-planner/assets/tupande-by-oaf-horizontal.png" alt="Tupande by One Acre Fund" width="900" height="267"><div class="prod"><b>Work Planning</b><small>Prototype · made-up data</small></div></div>' +
-      '<div class="ctl who"><label class="lab" for="roleSel">Viewing as</label><select id="roleSel">' + ROLES.map(function (r) { return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join('') + '</select><select id="whoSel" aria-label="Which one"></select></div></div>' +
-      '<div class="hd-row hd-sub"><nav class="path" id="path" aria-label="Where you are"></nav><span class="bsp"></span><div class="wkline"><span id="wkTxt"></span> <button class="linkbtn" data-act="wkToggle" aria-expanded="false" id="wkBtn">Change</button></div></div>' +
-      '<div class="hd-row hd-sub" id="wkRow" hidden><div class="ctl"><label class="lab" for="wkSel">Week of</label><select id="wkSel">';
-    WEEKS.forEach(function (w, i) { h += '<option value="' + i + '">' + w[0] + ' (' + w[1] + ')</option>'; });
-    h += '</select></div><div class="ctl" id="dayCtl"><span class="lab" id="dayLab">Up to</span><div class="seg" role="group" aria-labelledby="dayLab">';
-    DAYS.forEach(function (d, i) { h += '<button data-day="' + i + '" aria-pressed="false">' + d + '</button>'; });
-    h += '</div></div></div></header>' +
-      '<div class="wrap"><nav class="tabs" id="tabs" aria-label="Views"></nav><main id="view"></main></div>';
+      '<div class="ctl who"><label class="lab" for="roleSel">Demo: view as</label><select id="roleSel">' + ROLES.map(function (r) { return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join('') + '</select><select id="whoSel" aria-label="Which one"></select></div></div>' +
+      '<div class="hd-row hd-sub"><nav class="path" id="path" aria-label="Where you are"></nav><span class="bsp"></span>' +
+      '<div class="wkpick"><label class="lab" for="wkSel">Week</label><select id="wkSel"></select><span id="dayCtl" class="dayctl"><label class="lab" for="daySel">Up to</label><select id="daySel">' +
+      DAYS.map(function (d, i) { return '<option value="' + i + '">' + DAYS_LONG[i] + '</option>'; }).join('') + '</select></span></div></div>';
+    h += '</header>' +
+      '<div class="wrap"><nav class="tabs" id="tabs" aria-label="Views"></nav><main id="view"></main></div><div class="toast" id="toast" role="status" aria-live="polite" hidden></div>';
     $('app').innerHTML = h;
   }
 
@@ -1389,7 +1433,7 @@
     var more = allowed.filter(function (t) { return MAIN_TABS.indexOf(t) < 0; });
     if (more.length) {
       var inMore = more.indexOf(S.tab) >= 0;
-      h += '<details class="more"' + (inMore ? ' open' : '') + '><summary' + (inMore ? ' class="on"' : '') + '>More' + (inMore ? ': ' + esc(tabLabel(S.tab)) : '') + '</summary><div class="more-m">' +
+      h += '<details class="more"><summary' + (inMore ? ' class="on"' : '') + '>More' + (inMore ? ': ' + esc(tabLabel(S.tab)) : '') + '</summary><div class="more-m">' +
         more.map(function (t) { return '<button data-tab="' + t + '" aria-selected="' + (t === S.tab) + '">' + esc(tabLabel(t)) + '</button>'; }).join('') + '</div></details>';
     }
     return h + '</div>';
@@ -1426,10 +1470,8 @@
     $('roleSel').value = S.role;
     var ws = $('whoSel'); ws.innerHTML = whoOptions();
     ws.value = S.role === 'rm' ? S.region : S.role === 'ac' ? S.sArea : S.role === 'zs' ? S.sZone : S.role === 'ta' ? S.sTa : S.sDa;
-    $('wkSel').value = String(S.wk); $('dayCtl').hidden = S.wk !== 1;
-    $('wkRow').hidden = !S.showWk; $('wkBtn').setAttribute('aria-expanded', String(S.showWk)); $('wkBtn').textContent = S.showWk ? 'Done' : 'Change';
-    $('wkTxt').innerHTML = 'Week of <b>' + WEEKS[S.wk][0] + '</b>' + (S.wk === 1 ? ', ' + upTo() : ' · ' + WEEKS[S.wk][1]);
-    document.querySelectorAll('[data-day]').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.day === S.day)); });
+    $('wkSel').innerHTML = WEEKS.map(function (w, i) { return '<option value="' + i + '">' + wkLabel(i) + ' · ' + w[2] + ' · ' + wkStatus(i) + '</option>'; }).join('');
+    $('wkSel').value = String(S.wk); $('dayCtl').hidden = S.wk !== 1; $('daySel').value = String(S.day);
     $('path').innerHTML = pathHTML();
     $('tabs').innerHTML = tabsHTML();
     $('view').innerHTML = (S.wk !== 1 && S.tab !== 'priorities' && S.tab !== 'data' && S.tab !== 'home') ? offWeek() : VIEWS[S.tab]();
@@ -1450,7 +1492,16 @@
     S.edit = true; S.editTa = taId; S.editKey = pl.key; S.err[taId] = '';
   }
   function offWeek() {
-    return '<div class="panel"><h3>No performance data for the week of ' + WEEKS[S.wk][0] + '</h3><p class="sub" style="margin:6px 0 12px">' + (S.wk === 0 ? 'The prototype holds activity for the week of 9 November only. In the real tool, last week’s numbers and plans would be here, read only.' : 'No activity has been recorded yet this week, so there are no results or plans. Plans are generated from the priorities the RM publishes.') + '</p><button class="btn solid small" data-act="thisWeek">Go to this week</button> <button class="btn small" data-act="goPriosWk">See the priorities for this week</button></div>';
+    var lab = wkLabel(S.wk), st = wkStatus(S.wk);
+    if (S.wk === 0) return '<div class="panel sec"><h3>No results held for the week of ' + lab + '</h3><p class="sub" style="margin:6px 0 12px">The prototype holds activity for the week of 9 November only. In the real tool this week’s results would be here, read only.</p><div class="planhd"><button class="btn solid" data-act="thisWeek">See the week of ' + wkLabel(1) + '</button></div></div>';
+    return '<div class="panel sec"><h3>The week of ' + lab + ' has not happened yet</h3><p class="sub" style="margin:6px 0 12px">Plans and results appear once the week starts and activity comes in. Its priorities are <b>' + st.toLowerCase() + '</b>.</p><div class="planhd">' +
+      '<button class="btn solid" data-tab="priorities">' + (S.role === 'rm' && st !== 'Published' ? 'Set the priorities for this week' : 'See the priorities for this week') + '</button><button class="btn" data-act="thisWeek">See the week of ' + wkLabel(1) + '</button></div></div>';
+  }
+  var toastT = null;
+  function toast(msg) {
+    var el = $('toast'); if (!el) return;
+    el.textContent = msg; el.hidden = false; el.classList.add('on');
+    clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('on'); el.hidden = true; }, 4000);
   }
   function setTab(t) { leaveEdit(); S.tab = t; render(); window.scrollTo(0, 0); }
 
@@ -1462,12 +1513,11 @@
     if (b.dataset.day !== undefined) { leaveEdit(); S.day = +b.dataset.day; return render(); }
     var act = b.dataset.act; if (!act) return;
     if (act === 'goto') { leaveEdit(); S.at = b.dataset.id; var gu = DATA.byId[S.at]; if (gu.zoneId) S.zone = gu.zoneId; if (gu.tas) S.zone = gu.id; S.tab = 'home'; render(); window.scrollTo(0, 0); return; }
-    if (act === 'wkToggle') { S.showWk = !S.showWk; return render(); }
-    var dl0 = dprios();
+    var dl0 = dpriosWk();
     if (act === 'dremove') { dl0.splice(+b.dataset.i, 1); return render(); }
     if (act === 'dbalance') { var dt = sum(dl0, function (p) { return p.weight; }); dl0.forEach(function (p) { p.weight = dt ? Math.round(p.weight / dt * 100) : Math.round(100 / dl0.length); }); dl0[0].weight += 100 - sum(dl0, function (p) { return p.weight; }); return render(); }
     if (act === 'dadd') { var used = dl0.map(function (p) { return p.metric; }), nk = Object.keys(M).filter(function (k) { return M[k].owner === 'DA' && used.indexOf(k) < 0; })[0] || 'duka'; S.uid++; dl0.push({ id: 'dn' + S.uid, metric: nk, title: M[nk].label, text: 'New duka priority for the week.', target: defaultTarget(nk), deadline: 4, weight: 0, norm: 0, aud: {} }); return render(); }
-    if (act === 'dreset') { S.dprios[S.region] = WP.defaultDukaPriorities(S.region); return render(); }
+    if (act === 'dreset') { if (S.wk === 1) S.dprios[S.region] = WP.defaultDukaPriorities(S.region); else S.wkDprios[wkKey()] = WP.defaultDukaPriorities(S.region); return render(); }
     if (act === 'goRegion') { S.region = b.dataset.id; S.zone = null; S.ta = null; S.prio = null; return setTab('cascade'); }
     if (act === 'goPrios') { S.region = b.dataset.id; S.zone = null; S.ta = null; S.prio = null; return setTab('priorities'); }
     if (act === 'goAccept') return setTab('accept');
@@ -1478,10 +1528,16 @@
     if (act === 'collapseAll') { allZones(region()).forEach(function (z) { S.open[z.id] = false; S.open[z.areaId] = true; }); return render(); }
     if (act === 'plan') { leaveEdit(); var t = DATA.byId[b.dataset.id]; S.region = t.regionId; S.ta = t.id; S.zone = t.zoneId; S.prio = null; return setTab('week'); }
     if (act === 'thisWeek') { S.wk = 1; return render(); }
+    if (act === 'pickWeek') { leaveEdit(); S.wk = +b.dataset.wk; S.tab = 'priorities'; return render(); }
+    if (act === 'wkStart' || act === 'wkStartDefault') {
+      var pf = prevSets(S.wk), kk = wkKey();
+      S.wkPrios[kk] = act === 'wkStart' ? JSON.parse(JSON.stringify(pf[0])) : WP.defaultPriorities(S.region);
+      S.wkDprios[kk] = act === 'wkStart' ? JSON.parse(JSON.stringify(pf[1])) : WP.defaultDukaPriorities(S.region);
+      toast('Draft started for the week of ' + wkLabel(S.wk) + '. It is not visible to the team yet.'); return render();
+    }
+    if (act === 'unpublish') { S.wkPub[wkKey()] = false; toast('Unpublished. The team no longer sees the week of ' + wkLabel(S.wk) + '.'); return render(); }
     if (act === 'goPriosWk') { S.tab = 'priorities'; return render(); }
-    if (act === 'copyCur') { S.wkPrios[S.region + '|2'] = JSON.parse(JSON.stringify(S.prios[S.region])); S.wkPub[S.region + '|2'] = false; return render(); }
-    if (act === 'copyTo') { S.wkPrios[S.region + '|2'] = JSON.parse(JSON.stringify(prios())); S.wkPub[S.region + '|2'] = false; S.wk = 2; return render(); }
-    if (act === 'publish') { S.wkPub[wkKey()] = true; return render(); }
+    if (act === 'publish') { S.wkPub[wkKey()] = true; toast('Published the week of ' + wkLabel(S.wk) + ' to ACs, ZSs, TAs and Duka Assistants.'); return render(); }
     if (act === 'tuset') { S.tu = b.dataset.id || null; if (S.tu && DATA.byId[S.tu] && !DATA.byId[S.tu].zones && !DATA.byId[S.tu].tas) S.zone = DATA.byId[S.tu].zoneId; return render(); }
     if (act === 'tlevel') { S.tlevel = b.dataset.id; return render(); }
     if (act === 'role') {
@@ -1494,7 +1550,7 @@
     }
     if (/^acc/.test(act)) ACC_SET = b.dataset.set || 'ta';
     var au = S.accRole === 'ac' ? S.accArea : S.zone, ac0 = null, ek = eKey(au);
-    if (act === 'accAccept') { ac0 = getAcc(au); ac0.status = 'active'; ac0.weights = null; ac0.draft = null; ac0.proposed = null; ac0.reason = ''; ac0.comment = ''; ac0.log.push('Accepted as set'); S.accEdit = null; S.accErr[ek] = ''; return render(); }
+    if (act === 'accAccept') { ac0 = getAcc(au); ac0.status = 'active'; ac0.weights = null; ac0.draft = null; ac0.proposed = null; ac0.reason = ''; ac0.comment = ''; ac0.log.push('Accepted as set'); S.accEdit = null; S.accErr[ek] = ''; toast('Accepted the ' + (ACC_SET === 'duka' ? 'duka' : 'TA') + ' priorities as the RM set them.'); return render(); }
     if (act === 'accEdit' || act === 'accWithdraw') {
       ac0 = getAcc(au);
       if (act === 'accWithdraw') { ac0.status = 'proposed'; ac0.log.push('Withdrawn'); }
@@ -1511,17 +1567,17 @@
       else if (tooFar) S.accErr[ek] = 'A weight can move by at most 20 points from the RM’s.';
       else if (dr.join() === rmw.join()) S.accErr[ek] = 'The weights are the same as the RM’s. Accept them as set instead.';
       else if (!(ac0.reason || '').trim()) S.accErr[ek] = 'Say why you are changing the weights. ' + ap0.who + ' needs it to decide.';
-      else { ac0.proposed = dr.slice(); ac0.status = 'pending'; ac0.comment = ''; ac0.draft = null; ac0.log.push('Sent to ' + ap0.who); S.accEdit = null; S.accErr[ek] = ''; }
+      else { ac0.proposed = dr.slice(); ac0.status = 'pending'; ac0.comment = ''; ac0.draft = null; ac0.log.push('Sent to ' + ap0.who); S.accEdit = null; S.accErr[ek] = ''; toast('Weight change sent to ' + ap0.who + '.'); }
       return render();
     }
     if (act === 'accApprove' || act === 'accReturn') {
       var uid = b.dataset.id; ac0 = peekAcc(uid); if (!ac0) return;
       var ap1 = approverOf(DATA.byId[uid]);
-      if (act === 'accApprove') { ac0.status = 'active'; ac0.weights = ac0.proposed.slice(); ac0.approvedBy = ap1.who; ac0.log.push(ap1.who + ' approved'); S.accErr[eKey(uid)] = ''; }
+      if (act === 'accApprove') { ac0.status = 'active'; ac0.weights = ac0.proposed.slice(); ac0.approvedBy = ap1.who; ac0.log.push(ap1.who + ' approved'); S.accErr[eKey(uid)] = ''; toast('Approved the weight change for ' + DATA.byId[uid].name + '.'); }
       else {
         var cm2 = ($('acm' + eKey(uid)).value || '').trim();
         if (!cm2) { S.accErr[eKey(uid)] = 'Add a comment so they know what to change.'; return render(); }
-        ac0.status = 'returned'; ac0.comment = cm2; ac0.draftComment = ''; ac0.log.push(ap1.who + ' returned it'); S.accErr[eKey(uid)] = '';
+        ac0.status = 'returned'; ac0.comment = cm2; ac0.draftComment = ''; ac0.log.push(ap1.who + ' returned it'); S.accErr[eKey(uid)] = ''; toast('Returned to ' + ownerOf(DATA.byId[uid]) + ' with your comment.');
       }
       return render();
     }
@@ -1535,7 +1591,7 @@
     var ta0 = S.ta, pl = S.plans[planKey(ta0)] || null, r0 = null;
     if (act === 'accept' || act === 'useRecAccept') {
       pl = getPlan(ta0); pl.status = 'active'; pl.days = null; pl.approvedBy = null; pl.snap = null; pl.reason = ''; pl.comment = '';
-      pl.log.push('You accepted the recommended plan'); S.err[ta0] = ''; S.edit = false; return render();
+      pl.log.push('You accepted the recommended plan'); S.err[ta0] = ''; S.edit = false; toast('Plan accepted. It is now the plan for the rest of the week.'); return render();
     }
     if (act === 'editStart') { startEdit(ta0); return render(); }
     if (act === 'editCancel') { leaveEdit(); S.err[ta0] = ''; return render(); }
@@ -1545,7 +1601,7 @@
       pl = getPlan(ta0); r0 = rowOf(ta0);
       if (!pl.days || daysSig(pl.days) === daysSig(r0.plan.days)) S.err[ta0] = 'Nothing has changed from the recommended plan. Change a block first, or accept the plan as it is.';
       else if (!(pl.reason || '').trim()) S.err[ta0] = 'Say why you are changing the plan. ' + r0.zone.zs + ' needs it to decide.';
-      else { pl.status = 'pending'; pl.comment = ''; pl.snap = null; pl.log.push('You sent it to ' + r0.zone.zs); S.edit = false; S.err[ta0] = ''; }
+      else { pl.status = 'pending'; pl.comment = ''; pl.snap = null; pl.log.push('You sent it to ' + r0.zone.zs); S.edit = false; S.err[ta0] = ''; toast('Sent to ' + r0.zone.zs + ' for approval.'); }
       return render();
     }
     if (act === 'bminus' || act === 'bplus' || act === 'bremove') {
@@ -1571,11 +1627,11 @@
     if (act === 'approve' || act === 'return') {
       var tid = b.dataset.id; pl = peekPlan(tid); if (!pl) return;
       var zsn = DATA.byId[DATA.byId[tid].zoneId].zs;
-      if (act === 'approve') { pl.status = 'active'; pl.approvedBy = zsn; pl.log.push(zsn + ' approved it'); S.err[tid] = ''; }
+      if (act === 'approve') { pl.status = 'active'; pl.approvedBy = zsn; pl.log.push(zsn + ' approved it'); S.err[tid] = ''; toast('Approved ' + DATA.byId[tid].name + '’s plan.'); }
       else {
         var cm = ($('cm' + tid).value || '').trim();
         if (!cm) { S.err[tid] = 'Add a comment so the TA knows what to change.'; return render(); }
-        pl.status = 'returned'; pl.comment = cm; pl.draftComment = ''; pl.log.push(zsn + ' returned it'); S.err[tid] = '';
+        pl.status = 'returned'; pl.comment = cm; pl.draftComment = ''; pl.log.push(zsn + ' returned it'); S.err[tid] = ''; toast('Returned to ' + DATA.byId[tid].name + ' with your comment.');
       }
       return render();
     }
@@ -1613,7 +1669,7 @@
   function onChange(e) {
     var t = e.target;
     if (t.dataset.df) {
-      var dp = dprios()[+t.dataset.di], df = t.dataset.df;
+      var dp = dpriosWk()[+t.dataset.di], df = t.dataset.df;
       if (df === 'metric') { if (dp.title === M[dp.metric].label) dp.title = M[t.value].label; dp.metric = t.value; dp.target = defaultTarget(t.value); }
       else if (df === 'title') dp.title = t.value || M[dp.metric].label;
       else dp[df] = Math.max(0, Math.round(Number(t.value) || 0));
@@ -1627,6 +1683,7 @@
       fb2.day.blocks.splice(fb2.j, 1); fb2.block.edited = true; td.blocks.push(fb2.block); S.err[S.ta] = ''; return render();
     }
     if (t.dataset.aw !== undefined) { ACC_SET = t.dataset.set || 'ta'; var unitW = S.accRole === 'ac' ? S.accArea : S.zone, aw = getAcc(unitW); if (aw.draft) { aw.draft[+t.dataset.aw] = Math.max(0, Math.round(Number(t.value) || 0)); } return render(); }
+    if (t.id === 'daySel') { leaveEdit(); S.day = +t.value; return render(); }
     if (t.id === 'roleSel') {
       leaveEdit(); var cu = curUnit(); S.role = t.value; S.at = null; S.accEdit = null; S.tu = null; S.rvArea = null; S.rvZone = null; S.level = 'region'; S.rlevel = null; S.tlevel = null; S.open = {};
       if (cu.zoneId) { S.sZone = cu.zoneId; S.sArea = cu.areaId; if (cu.role === 'DA') S.sDa = cu.id; else S.sTa = cu.id; } else if (cu.tas) { S.sZone = cu.id; S.sArea = cu.areaId; } else if (cu.zones) S.sArea = cu.id;
@@ -1661,6 +1718,8 @@
     shell();
     var h = (location.hash || '').replace('#', '');
     if (VIEWS[h]) S.tab = h;
+    document.addEventListener('click', function (e) { document.querySelectorAll('details.more[open]').forEach(function (d) { if (!d.contains(e.target)) d.removeAttribute('open'); }); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') document.querySelectorAll('details.more[open]').forEach(function (d) { d.removeAttribute('open'); d.querySelector('summary').focus(); }); });
     document.addEventListener('click', onClick);
     document.addEventListener('input', onInput);
     document.addEventListener('change', onChange);

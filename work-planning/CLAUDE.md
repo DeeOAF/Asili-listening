@@ -14,6 +14,8 @@ Single-file HTML prototype. `node build.js` stitches src/template.html + style.c
 - "Met target" for areas, zones and territories = 95% of the pace line on every priority the unit is accountable for.
 - AC (area) and ZS (zone) may change weights only: +/-20 points, total 100, reason required, approved one level up. Scores stay on the RM's weights.
 - Roles: Viewing as RM / AC / ZS / TA / DA scopes every view; priorities are read-only below the RM.
+- Weeks: WEEKS is a calendar (0 closed, 1 last week with the live results, 2 this week, 3+ upcoming). Planning weeks (>= 2) start as Not started; the RM copies the previous week's TA and duka sets (S.wkPrios / S.wkDprios) or starts from defaults, edits, then publishes. Below the RM a planning week shows only once published. Never edit prios() / dpriosWk() for a week that has not been started: before that they return the previous week's sets.
+- UX conventions: the More menu never renders open and closes on pick, outside click or Escape; actions confirm with toast(); drilling below your own level shows a Back link; the role switcher is labelled as a demo control.
 - Keep it simple: each role has one home (RM/AC/ZS: their unit with priorities and the units below it, lowest first; TA/DA: My week). Main nav is Home, Priorities, Plans to approve; everything else sits under More. Answer first in plain words, reasons inside "How is this worked out?".
 
 ## Files

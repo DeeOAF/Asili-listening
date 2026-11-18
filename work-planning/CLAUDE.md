@@ -1,6 +1,6 @@
 # Work Planning prototype (Asili field cascade)
 
-Single-file HTML prototype. `node build.js` stitches src/template.html + style.css + engine.js + app.js into work-planning.html. `node test.js` runs the engine tests. No dependencies.
+Single-file HTML prototype. `node build.js` stitches src/template.html + style.css + engine.js + app.js into work-planning.html (served by Vercel at /work-planning/) and work-planning.artifact.html (the shareable claude.ai page: no doctype/head, logo embedded). The shared page is https://claude.ai/artifact/C7E1PDLzaTQNXqHvxHhCfE; after a change, rebuild and republish work-planning.artifact.html to that URL so the link stays the same. `node test.js` runs the engine tests. No dependencies.
 
 ## Rules that must hold
 - All data is generated (engine.js generateData, hashRng for deterministic history). Never present it as real. Keep the "made-up data" label.
@@ -19,4 +19,4 @@ Single-file HTML prototype. `node build.js` stitches src/template.html + style.c
 ## Files
 - src/engine.js: window.WP (METRICS, PILLARS, generateData, calcTA, computeRegion, aggregate, planTA, focusOf, reviewUnit, history, histUnit, weekCheck).
 - src/app.js: state S, scope helpers (sreg, sres, scopeIds), simple views (viewHome, unitCard, prioList, childList, territoryHome, daHome, viewPrioMerged), detailed views under More, approval workflows (browser state only).
-- src/style.css: tokens (light and dark), components.
+- src/style.css: tokens (single light look, no dark theme by choice), components.

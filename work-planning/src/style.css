@@ -756,3 +756,15 @@ body::before { background: var(--bg); }
   .wkpick { width: 100%; } .wkpick > select, #wkSel { flex: 1 1 100%; max-width: none; }
   .cal-strip { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 132px; overflow-x: auto; padding-bottom: 4px; }
 }
+/* the eight pillars */
+/* brand-derived: Trees & Poultry in Kunde, Aggregation in Sangalo Rock (darkened), Compliance in Plum (small marks only) */
+:root { --pc-trees: #67724D; --pc-trees-bg: #E8EADF; --pc-aggr: #8A5A3F; --pc-aggr-bg: #F4E9E1; --pc-comp: #6F285B; --pc-comp-bg: #F2E4EE; }
+.pi-trees, .pt-trees { background: var(--pc-trees-bg); color: var(--pc-trees); }
+.pi-aggregation, .pt-aggregation { background: var(--pc-aggr-bg); color: var(--pc-aggr); }
+.pi-compliance, .pt-compliance { background: var(--pc-comp-bg); color: var(--pc-comp); }
+.pl-p { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink-3); }
+.savest { font-weight: 600; }
+.savest.s-saved { color: var(--t-green-dark); }
+.savest.s-saving, .savest.s-loading { color: var(--ink-3); }
+.savest.s-error, .savest.s-slow { color: var(--s-crit); }
+.savest.s-readonly, .savest.s-local { color: var(--ink-3); }

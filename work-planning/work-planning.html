@@ -767,6 +767,18 @@ body::before { background: var(--bg); }
   .wkpick { width: 100%; } .wkpick > select, #wkSel { flex: 1 1 100%; max-width: none; }
   .cal-strip { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 132px; overflow-x: auto; padding-bottom: 4px; }
 }
+/* the eight pillars */
+/* brand-derived: Trees & Poultry in Kunde, Aggregation in Sangalo Rock (darkened), Compliance in Plum (small marks only) */
+:root { --pc-trees: #67724D; --pc-trees-bg: #E8EADF; --pc-aggr: #8A5A3F; --pc-aggr-bg: #F4E9E1; --pc-comp: #6F285B; --pc-comp-bg: #F2E4EE; }
+.pi-trees, .pt-trees { background: var(--pc-trees-bg); color: var(--pc-trees); }
+.pi-aggregation, .pt-aggregation { background: var(--pc-aggr-bg); color: var(--pc-aggr); }
+.pi-compliance, .pt-compliance { background: var(--pc-comp-bg); color: var(--pc-comp); }
+.pl-p { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink-3); }
+.savest { font-weight: 600; }
+.savest.s-saved { color: var(--t-green-dark); }
+.savest.s-saving, .savest.s-loading { color: var(--ink-3); }
+.savest.s-error, .savest.s-slow { color: var(--s-crit); }
+.savest.s-readonly, .savest.s-local { color: var(--ink-3); }
 
 </style>
 <div id="app"></div>
@@ -794,6 +806,8 @@ body::before { background: var(--bg); }
     hvc:      { label: 'HVC client visits',       unit: 'visits',  kind: 'count',  hrs: 0.5,       mean: 5.7 },
     training: { label: 'Training modules passed', unit: 'modules', kind: 'count',  hrs: 1.5,       mean: 0.42 },
     glcalls:  { label: 'GL validation calls',     unit: 'calls',   kind: 'count',  hrs: 0.25,      mean: 4.1 },
+    trees:    { label: 'Tree and poultry orders',  unit: 'orders',  kind: 'count',  hrs: 0.5,       mean: 2.6 },
+    aggr:     { label: 'Produce aggregated',       unit: 'bags',    kind: 'count',  hrs: 0.3,       mean: 7.5 },
     // Duka Assistants: a separate workforce selling for cash at the dukas (TAs sell on credit and do extension)
     dsales:   { label: 'Duka cash sales',          unit: 'KES',        kind: 'count', hrs: 1 / 25000, mean: 38000, owner: 'DA' },
     tms:      { label: 'TMS validations',          unit: 'validations', kind: 'count', hrs: 0.4,      mean: 4.2,   owner: 'DA' },
@@ -802,21 +816,26 @@ body::before { background: var(--bg); }
     duka:     { label: 'Duka compliance visits',   unit: 'dukas',      kind: 'count', hrs: 1,         mean: 2.2,   owner: 'DA' }
   };
   /* the pillar each measure serves, so a priority can be read as a push on enrolment, repayment, HVC, extension or the duka network */
+  /* the RM's eight pillars. Every priority names one (p.pillar); a measure's home pillar is the default */
   var PILLARS = {
-    enrolment: { label: 'Enrolment', short: 'Enrol', metrics: ['clients', 'groups'] },
-    repayment: { label: 'Repayment', short: 'Repay', metrics: ['repaid'] },
-    hvc:       { label: 'HVC', short: 'HVC', metrics: ['hvc'] },
-    extension: { label: 'Extension', short: 'Ext', metrics: ['training', 'scoped', 'glcalls'] },
-    duka:      { label: 'Duka', short: 'Duka', metrics: ['dsales', 'tms', 'invvar', 'expiry', 'duka'] }
+    trees:       { label: 'Trees & Poultry', short: 'Trees', metrics: ['trees'] },
+    enrolment:   { label: 'Enrolment', short: 'Enrol', metrics: ['clients', 'groups'] },
+    repayment:   { label: 'Repayment', short: 'Repay', metrics: ['repaid'] },
+    extension:   { label: 'Extension', short: 'Ext', metrics: ['training', 'scoped', 'glcalls'] },
+    hvc:         { label: 'HVC', short: 'HVC', metrics: ['hvc'] },
+    aggregation: { label: 'Aggregation', short: 'Aggr', metrics: ['aggr'] },
+    duka:        { label: 'Duka', short: 'Duka', metrics: ['dsales', 'tms', 'invvar', 'expiry'] },
+    compliance:  { label: 'Compliance', short: 'Comp', metrics: ['duka'] }
   };
   function ownedByDA(metric) { return METRICS[metric].owner === 'DA'; }
+  function pillarOfP(p) { return p && p.pillar && PILLARS[p.pillar] ? p.pillar : pillarOf(p.metric); }
   function pillarOf(metric) { for (var k in PILLARS) if (PILLARS[k].metrics.indexOf(metric) >= 0) return k; return null; }
 
   var KIND_LABEL = { season: 'Trajectory', rate: 'Rate', count: 'Per person' };
 
   /* ---------- default regional priorities (illustrative) ---------- */
   function P(id, metric, title, text, target, deadline, weight, extra) {
-    var o = { id: id, metric: metric, title: title, text: text, target: target, deadline: deadline, weight: weight, norm: 0, aud: {} };
+    var o = { id: id, metric: metric, pillar: pillarOf(metric), title: title, text: text, target: target, deadline: deadline, weight: weight, norm: 0, aud: {} };
     if (extra) for (var k in extra) o[k] = extra[k];
     return o;
   }
@@ -991,7 +1010,7 @@ body::before { background: var(--bg); }
               groups: Math.round(S.groups * clip(0.036 + 0.014 * randn(), 0.005, 0.08)),
               scoped: Math.round(S.scoped * clip(0.41 + 0.08 * randn(), 0.15, 0.7)),
               repaid: Math.round(due * clip(0.58 + 0.07 * randn(), 0.35, 0.78) / 1000) * 1000,
-              hvc: 0, glcalls: 0, duka: 0, training: rint(0, 2)
+              hvc: 0, glcalls: 0, duka: 0, trees: 0, aggr: 0, training: rint(0, 2)
             };
             var pool = {
               clients: Math.round(S.clients * (0.35 + rand() * 0.55)),
@@ -1000,7 +1019,7 @@ body::before { background: var(--bg); }
             };
             var daily = {};
             Object.keys(METRICS).forEach(function (mk) {
-              if (ownedByDA(mk)) return;
+              if (ownedByDA(mk) || mk === 'trees' || mk === 'aggr') return;
               var arr = [];
               for (var di = 0; di < 6; di++) {
                 var dayF = di === 5 ? 0.4 : 1;
@@ -1013,7 +1032,12 @@ body::before { background: var(--bg); }
               }
               daily[mk] = arr;
             });
-            Object.keys(METRICS).forEach(function (mk) { if (ownedByDA(mk)) daily[mk] = [0, 0, 0, 0, 0, 0]; }); // duka work belongs to the zone's Duka Assistants
+            Object.keys(METRICS).forEach(function (mk) { if (ownedByDA(mk)) daily[mk] = [0, 0, 0, 0, 0, 0]; });
+            ['trees', 'aggr'].forEach(function (mk) {
+              var hr2 = hashRng('nm|' + rd.id + ai + zi + ti + mk), arr2 = [];
+              for (var di = 0; di < 6; di++) { var x2 = METRICS[mk].mean * f * (di === 5 ? 0.4 : 1) * clip(1 + 0.35 * gauss('nmg|' + rd.id + ai + zi + ti + mk + di), 0.2, 2.2), fl2 = Math.floor(x2); arr2.push(fl2 + (hr2() < x2 - fl2 ? 1 : 0)); }
+              daily[mk] = arr2;
+            }); // duka work belongs to the zone's Duka Assistants
             // training can never pass 4 modules in total
             var tcap = 4 - A0.training, ts = 0;
             daily.training = daily.training.map(function (v) { var k = Math.min(v, Math.max(0, tcap - ts)); ts += k; return k; });
@@ -1314,6 +1338,12 @@ body::before { background: var(--bg); }
       var mod = Math.min(4, ta.A0.training + calc.gain + 1 + k);
       ptr[p.id] = k + 1;
       text = 'Training module ' + mod + ' and its assessment (80% to pass)';
+    } else if (m === 'trees') {
+      var tg = ta.groups[k % ta.groups.length]; ptr[p.id] = k + 1;
+      text = 'Take ' + Math.max(1, Math.round(units)) + ' tree and poultry orders in ' + tg.name + ' (' + tg.village + ')';
+    } else if (m === 'aggr') {
+      var ag = ta.groups[k % ta.groups.length]; ptr[p.id] = k + 1;
+      text = 'Aggregate about ' + Math.max(1, Math.round(units)) + ' bags of produce from ' + ag.name + ' at the collection point';
     } else if (ownedByDA(m)) {
       var dl = ta.dukas && ta.dukas.length ? ta.dukas : ta.groups, d1 = dl[k % dl.length], d2 = dl[(k + 1) % dl.length], n2 = Math.max(1, Math.round(units));
       ptr[p.id] = k + 1;
@@ -1507,7 +1537,7 @@ body::before { background: var(--bg); }
     function zf(zoneId, w2) { return 1.0 + 0.012 * (w2 + 1) * (gauss('zs|' + zoneId) > 0 ? 1 : -0.6) + 0.07 * gauss('zw|' + zoneId + '|' + w2) + 0.03 * gauss('rw|' + region.id + '|' + w2); }
     for (var w2 = 0; w2 < 8; w2++) {
       var live = w2 === 7;
-      var pl = live ? prios.map(function (p) { return { id: p.id, metric: p.metric, title: p.title, weight: p.weight }; })
+      var pl = live ? prios.map(function (p) { return { id: p.id, metric: p.metric, pillar: p.pillar, title: p.title, weight: p.weight }; })
         : histPrios(sets[w2], WSETS[Math.floor(hashRng('w|' + region.id + w2)() * WSETS.length)], w2);
       var wk = { label: HIST_WEEKS[w2], live: live, prios: pl, idx: {}, p: {}, score: {}, dp: {}, zidx: {} };
       var wT = sum(pl, function (p) { return ownedByDA(p.metric) ? 0 : p.weight; }) || 1;
@@ -1594,11 +1624,11 @@ body::before { background: var(--bg); }
     var pillars = Object.keys(PILLARS).map(function (k) {
       var ms = PILLARS[k].metrics, pi = [], ni = [], sc = [], tw = 0, blocked = single && ms.every(ownedByDA);
       weeks.forEach(function (w, wi) {
-        var wk = h.weeks[wi], hit = wk.prios.some(function (p) { return pillarOf(p.metric) === k; });
+        var wk = h.weeks[wi], hit = wk.prios.some(function (p) { return pillarOfP(p) === k; });
         var v = mean(ms.map(function (m) { return mean(ids.map(function (id) { return wk.idx[id][m]; })); }));
         (hit ? pi : ni).push(v);
         var parts = [], zIds = zones.map(function (z) { return z.id; });
-        wk.prios.forEach(function (p, i) { if (pillarOf(p.metric) === k) { var pv = prog(wk, i, ids, zIds); if (pv != null) parts.push({ w: p.weight, s: pv, t: p.title }); } });
+        wk.prios.forEach(function (p, i) { if (pillarOfP(p) === k) { var pv = prog(wk, i, ids, zIds); if (pv != null) parts.push({ w: p.weight, s: pv, t: p.title }); } });
         w.pil = w.pil || {};
         if (parts.length) { var ws = sum(parts, function (x) { return x.w; }); w.pil[k] = { score: sum(parts, function (x) { return x.w * x.s; }) / (ws || 1) * 100, weight: ws, titles: parts.map(function (x) { return x.t; }) }; sc.push(w.pil[k].score); tw++; }
         else w.pil[k] = null;
@@ -1614,7 +1644,7 @@ body::before { background: var(--bg); }
   }
 
   root.WP = {
-    DAYS: DAYS, DAY_DATES: DAY_DATES, DAY_CAP: DAY_CAP, WEEK_HOURS: WEEK_HOURS, METRICS: METRICS, PILLARS: PILLARS, pillarOf: pillarOf, ownedByDA: ownedByDA, defaultDukaPriorities: defaultDukaPriorities, daRowsFor: daRowsFor, KIND_LABEL: KIND_LABEL,
+    DAYS: DAYS, DAY_DATES: DAY_DATES, DAY_CAP: DAY_CAP, WEEK_HOURS: WEEK_HOURS, METRICS: METRICS, PILLARS: PILLARS, pillarOf: pillarOf, pillarOfP: pillarOfP, ownedByDA: ownedByDA, defaultDukaPriorities: defaultDukaPriorities, daRowsFor: daRowsFor, KIND_LABEL: KIND_LABEL,
     REGION_DEFS: REGION_DEFS, generateData: generateData, defaultPriorities: defaultPriorities,
     calcTA: calcTA, computeRegion: computeRegion, aggregate: aggregate, focusOf: focusOf, reviewUnit: reviewUnit, history: history, histUnit: histUnit, weekCheck: weekCheck, normCheck: normCheck,
     allocateZone: allocateZone, planTA: planTA, paceAt: paceAt, sum: sum
@@ -1684,6 +1714,9 @@ body::before { background: var(--bg); }
     repayment: '<ellipse cx="12" cy="7.5" rx="5.5" ry="2.2"/><path d="M6.5 7.5v4.2c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2V7.5M6.5 11.7v4.3c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2v-4.3"/>',
     hvc: '<path d="M12 19.5V10.5M12 13c-3.8 0-5.6-2.2-5.8-5.4 3.4 0 5.6 1.6 5.8 5.4zM12 11c.2-3.4 2.3-5.3 5.8-5.3-.2 3.3-2.1 5.3-5.8 5.3zM7.5 19.5h9"/>',
     extension: '<path d="M4.5 6.5c2.6-.8 5.1-.5 7.5 1v11c-2.4-1.5-4.9-1.8-7.5-1zM19.5 6.5c-2.6-.8-5.1-.5-7.5 1v11c2.4-1.5 4.9-1.8 7.5-1z"/>',
+    trees: '<path d="M8 19.5v-5M8 14.5c-2.6 0-4-1.7-4-4 0-2.6 1.8-4.6 4-4.6s4 2 4 4.6c0 2.3-1.4 4-4 4zM14 15.5c0-2 1.4-3.5 3.2-3.5 1.6 0 2.8 1.2 2.8 2.8 0 2.4-2 4.7-5 4.7h-1zM17.5 12V10.4l1.2-.9M15 19.5l-.5 1.5M18 19.2l.6 1.6"/>',
+    aggregation: '<path d="M8 6.5c0-1 1.8-2 4-2s4 1 4 2M8 6.5c-2.4 2-3.5 5-3.5 7.5 0 3.4 3.4 5.5 7.5 5.5s7.5-2.1 7.5-5.5c0-2.5-1.1-5.5-3.5-7.5M8 6.5h8M10 12.5h4"/>',
+    compliance: '<path d="M12 4l6.5 2.5v5c0 4-2.8 7-6.5 8.5-3.7-1.5-6.5-4.5-6.5-8.5v-5zM9 12l2.2 2.2L15.2 10"/>',
     duka: '<path d="M4.5 9.5l1.3-4h12.4l1.3 4M4.5 9.5c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2M6 11.6v7.4h12v-7.4M10 19v-4h4v4"/>'
   };
   var MICON = {
@@ -1692,8 +1725,8 @@ body::before { background: var(--bg); }
     expiry: '<circle cx="12" cy="13" r="6.5"/><path d="M12 9.5V13l2.5 1.6M10 3.5h4"/>',
     dsales: '<path d="M4.5 9.5h15l-1.4 9H5.9zM8.5 9.5l3.5-5 3.5 5M12 12.5v3.5M10.5 14.2h3"/>'
   };
-  function pIcon(metric) { var k = WP.pillarOf(metric), svg = MICON[metric] || PICON[k]; return '<span class="pico pi-' + k + '" title="' + esc(WP.PILLARS[k].label) + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + svg + '</svg></span>'; }
-  function pTag(metric) { var k = WP.pillarOf(metric); return '<span class="ptag pt-' + k + '">' + esc(WP.PILLARS[k].short) + '</span>'; }
+  function pIcon(x) { var metric = typeof x === 'object' ? x.metric : x, k = typeof x === 'object' ? WP.pillarOfP(x) : WP.pillarOf(x), svg = (k === WP.pillarOf(metric) && MICON[metric]) || PICON[k]; return '<span class="pico pi-' + k + '" title="' + esc(WP.PILLARS[k].label) + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + svg + '</svg></span>'; }
+  function pTag(x) { var k = typeof x === 'object' ? WP.pillarOfP(x) : WP.pillarOf(x); return '<span class="ptag pt-' + k + '">' + esc(WP.PILLARS[k].short) + '</span>'; }
   function trendUnit() {
     var u = S.tu && DATA.byId[S.tu] && DATA.byId[S.tu].regionId === S.region ? DATA.byId[S.tu] : null;
     if (u && S.role === 'ac') { if ((u.zones ? u.id : u.areaId) !== sArea().id) u = null; }
@@ -1758,7 +1791,7 @@ body::before { background: var(--bg); }
     if (k === 'rate') return p.target + '% repaid by ' + dl(p);
     return (M[p.metric].unit === 'KES' ? 'KES ' + Number(p.target).toLocaleString('en-GB') : p.target + ' ' + M[p.metric].unit) + ' each by ' + dl(p);
   }
-  function readAs(p) { return WP.KIND_LABEL[M[p.metric].kind] + ' · ' + M[p.metric].label + ' · ' + targetText(p) + (p.norm ? ' · norm ' + p.norm + ' a day' : ''); }
+  function readAs(p) { return WP.PILLARS[WP.pillarOfP(p)].label + ' pillar · ' + WP.KIND_LABEL[M[p.metric].kind] + ' · ' + M[p.metric].label + ' · ' + targetText(p) + (p.norm ? ' · norm ' + p.norm + ' a day' : ''); }
   var ST = { done: ['Target met', 'c-done'], ahead: ['Ahead', 'c-ahead'], on: ['On track', 'c-on'], slip: ['Slipping', 'c-slip'], behind: ['Behind', 'c-behind'], critical: ['Well behind', 'c-crit'] };
   function chip(st) { return '<span class="chip ' + ST[st][1] + '">' + ST[st][0] + '</span>'; }
   function fcls(st) { return st === 'critical' ? 'f-crit' : 'f-' + st; }
@@ -1909,9 +1942,11 @@ body::before { background: var(--bg); }
   }
 
   /* RM priorities editor */
+  function pillarOpts(p) { var cur = WP.pillarOfP(p); return Object.keys(WP.PILLARS).map(function (k) { return '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + esc(WP.PILLARS[k].label) + '</option>'; }).join(''); }
   function editorCard(p, i, n) {
     var m = M[p.metric], kind = m.kind;
     var h = '<article class="panel edit" data-card="' + i + '"><div class="row"><label class="field grow"><span>Priority name</span><input type="text" id="t' + i + '" data-f="title" data-i="' + i + '" value="' + esc(p.title) + '"></label>' +
+      '<label class="field"><span>Pillar</span><select id="pl' + i + '" data-f="pillar" data-i="' + i + '" required>' + pillarOpts(p) + '</select></label>' +
       '<label class="field"><span>Measure</span><select id="m' + i + '" data-f="metric" data-i="' + i + '">';
     Object.keys(M).forEach(function (k) { h += '<option value="' + k + '"' + (k === p.metric ? ' selected' : '') + '>' + esc(M[k].label) + '</option>'; });
     h += '</select></label><span class="kind">' + WP.KIND_LABEL[kind] + '</span></div>' +
@@ -1960,9 +1995,9 @@ body::before { background: var(--bg); }
   function viewPriorities() {
     var reg = region(), l = prios();
     var ro = S.wk === 0 || S.role !== 'rm', pub = !!S.wkPub[wkKey()];
-    var dtot = sum(dpriosWk(), function (p) { return p.weight; }), ttot = sum(l, function (p) { return p.weight; });
+    var dtot = sum(dpriosWk(), function (p) { return p.weight; }), ttot = sum(l, function (p) { return p.weight; }), nopil = l.concat(dpriosWk()).filter(function (p) { return !p.pillar || !WP.PILLARS[p.pillar]; }).length;
     var banner = S.wk === 1 ? '' : S.wk === 0 ? '<div class="banner active" style="margin-top:12px"><div class="bhead"><span class="chip c-done">Closed</span><span class="sub">Published and closed. Read only.</span></div></div>' :
-      '<div class="banner ' + (pub ? 'active' : 'pending') + '" style="margin-top:12px"><div class="bhead"><span class="chip ' + (pub ? 'c-done' : 'c-slip') + '">' + (pub ? 'Published' : 'Draft') + '</span><span class="sub">' + (pub ? 'Sent to ACs, ZSs, TAs and Duka Assistants for the week of ' + wkLabel(S.wk) + '. You can still change it before the week starts.' : 'Not visible to the team yet. Publish when both sets of weights total 100.' + (ttot !== 100 ? ' TA weights total ' + ttot + '%.' : '') + (dtot !== 100 ? ' Duka weights total ' + dtot + '%.' : '')) + '</span></div><div class="bact">' + (pub ? '<button class="btn small" data-act="unpublish">Unpublish</button>' : '<button class="btn solid small" data-act="publish"' + (ttot !== 100 || dtot !== 100 ? ' disabled' : '') + '>Publish to the team</button>') + '</div></div>';
+      '<div class="banner ' + (pub ? 'active' : 'pending') + '" style="margin-top:12px"><div class="bhead"><span class="chip ' + (pub ? 'c-done' : 'c-slip') + '">' + (pub ? 'Published' : 'Draft') + '</span><span class="sub">' + (pub ? 'Sent to ACs, ZSs, TAs and Duka Assistants for the week of ' + wkLabel(S.wk) + '. You can still change it before the week starts.' : 'Not visible to the team yet. Publish when both sets of weights total 100 and every priority has a pillar.' + (ttot !== 100 ? ' TA weights total ' + ttot + '%.' : '') + (dtot !== 100 ? ' Duka weights total ' + dtot + '%.' : '') + (nopil ? ' ' + nopil + ' priorit' + (nopil === 1 ? 'y has' : 'ies have') + ' no pillar.' : '')) + '</span></div><div class="bact">' + (pub ? '<button class="btn small" data-act="unpublish">Unpublish</button>' : '<button class="btn solid small" data-act="publish"' + (ttot !== 100 || dtot !== 100 || nopil ? ' disabled' : '') + '>Publish to the team</button>') + '</div></div>';
     if (S.role !== 'rm') banner = '<div class="banner active" style="margin-top:12px"><div class="bhead"><span class="chip c-on">Set by the RM</span><span class="sub">' + (S.role === 'ta' ? 'Read only for you. Your plan is on My week, where you can accept it or change it for your ZS to approve.' : S.role === 'da' ? 'Read only for you. Your duka plan is on My week.' : 'Read only for you. Accept them or change the time split for your ' + (S.role === 'ac' ? 'area' : 'zone') + ' above.') + '</span></div>' + (S.role === 'ta' || S.role === 'da' ? '<div class="bact"><button class="btn small solid" data-tab="home">My week</button></div>' : '') + '</div>';
     var h = '<div class="top-row"><h2 style="font-size:20px">Priorities set by ' + esc(reg.rm) + ' for the week of ' + WEEKS[S.wk][0] + ' 2026</h2>' + banner +
       '<p class="sub" style="margin-top:4px">' + (S.role === 'rm' ? 'Change a target, deadline or weight. Everything else recalculates. In the full tool the RM types the sentence and the structure below is read from it; here you set the numbers.' : 'These are the priorities your RM published. Each has a pillar, a target, a deadline and a weight. The right-hand column says what is asked of each level.') + '</p></div>' +
@@ -2450,14 +2485,14 @@ body::before { background: var(--bg); }
   function scoreCard(p, ids, selected) {
     var r5 = resDay(S.day), rows = ids.map(function (id) { return r5.byTA[id]; }), a = WP.aggregate(rows, p), m = M[p.metric];
     var score = scoreAt(ids, p, S.day);
-    if (score == null) return '<div class="sc na"><span class="sct"><b>' + pTag(p.metric) + esc(p.title) + '</b><span class="muted">' + p.weight + '%</span></span><span class="scl">Carried by the Duka Assistants in the zone. <span class="muted">It is not part of a TA’s score.</span></span></div>';
+    if (score == null) return '<div class="sc na"><span class="sct"><b>' + pTag(p) + esc(p.title) + '</b><span class="muted">' + p.weight + '%</span></span><span class="scl">Carried by the Duka Assistants in the zone. <span class="muted">It is not part of a TA’s score.</span></span></div>';
     var st = statusFromScore(score), days = [];
     for (var d = 0; d <= 5; d++) days.push(d <= S.day ? scoreAt(ids, p, d) : null);
     var head = a.curPct != null ? 'at ' + a.curPct.toFixed(a.curPct < 10 ? 1 : 0) + '%' : num(p.metric, a.gain / a.n) + ' ' + m.unit + (isDA(p) ? ' per assistant' : ' per TA');
     var sub = a.curPct != null ? (S.day < 5 && S.day < p.deadline ? 'pace line ' + a.expPct.toFixed(a.expPct < 10 ? 1 : 0) + '%, ' : '') + 'target ' + p.target + '% by ' + DAYS[p.deadline] : 'asked ' + num(p.metric, a.need / a.n) + (isDA(p) ? ' each' : '') + ' by ' + DAYS[p.deadline];
     var spark = '<span class="spark" role="img" aria-label="Score by day: ' + days.filter(function (x) { return x != null; }).map(function (x) { return Math.round(x); }).join(', ') + '">' +
       days.map(function (x, i) { return x == null ? '<i class="fut" style="height:8%" title="' + DAYS[i] + ' not yet"></i>' : '<i class="' + fcls(statusFromScore(x)) + '" style="height:' + Math.max(8, x) + '%" title="' + DAYS[i] + ' ' + Math.round(x) + '"></i>'; }).join('') + '</span>';
-    return '<button class="sc" data-act="rprio" data-id="' + p.id + '" aria-pressed="' + selected + '"><span class="sct"><b>' + pTag(p.metric) + esc(p.title) + '</b><span class="muted">' + p.weight + '%</span></span>' +
+    return '<button class="sc" data-act="rprio" data-id="' + p.id + '" aria-pressed="' + selected + '"><span class="sct"><b>' + pTag(p) + esc(p.title) + '</b><span class="muted">' + p.weight + '%</span></span>' +
       '<span class="scl">' + esc(head) + ' <span class="muted">' + esc(sub) + '</span></span>' +
       '<span class="scr"><span class="chip ' + ST[st][1] + '">' + SC_LABEL[st] + '</span><span class="scn num">' + Math.round(score) + '</span></span>' + spark + '</button>';
   }
@@ -2616,7 +2651,7 @@ body::before { background: var(--bg); }
     h += '<div class="panel sec"><h3>Week by week</h3><div class="scroll" style="margin-top:8px"><table><thead><tr><th>Week of</th><th>Priorities set</th><th style="min-width:150px">Score</th><th class="r">Areas met</th><th class="r">Zones met</th><th class="r">Territories met</th><th class="r">Priorities delivered</th><th class="r">Against week before</th></tr></thead><tbody>';
     for (var i = U.weeks.length - 1; i >= 0; i--) {
       var w = U.weeks[i], prev = i > 0 ? U.weeks[i - 1].score : null;
-      h += '<tr><td>' + w.label + (w.live ? ' <span class="chip c-on">' + (S.day < 5 ? 'in progress' : 'latest') + '</span>' : '') + '</td><td>' + w.prios.map(function (p) { return '<span class="wchip">' + pTag(p.metric) + esc(p.title) + ' ' + p.weight + '%</span>'; }).join(' ') + '</td>' +
+      h += '<tr><td>' + w.label + (w.live ? ' <span class="chip c-on">' + (S.day < 5 ? 'in progress' : 'latest') + '</span>' : '') + '</td><td>' + w.prios.map(function (p) { return '<span class="wchip">' + pTag(p) + esc(p.title) + ' ' + p.weight + '%</span>'; }).join(' ') + '</td>' +
         '<td><div class="prog" style="margin:0"><div class="fill ' + fcls(statusFromScore(w.score)) + '" style="width:' + w.score + '%"></div></div><span class="sub"><b>' + Math.round(w.score) + '</b></span></td>' + lvCell(w.lv.areas) + lvCell(w.lv.zones) + lvCell(w.lv.tas) + '<td class="r n">' + w.hits + ' of ' + w.n + '</td><td class="r n"><b>' + (prev == null ? '–' : ptsTxt(w.score - prev)) + '</b></td></tr>';
     }
     h += '</tbody></table></div><p class="sub" style="margin-top:8px"><b>Met</b> means the unit reached 95% of the pace line on every priority it is accountable for that week. A territory is not accountable for duka work, which has its own set for the Duka Assistants. A dash means that level is not part of this view.</p></div>';
@@ -2796,6 +2831,11 @@ body::before { background: var(--bg); }
   function compactJSON(o) {
     return JSON.stringify(o, null, 1).replace(/\[\s*(-?\d[\d,\s]*?)\s*\]/g, function (m, a) { return '[' + a.replace(/\s+/g, ' ') + ']'; });
   }
+  function resetHTML() {
+    if (!SAVE.db || SAVE.status === 'readonly') return '';
+    return '<div class="panel sec"><h3>Start again from the sample data</h3><p class="sub" style="margin:6px 0 10px">Clears every saved priority, planned week, weight change and plan for everyone who uses this page.</p>' +
+      (S.confirmReset ? '<div class="planhd"><b>Clear everything for everyone?</b><button class="btn solid" data-act="resetYes">Yes, clear it</button><button class="btn" data-act="resetNo">Keep my changes</button></div>' : '<button class="btn" data-act="resetAsk">Clear saved changes</button>') + '</div>';
+  }
   function viewData() {
     var tas = DATA.tas, ta = DATA.byId[S.ta] || tas[0], ng = sum(tas, function (t) { return t.groups.length; });
     var areas = sum(DATA.regions, function (r) { return r.areas.length; }), zones = sum(DATA.regions, function (r) { return sum(r.areas, function (a) { return a.zones.length; }); });
@@ -2900,7 +2940,7 @@ body::before { background: var(--bg); }
     var v = prioScore(u, p), m = M[p.metric];
     if (v == null) {
       var z = DATA.byId[u.zoneId] || u;
-      return '<li class="pl na">' + pIcon(p.metric) + '<div class="pl-b"><div class="pl-t"><b>' + esc(p.title) + '</b></div><p class="pl-s">Done by the Duka Assistants in ' + esc(z.name) + ': ' + z.das.map(function (o) { return esc(o.name); }).join(' and ') + '. Not part of this territory’s score.</p></div></li>';
+      return '<li class="pl na">' + pIcon(p) + '<div class="pl-b"><div class="pl-t"><b>' + esc(p.title) + '</b></div><p class="pl-s">Done by the Duka Assistants in ' + esc(z.name) + ': ' + z.das.map(function (o) { return esc(o.name); }).join(' and ') + '. Not part of this territory’s score.</p></div></li>';
     }
     var rows = u.role === 'DA' ? [comp(S.region).byDA[u.id]] : idsUnder(u).map(function (id) { return comp(S.region).byTA[id]; });
     var a = WP.aggregate(rows, p), st = statusFromScore(v);
@@ -2908,7 +2948,7 @@ body::before { background: var(--bg); }
     var left = rows.length === 1 ? Math.max(0, a.need - a.gain) : a.ask, by = ' by ' + DAYS_LONG[p.deadline];
     var sofar = (a.gain > a.need ? 'Done so far: ' + amt(p.metric, a.gain) + ', more than the ' + amt(p.metric, a.need) + ' needed in total.' : 'Done so far: ' + amt(p.metric, a.gain) + ' of ' + amt(p.metric, a.need) + '.') +
       (left <= 0.5 ? ' Nothing more is needed.' : rows.length === 1 ? ' Still to do' + by + ': ' + amt(p.metric, left) + '.' : ' Still owed' + by + ' by those behind: ' + amt(p.metric, left) + '.');
-    return '<li class="pl">' + pIcon(p.metric) + '<div class="pl-b"><div class="pl-t"><b>' + esc(p.title) + '</b><span class="pl-w">' + p.weight + '%</span></div>' +
+    return '<li class="pl">' + pIcon(p) + '<div class="pl-b"><span class="pl-p">' + esc(WP.PILLARS[WP.pillarOfP(p)].label) + '</span><div class="pl-t"><b>' + esc(p.title) + '</b><span class="pl-w">' + p.weight + '%</span></div>' +
       '<p class="pl-s">' + sofar + who + '</p>' +
       '<div class="pl-bar"><i class="' + fcls(st) + '" style="width:' + Math.min(100, v) + '%"></i></div>' +
       '<details><summary>How is this worked out?</summary><p>' + esc(p.text) + '</p><p>Target: ' + esc(targetText(p)) + '. Weight ' + p.weight + '% of the ' + (isDA(p) ? 'duka' : 'TA') + ' set.</p>' +
@@ -2979,16 +3019,16 @@ body::before { background: var(--bg); }
   function dukaSetHTML() {
     var l = dpriosWk(), ro = S.role !== 'rm' || S.wk === 0, tot = sum(l, function (p) { return p.weight; });
     var h = '<section class="panel sec dset"><h2>Duka priorities</h2><p class="sub" style="margin:4px 0 12px">For the Duka Assistants, a separate workforce that sells for cash at the dukas. Its weights total 100 on their own and split a Duka Assistant’s time. ' + (ro ? 'Set by the RM.' : 'Change a measure, target, deadline or weight.') + '</p>';
-    h += '<div class="scroll"><table><thead><tr><th>Priority</th><th>Measure</th><th class="r">Target each</th><th>By</th><th class="r">Weight</th>' + (ro ? '' : '<th></th>') + '</tr></thead><tbody>';
+    h += '<div class="scroll"><table><thead><tr><th>Priority</th><th>Pillar</th><th>Measure</th><th class="r">Target each</th><th>By</th><th class="r">Weight</th>' + (ro ? '' : '<th></th>') + '</tr></thead><tbody>';
     l.forEach(function (p, i) {
-      if (ro) { h += '<tr><td>' + pTag(p.metric) + esc(p.title) + '<div class="muted" style="font-size:13px">' + esc(p.text) + '</div></td><td>' + esc(M[p.metric].label) + '</td><td class="r n">' + amt(p.metric, p.target) + '</td><td>' + DAYS[p.deadline] + '</td><td class="r n">' + p.weight + '%</td></tr>'; return; }
-      h += '<tr><td><input type="text" data-df="title" data-di="' + i + '" value="' + esc(p.title) + '" aria-label="Priority name"></td><td><select data-df="metric" data-di="' + i + '" aria-label="Measure">' +
+      if (ro) { h += '<tr><td>' + esc(p.title) + '<div class="muted" style="font-size:13px">' + esc(p.text) + '</div></td><td>' + pTag(p) + esc(WP.PILLARS[WP.pillarOfP(p)].label) + '</td><td>' + esc(M[p.metric].label) + '</td><td class="r n">' + amt(p.metric, p.target) + '</td><td>' + DAYS[p.deadline] + '</td><td class="r n">' + p.weight + '%</td></tr>'; return; }
+      h += '<tr><td><input type="text" data-df="title" data-di="' + i + '" value="' + esc(p.title) + '" aria-label="Priority name"></td><td><select data-df="pillar" data-di="' + i + '" aria-label="Pillar" required>' + pillarOpts(p) + '</select></td><td><select data-df="metric" data-di="' + i + '" aria-label="Measure">' +
         Object.keys(M).filter(function (k) { return M[k].owner === 'DA'; }).map(function (k) { return '<option value="' + k + '"' + (k === p.metric ? ' selected' : '') + '>' + esc(M[k].label) + '</option>'; }).join('') + '</select></td>' +
         '<td class="r"><input type="number" min="0" data-df="target" data-di="' + i + '" value="' + p.target + '" aria-label="Target each" style="width:110px"></td>' +
         '<td><select data-df="deadline" data-di="' + i + '" aria-label="Deadline">' + DAYS.map(function (d, j) { return '<option value="' + j + '"' + (j === p.deadline ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></td>' +
         '<td class="r"><input type="number" min="0" max="100" data-df="weight" data-di="' + i + '" value="' + p.weight + '" aria-label="Weight" style="width:70px"></td><td><button class="btn small" data-act="dremove" data-i="' + i + '"' + (l.length <= 1 ? ' disabled' : '') + '>Remove</button></td></tr>';
     });
-    h += '</tbody><tfoot><tr><td colspan="4"><b>Total</b></td><td class="r n"><span class="total ' + (tot === 100 ? 'good' : 'bad') + '">' + tot + '%</span></td>' + (ro ? '' : '<td></td>') + '</tr></tfoot></table></div>';
+    h += '</tbody><tfoot><tr><td colspan="5"><b>Total</b></td><td class="r n"><span class="total ' + (tot === 100 ? 'good' : 'bad') + '">' + tot + '%</span></td>' + (ro ? '' : '<td></td>') + '</tr></tfoot></table></div>';
     if (!ro) h += '<div class="planhd" style="margin-top:10px">' + (tot !== 100 ? '<span class="note warn">The duka weights total ' + tot + '%. They must total 100.</span>' : '') + '<button class="btn small" data-act="dbalance">Balance to 100</button><button class="btn small" data-act="dadd"' + (l.length >= 5 ? ' disabled' : '') + '>Add a duka priority</button><button class="btn small" data-act="dreset">Reset</button></div>';
     return h + '</section>';
   }
@@ -3033,12 +3073,72 @@ body::before { background: var(--bg); }
     return S.role === 'da' ? dukaSetHTML() : viewPriorities();
   }
 
-  var VIEWS = { home: viewHome, overview: viewOverview, priorities: viewPrioMerged, cascade: viewCascade, review: viewReview, trend: viewTrend, accept: viewAccept, team: viewTeam, week: viewWeek, data: viewData };
+  var VIEWS = { home: viewHome, overview: viewOverview, priorities: viewPrioMerged, cascade: viewCascade, review: viewReview, trend: viewTrend, accept: viewAccept, team: viewTeam, week: viewWeek, data: function () { return viewData() + resetHTML(); } };
 
+
+  /* ---------- saving: shared state in the page's database (on claude.ai only) ----------
+     Two documents: wp/plan (priorities, weeks, publishing, weight acceptance) and wp/plans (TA and DA plans).
+     Maps are stored as [{k, v}] lists so no key ever has to be a valid field name. */
+  var SAVE = { db: null, status: 'local', last: {}, busy: false, again: false, timer: null, loadT: null };
+  function ents(o) { return Object.keys(o || {}).map(function (k) { return { k: k, v: o[k] }; }); }
+  function unents(l) { var o = {}; (l || []).forEach(function (e) { o[e.k] = e.v; }); return o; }
+  function docData(path) {
+    if (path === 'wp/plan') return { v: 1, prios: ents(S.prios), dprios: ents(S.dprios), wkPrios: ents(S.wkPrios), wkDprios: ents(S.wkDprios), wkPub: ents(S.wkPub), acc: ents(S.acc) };
+    var out = [];
+    Object.keys(S.plans).forEach(function (k) { var pl = S.plans[k]; if (pl.status === 'proposed' && !pl.days && !pl.log.length) return; var c = copyOf(pl); delete c.snap; out.push({ k: k, v: c }); });
+    return { v: 1, plans: out };
+  }
+  function applyDoc(path, d) {
+    if (path === 'wp/plan') {
+      var pr = unents(d.prios), dp = unents(d.dprios);
+      Object.keys(pr).forEach(function (r) { S.prios[r] = pr[r]; }); Object.keys(dp).forEach(function (r) { S.dprios[r] = dp[r]; });
+      S.wkPrios = unents(d.wkPrios); S.wkDprios = unents(d.wkDprios); S.wkPub = unents(d.wkPub); S.acc = unents(d.acc);
+    } else S.plans = unents(d.plans);
+  }
+  function saveState(st) {
+    SAVE.status = st; var el = $('saveSt'); if (!el) return;
+    var t = { local: 'Changes are not saved in this copy', loading: 'Loading saved changes…', saved: 'All changes saved', saving: 'Saving…', readonly: 'View only: your changes are not saved', error: 'Could not save. Your changes stay until you reload.', slow: 'Saved changes cannot be reached yet' }[st];
+    el.textContent = t; el.className = 'savest s-' + st;
+  }
+  function scheduleSave() {
+    if (!SAVE.db || SAVE.status === 'readonly' || SAVE.status === 'loading') return;
+    clearTimeout(SAVE.timer); SAVE.timer = setTimeout(function () { SAVE.timer = null; flush(); }, 700);
+  }
+  function flush() {
+    if (SAVE.busy) { SAVE.again = true; return; }
+    var todo = ['wp/plan', 'wp/plans'].map(function (pth) { return [pth, docData(pth)]; }).filter(function (x) { return JSON.stringify(x[1]) !== SAVE.last[x[0]]; });
+    if (!todo.length) return;
+    SAVE.busy = true; saveState('saving');
+    var chain = Promise.resolve();
+    todo.forEach(function (x) { chain = chain.then(function () { return SAVE.db.doc(x[0]).set(x[1]).then(function () { SAVE.last[x[0]] = JSON.stringify(x[1]); }); }); });
+    chain.then(function () { saveState('saved'); }, function (e) { saveState(e && e.code === 'unavailable' ? 'error' : 'error'); })
+      .then(function () { SAVE.busy = false; if (SAVE.again) { SAVE.again = false; flush(); } });
+  }
+  function connectSave() {
+    if (!window.claude || !window.claude.use) return saveState('local');
+    saveState('loading');
+    Promise.all([window.claude.use('db'), window.claude.use('user')]).then(function (r) {
+      var db = r[0], user = r[1];
+      if (!db) return saveState('local');
+      SAVE.db = db;
+      var canWrite = user && user.can ? user.can('data.write') : null;
+      var got = {};
+      SAVE.loadT = setTimeout(function () { if (SAVE.status === 'loading') saveState('slow'); }, 10000);
+      ['wp/plan', 'wp/plans'].forEach(function (pth) {
+        db.doc(pth).onSnapshot(function (snap) {
+          if (!snap.fromCache) got[pth] = true;
+          var d = snap.exists ? snap.data : null, js = d ? JSON.stringify(d) : null;
+          if (d && js !== SAVE.last[pth] && !SAVE.timer && !SAVE.busy && !S.edit) { SAVE.last[pth] = js; applyDoc(pth, d); render(); }
+          else if (d) SAVE.last[pth] = SAVE.last[pth] || js;
+          if (got['wp/plan'] && got['wp/plans'] && (SAVE.status === 'loading' || SAVE.status === 'slow')) { clearTimeout(SAVE.loadT); saveState(canWrite === false ? 'readonly' : 'saved'); }
+        }, function () { clearTimeout(SAVE.loadT); saveState('error'); });
+      });
+    }, function () { saveState('local'); });
+  }
 
   /* ---------- shell ---------- */
   function shell() {
-    var h = '<header class="hd"><div class="hd-row"><div class="brand"><img class="logo" src="../tupande-farm-planner/assets/tupande-by-oaf-horizontal.png" alt="Tupande by One Acre Fund" width="900" height="267"><div class="prod"><b>Work Planning</b><small>Prototype · made-up data</small></div></div>' +
+    var h = '<header class="hd"><div class="hd-row"><div class="brand"><img class="logo" src="../tupande-farm-planner/assets/tupande-by-oaf-horizontal.png" alt="Tupande by One Acre Fund" width="900" height="267"><div class="prod"><b>Work Planning</b><small>Prototype · made-up data · <span id="saveSt" class="savest" role="status"></span></small></div></div>' +
       '<div class="ctl who"><label class="lab" for="roleSel">Demo: view as</label><select id="roleSel">' + ROLES.map(function (r) { return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join('') + '</select><select id="whoSel" aria-label="Which one"></select></div></div>' +
       '<div class="hd-row hd-sub"><nav class="path" id="path" aria-label="Where you are"></nav><span class="bsp"></span>' +
       '<div class="wkpick"><label class="lab" for="wkSel">Week</label><select id="wkSel"></select><span id="dayCtl" class="dayctl"><label class="lab" for="daySel">Up to</label><select id="daySel">' +
@@ -3130,7 +3230,7 @@ body::before { background: var(--bg); }
   }
   function setTab(t) { leaveEdit(); S.tab = t; render(); window.scrollTo(0, 0); }
 
-  function defaultTarget(k) { return { clients: 8, groups: 8, scoped: 70, repaid: 66, hvc: 20, training: 3, glcalls: 10, duka: 10, dsales: 150000, tms: 18, invvar: 5, expiry: 6 }[k]; }
+  function defaultTarget(k) { return { trees: 12, aggr: 35, clients: 8, groups: 8, scoped: 70, repaid: 66, hvc: 20, training: 3, glcalls: 10, duka: 10, dsales: 150000, tms: 18, invvar: 5, expiry: 6 }[k]; }
 
   function onClick(e) {
     var b = e.target.closest('button'); if (!b) return;
@@ -3141,7 +3241,7 @@ body::before { background: var(--bg); }
     var dl0 = dpriosWk();
     if (act === 'dremove') { dl0.splice(+b.dataset.i, 1); return render(); }
     if (act === 'dbalance') { var dt = sum(dl0, function (p) { return p.weight; }); dl0.forEach(function (p) { p.weight = dt ? Math.round(p.weight / dt * 100) : Math.round(100 / dl0.length); }); dl0[0].weight += 100 - sum(dl0, function (p) { return p.weight; }); return render(); }
-    if (act === 'dadd') { var used = dl0.map(function (p) { return p.metric; }), nk = Object.keys(M).filter(function (k) { return M[k].owner === 'DA' && used.indexOf(k) < 0; })[0] || 'duka'; S.uid++; dl0.push({ id: 'dn' + S.uid, metric: nk, title: M[nk].label, text: 'New duka priority for the week.', target: defaultTarget(nk), deadline: 4, weight: 0, norm: 0, aud: {} }); return render(); }
+    if (act === 'dadd') { var used = dl0.map(function (p) { return p.metric; }), nk = Object.keys(M).filter(function (k) { return M[k].owner === 'DA' && used.indexOf(k) < 0; })[0] || 'duka'; S.uid++; dl0.push({ id: 'dn' + S.uid, metric: nk, pillar: WP.pillarOf(nk), title: M[nk].label, text: 'New duka priority for the week.', target: defaultTarget(nk), deadline: 4, weight: 0, norm: 0, aud: {} }); return render(); }
     if (act === 'dreset') { if (S.wk === 1) S.dprios[S.region] = WP.defaultDukaPriorities(S.region); else S.wkDprios[wkKey()] = WP.defaultDukaPriorities(S.region); return render(); }
     if (act === 'goRegion') { S.region = b.dataset.id; S.zone = null; S.ta = null; S.prio = null; return setTab('cascade'); }
     if (act === 'goPrios') { S.region = b.dataset.id; S.zone = null; S.ta = null; S.prio = null; return setTab('priorities'); }
@@ -3153,6 +3253,12 @@ body::before { background: var(--bg); }
     if (act === 'collapseAll') { allZones(region()).forEach(function (z) { S.open[z.id] = false; S.open[z.areaId] = true; }); return render(); }
     if (act === 'plan') { leaveEdit(); var t = DATA.byId[b.dataset.id]; S.region = t.regionId; S.ta = t.id; S.zone = t.zoneId; S.prio = null; return setTab('week'); }
     if (act === 'thisWeek') { S.wk = 1; return render(); }
+    if (act === 'resetAsk') { S.confirmReset = true; return render(); }
+    if (act === 'resetNo') { S.confirmReset = false; return render(); }
+    if (act === 'resetYes') {
+      S.confirmReset = false; DATA.regions.forEach(function (r) { S.prios[r.id] = WP.defaultPriorities(r.id); S.dprios[r.id] = WP.defaultDukaPriorities(r.id); });
+      S.wkPrios = {}; S.wkDprios = {}; S.wkPub = {}; S.acc = {}; S.plans = {}; S.edit = false; toast('Cleared. Everyone now sees the sample data.'); return render();
+    }
     if (act === 'pickWeek') { leaveEdit(); S.wk = +b.dataset.wk; S.tab = 'priorities'; return render(); }
     if (act === 'wkStart' || act === 'wkStartDefault') {
       var pf = prevSets(S.wk), kk = wkKey();
@@ -3271,7 +3377,7 @@ body::before { background: var(--bg); }
     }
     if (act === 'add') {
       var k = $('addMetric').value; S.uid++;
-      l.push({ id: 'n' + S.uid, metric: k, title: M[k].label, text: 'New priority for the week.', target: defaultTarget(k), deadline: 4, weight: 0, norm: 0, aud: {} });
+      l.push({ id: 'n' + S.uid, metric: k, pillar: WP.pillarOf(k), title: M[k].label, text: 'New priority for the week.', target: defaultTarget(k), deadline: 4, weight: 0, norm: 0, aud: {} });
       return render();
     }
     if (act === 'reset') { S.prios[S.region] = WP.defaultPriorities(S.region); S.prio = null; return render(); }
@@ -3286,7 +3392,7 @@ body::before { background: var(--bg); }
     var f = e.target.dataset.f; if (!f) return;
     var i = +e.target.dataset.i, p = prios()[i], v = e.target.value;
     if (f === 'title' || f === 'text') p[f] = v;
-    else if (f === 'metric') return; // handled on change
+    else if (f === 'metric' || f === 'pillar') return; // handled on change
     else p[f] = Math.max(0, Number(v) || 0);
     if (f === 'deadline') return;
     refreshLive();
@@ -3295,7 +3401,8 @@ body::before { background: var(--bg); }
     var t = e.target;
     if (t.dataset.df) {
       var dp = dpriosWk()[+t.dataset.di], df = t.dataset.df;
-      if (df === 'metric') { if (dp.title === M[dp.metric].label) dp.title = M[t.value].label; dp.metric = t.value; dp.target = defaultTarget(t.value); }
+      if (df === 'pillar') dp.pillar = t.value;
+      else if (df === 'metric') { if (dp.title === M[dp.metric].label) dp.title = M[t.value].label; if (WP.pillarOfP(dp) === WP.pillarOf(dp.metric)) dp.pillar = WP.pillarOf(t.value); dp.metric = t.value; dp.target = defaultTarget(t.value); }
       else if (df === 'title') dp.title = t.value || M[dp.metric].label;
       else dp[df] = Math.max(0, Math.round(Number(t.value) || 0));
       return render();
@@ -3329,7 +3436,9 @@ body::before { background: var(--bg); }
     if (t.id === 'taSel') { S.ta = t.value; S.zone = DATA.byId[t.value].zoneId; return render(); }
     var f = t.dataset.f; if (!f) return;
     var p = prios()[+t.dataset.i];
+    if (f === 'pillar') { p.pillar = t.value; return render(); }
     if (f === 'metric') {
+      if (WP.pillarOfP(p) === WP.pillarOf(p.metric)) p.pillar = WP.pillarOf(t.value);
       p.metric = t.value; p.target = defaultTarget(t.value); if (M[t.value].kind !== 'season') p.norm = 0;
       if (p.title === 'New priority' || Object.keys(M).some(function (k) { return M[k].label === p.title; })) p.title = M[t.value].label;
       return render();
@@ -3345,11 +3454,12 @@ body::before { background: var(--bg); }
     if (VIEWS[h]) S.tab = h;
     document.addEventListener('click', function (e) { document.querySelectorAll('details.more[open]').forEach(function (d) { if (!d.contains(e.target)) d.removeAttribute('open'); }); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') document.querySelectorAll('details.more[open]').forEach(function (d) { d.removeAttribute('open'); d.querySelector('summary').focus(); }); });
-    document.addEventListener('click', onClick);
-    document.addEventListener('input', onInput);
-    document.addEventListener('change', onChange);
+    document.addEventListener('click', function (e) { onClick(e); scheduleSave(); });
+    document.addEventListener('input', function (e) { onInput(e); scheduleSave(); });
+    document.addEventListener('change', function (e) { onChange(e); scheduleSave(); });
     window.addEventListener('hashchange', function () { var x = (location.hash || '').replace('#', ''); if (VIEWS[x] && x !== S.tab) { S.tab = x; render(); } });
     render();
+    connectSave();
   }
   window.__WP = { S: S, DATA: DATA, render: render, setTab: setTab };
   init();

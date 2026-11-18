@@ -21,6 +21,8 @@
     hvc:      { label: 'HVC client visits',       unit: 'visits',  kind: 'count',  hrs: 0.5,       mean: 5.7 },
     training: { label: 'Training modules passed', unit: 'modules', kind: 'count',  hrs: 1.5,       mean: 0.42 },
     glcalls:  { label: 'GL validation calls',     unit: 'calls',   kind: 'count',  hrs: 0.25,      mean: 4.1 },
+    trees:    { label: 'Tree and poultry orders',  unit: 'orders',  kind: 'count',  hrs: 0.5,       mean: 2.6 },
+    aggr:     { label: 'Produce aggregated',       unit: 'bags',    kind: 'count',  hrs: 0.3,       mean: 7.5 },
     // Duka Assistants: a separate workforce selling for cash at the dukas (TAs sell on credit and do extension)
     dsales:   { label: 'Duka cash sales',          unit: 'KES',        kind: 'count', hrs: 1 / 25000, mean: 38000, owner: 'DA' },
     tms:      { label: 'TMS validations',          unit: 'validations', kind: 'count', hrs: 0.4,      mean: 4.2,   owner: 'DA' },
@@ -29,21 +31,26 @@
     duka:     { label: 'Duka compliance visits',   unit: 'dukas',      kind: 'count', hrs: 1,         mean: 2.2,   owner: 'DA' }
   };
   /* the pillar each measure serves, so a priority can be read as a push on enrolment, repayment, HVC, extension or the duka network */
+  /* the RM's eight pillars. Every priority names one (p.pillar); a measure's home pillar is the default */
   var PILLARS = {
-    enrolment: { label: 'Enrolment', short: 'Enrol', metrics: ['clients', 'groups'] },
-    repayment: { label: 'Repayment', short: 'Repay', metrics: ['repaid'] },
-    hvc:       { label: 'HVC', short: 'HVC', metrics: ['hvc'] },
-    extension: { label: 'Extension', short: 'Ext', metrics: ['training', 'scoped', 'glcalls'] },
-    duka:      { label: 'Duka', short: 'Duka', metrics: ['dsales', 'tms', 'invvar', 'expiry', 'duka'] }
+    trees:       { label: 'Trees & Poultry', short: 'Trees', metrics: ['trees'] },
+    enrolment:   { label: 'Enrolment', short: 'Enrol', metrics: ['clients', 'groups'] },
+    repayment:   { label: 'Repayment', short: 'Repay', metrics: ['repaid'] },
+    extension:   { label: 'Extension', short: 'Ext', metrics: ['training', 'scoped', 'glcalls'] },
+    hvc:         { label: 'HVC', short: 'HVC', metrics: ['hvc'] },
+    aggregation: { label: 'Aggregation', short: 'Aggr', metrics: ['aggr'] },
+    duka:        { label: 'Duka', short: 'Duka', metrics: ['dsales', 'tms', 'invvar', 'expiry'] },
+    compliance:  { label: 'Compliance', short: 'Comp', metrics: ['duka'] }
   };
   function ownedByDA(metric) { return METRICS[metric].owner === 'DA'; }
+  function pillarOfP(p) { return p && p.pillar && PILLARS[p.pillar] ? p.pillar : pillarOf(p.metric); }
   function pillarOf(metric) { for (var k in PILLARS) if (PILLARS[k].metrics.indexOf(metric) >= 0) return k; return null; }
 
   var KIND_LABEL = { season: 'Trajectory', rate: 'Rate', count: 'Per person' };
 
   /* ---------- default regional priorities (illustrative) ---------- */
   function P(id, metric, title, text, target, deadline, weight, extra) {
-    var o = { id: id, metric: metric, title: title, text: text, target: target, deadline: deadline, weight: weight, norm: 0, aud: {} };
+    var o = { id: id, metric: metric, pillar: pillarOf(metric), title: title, text: text, target: target, deadline: deadline, weight: weight, norm: 0, aud: {} };
     if (extra) for (var k in extra) o[k] = extra[k];
     return o;
   }
@@ -218,7 +225,7 @@
               groups: Math.round(S.groups * clip(0.036 + 0.014 * randn(), 0.005, 0.08)),
               scoped: Math.round(S.scoped * clip(0.41 + 0.08 * randn(), 0.15, 0.7)),
               repaid: Math.round(due * clip(0.58 + 0.07 * randn(), 0.35, 0.78) / 1000) * 1000,
-              hvc: 0, glcalls: 0, duka: 0, training: rint(0, 2)
+              hvc: 0, glcalls: 0, duka: 0, trees: 0, aggr: 0, training: rint(0, 2)
             };
             var pool = {
               clients: Math.round(S.clients * (0.35 + rand() * 0.55)),
@@ -227,7 +234,7 @@
             };
             var daily = {};
             Object.keys(METRICS).forEach(function (mk) {
-              if (ownedByDA(mk)) return;
+              if (ownedByDA(mk) || mk === 'trees' || mk === 'aggr') return;
               var arr = [];
               for (var di = 0; di < 6; di++) {
                 var dayF = di === 5 ? 0.4 : 1;
@@ -240,7 +247,12 @@
               }
               daily[mk] = arr;
             });
-            Object.keys(METRICS).forEach(function (mk) { if (ownedByDA(mk)) daily[mk] = [0, 0, 0, 0, 0, 0]; }); // duka work belongs to the zone's Duka Assistants
+            Object.keys(METRICS).forEach(function (mk) { if (ownedByDA(mk)) daily[mk] = [0, 0, 0, 0, 0, 0]; });
+            ['trees', 'aggr'].forEach(function (mk) {
+              var hr2 = hashRng('nm|' + rd.id + ai + zi + ti + mk), arr2 = [];
+              for (var di = 0; di < 6; di++) { var x2 = METRICS[mk].mean * f * (di === 5 ? 0.4 : 1) * clip(1 + 0.35 * gauss('nmg|' + rd.id + ai + zi + ti + mk + di), 0.2, 2.2), fl2 = Math.floor(x2); arr2.push(fl2 + (hr2() < x2 - fl2 ? 1 : 0)); }
+              daily[mk] = arr2;
+            }); // duka work belongs to the zone's Duka Assistants
             // training can never pass 4 modules in total
             var tcap = 4 - A0.training, ts = 0;
             daily.training = daily.training.map(function (v) { var k = Math.min(v, Math.max(0, tcap - ts)); ts += k; return k; });
@@ -541,6 +553,12 @@
       var mod = Math.min(4, ta.A0.training + calc.gain + 1 + k);
       ptr[p.id] = k + 1;
       text = 'Training module ' + mod + ' and its assessment (80% to pass)';
+    } else if (m === 'trees') {
+      var tg = ta.groups[k % ta.groups.length]; ptr[p.id] = k + 1;
+      text = 'Take ' + Math.max(1, Math.round(units)) + ' tree and poultry orders in ' + tg.name + ' (' + tg.village + ')';
+    } else if (m === 'aggr') {
+      var ag = ta.groups[k % ta.groups.length]; ptr[p.id] = k + 1;
+      text = 'Aggregate about ' + Math.max(1, Math.round(units)) + ' bags of produce from ' + ag.name + ' at the collection point';
     } else if (ownedByDA(m)) {
       var dl = ta.dukas && ta.dukas.length ? ta.dukas : ta.groups, d1 = dl[k % dl.length], d2 = dl[(k + 1) % dl.length], n2 = Math.max(1, Math.round(units));
       ptr[p.id] = k + 1;
@@ -734,7 +752,7 @@
     function zf(zoneId, w2) { return 1.0 + 0.012 * (w2 + 1) * (gauss('zs|' + zoneId) > 0 ? 1 : -0.6) + 0.07 * gauss('zw|' + zoneId + '|' + w2) + 0.03 * gauss('rw|' + region.id + '|' + w2); }
     for (var w2 = 0; w2 < 8; w2++) {
       var live = w2 === 7;
-      var pl = live ? prios.map(function (p) { return { id: p.id, metric: p.metric, title: p.title, weight: p.weight }; })
+      var pl = live ? prios.map(function (p) { return { id: p.id, metric: p.metric, pillar: p.pillar, title: p.title, weight: p.weight }; })
         : histPrios(sets[w2], WSETS[Math.floor(hashRng('w|' + region.id + w2)() * WSETS.length)], w2);
       var wk = { label: HIST_WEEKS[w2], live: live, prios: pl, idx: {}, p: {}, score: {}, dp: {}, zidx: {} };
       var wT = sum(pl, function (p) { return ownedByDA(p.metric) ? 0 : p.weight; }) || 1;
@@ -821,11 +839,11 @@
     var pillars = Object.keys(PILLARS).map(function (k) {
       var ms = PILLARS[k].metrics, pi = [], ni = [], sc = [], tw = 0, blocked = single && ms.every(ownedByDA);
       weeks.forEach(function (w, wi) {
-        var wk = h.weeks[wi], hit = wk.prios.some(function (p) { return pillarOf(p.metric) === k; });
+        var wk = h.weeks[wi], hit = wk.prios.some(function (p) { return pillarOfP(p) === k; });
         var v = mean(ms.map(function (m) { return mean(ids.map(function (id) { return wk.idx[id][m]; })); }));
         (hit ? pi : ni).push(v);
         var parts = [], zIds = zones.map(function (z) { return z.id; });
-        wk.prios.forEach(function (p, i) { if (pillarOf(p.metric) === k) { var pv = prog(wk, i, ids, zIds); if (pv != null) parts.push({ w: p.weight, s: pv, t: p.title }); } });
+        wk.prios.forEach(function (p, i) { if (pillarOfP(p) === k) { var pv = prog(wk, i, ids, zIds); if (pv != null) parts.push({ w: p.weight, s: pv, t: p.title }); } });
         w.pil = w.pil || {};
         if (parts.length) { var ws = sum(parts, function (x) { return x.w; }); w.pil[k] = { score: sum(parts, function (x) { return x.w * x.s; }) / (ws || 1) * 100, weight: ws, titles: parts.map(function (x) { return x.t; }) }; sc.push(w.pil[k].score); tw++; }
         else w.pil[k] = null;
@@ -841,7 +859,7 @@
   }
 
   root.WP = {
-    DAYS: DAYS, DAY_DATES: DAY_DATES, DAY_CAP: DAY_CAP, WEEK_HOURS: WEEK_HOURS, METRICS: METRICS, PILLARS: PILLARS, pillarOf: pillarOf, ownedByDA: ownedByDA, defaultDukaPriorities: defaultDukaPriorities, daRowsFor: daRowsFor, KIND_LABEL: KIND_LABEL,
+    DAYS: DAYS, DAY_DATES: DAY_DATES, DAY_CAP: DAY_CAP, WEEK_HOURS: WEEK_HOURS, METRICS: METRICS, PILLARS: PILLARS, pillarOf: pillarOf, pillarOfP: pillarOfP, ownedByDA: ownedByDA, defaultDukaPriorities: defaultDukaPriorities, daRowsFor: daRowsFor, KIND_LABEL: KIND_LABEL,
     REGION_DEFS: REGION_DEFS, generateData: generateData, defaultPriorities: defaultPriorities,
     calcTA: calcTA, computeRegion: computeRegion, aggregate: aggregate, focusOf: focusOf, reviewUnit: reviewUnit, history: history, histUnit: histUnit, weekCheck: weekCheck, normCheck: normCheck,
     allocateZone: allocateZone, planTA: planTA, paceAt: paceAt, sum: sum

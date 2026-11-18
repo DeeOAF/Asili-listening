@@ -54,6 +54,20 @@
     return { home: S.role === 'ta' || S.role === 'da' ? 'My week' : 'Home', priorities: 'Priorities', team: S.role === 'zs' ? 'Plans to approve' : 'Plans in my zones',
       overview: 'All regions', cascade: 'Detailed table', review: 'Scorecards', trend: 'Week on week', week: S.role === 'ta' ? 'Change my plan' : 'A territory’s full plan', data: 'How it works' }[id] || id;
   }
+  var PICON = {
+    enrolment: '<circle cx="9" cy="8.5" r="2.6"/><circle cx="15.5" cy="9.5" r="2.1"/><path d="M4.5 18c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6M13.6 14.2c.6-.4 1.2-.6 1.9-.6 1.8 0 3.2 1.4 3.7 4.4"/>',
+    repayment: '<ellipse cx="12" cy="7.5" rx="5.5" ry="2.2"/><path d="M6.5 7.5v4.2c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2V7.5M6.5 11.7v4.3c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2v-4.3"/>',
+    hvc: '<path d="M12 19.5V10.5M12 13c-3.8 0-5.6-2.2-5.8-5.4 3.4 0 5.6 1.6 5.8 5.4zM12 11c.2-3.4 2.3-5.3 5.8-5.3-.2 3.3-2.1 5.3-5.8 5.3zM7.5 19.5h9"/>',
+    extension: '<path d="M4.5 6.5c2.6-.8 5.1-.5 7.5 1v11c-2.4-1.5-4.9-1.8-7.5-1zM19.5 6.5c-2.6-.8-5.1-.5-7.5 1v11c2.4-1.5 4.9-1.8 7.5-1z"/>',
+    duka: '<path d="M4.5 9.5l1.3-4h12.4l1.3 4M4.5 9.5c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2M6 11.6v7.4h12v-7.4M10 19v-4h4v4"/>'
+  };
+  var MICON = {
+    tms: '<rect x="6" y="4.5" width="12" height="15" rx="2"/><path d="M9.5 4.5v1.8h5V4.5M9 12.5l2 2 4-4"/>',
+    invvar: '<path d="M12 5v14M7.5 19h9M5 8h14M5 8l-2.2 5c.4 1.2 1.3 1.8 2.2 1.8s1.8-.6 2.2-1.8L5 8zM19 8l-2.2 5c.4 1.2 1.3 1.8 2.2 1.8s1.8-.6 2.2-1.8L19 8z"/>',
+    expiry: '<circle cx="12" cy="13" r="6.5"/><path d="M12 9.5V13l2.5 1.6M10 3.5h4"/>',
+    dsales: '<path d="M4.5 9.5h15l-1.4 9H5.9zM8.5 9.5l3.5-5 3.5 5M12 12.5v3.5M10.5 14.2h3"/>'
+  };
+  function pIcon(metric) { var k = WP.pillarOf(metric), svg = MICON[metric] || PICON[k]; return '<span class="pico pi-' + k + '" title="' + esc(WP.PILLARS[k].label) + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + svg + '</svg></span>'; }
   function pTag(metric) { var k = WP.pillarOf(metric); return '<span class="ptag pt-' + k + '">' + esc(WP.PILLARS[k].short) + '</span>'; }
   function trendUnit() {
     var u = S.tu && DATA.byId[S.tu] && DATA.byId[S.tu].regionId === S.region ? DATA.byId[S.tu] : null;
@@ -1226,23 +1240,23 @@
   var DAYS_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   function sayOf(v) { var st = statusFromScore(v); return st === 'on' ? 'on track' : st === 'slip' ? 'a little behind' : st === 'behind' ? 'behind' : 'well behind'; }
-  function scoreBox(label, v) { return '<div class="ou-score"><span class="sbl">' + label + '</span><span class="scn num">' + Math.round(v) + '</span>' + stateLine(v) + '</div>'; }
+  function scoreBox(label, v) { return '<div class="badge-score"><span class="bs-ring"><b class="num">' + Math.round(v) + '</b></span><span class="bs-t"><small>' + label + '</small>' + stateLine(v) + '</span></div>'; }
+  function arc(t) { return '<span class="arc">' + t + '<svg viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 10 Q50 1 97 10"/></svg></span>'; }
+  var LEAF = '<svg class="leaf" viewBox="0 0 120 120" aria-hidden="true"><path d="M20 104C24 52 54 22 106 16c-4 52-34 84-86 88z"/><path d="M20 104C46 78 68 56 92 30"/><path d="M44 80l-2-20M60 64l-1-18M74 50l-1-14M44 80l18 0M60 64l16 1"/></svg>';
   function unitCard(u) {
     var unitLv = !!(u.areas || u.zones || u.tas), v = scoreOf(u), dv = unitLv ? dukaScoreOf(u) : null, w = weakest(u), dw = unitLv && dv != null ? weakest(u, dprios()) : null;
     var who = u.role === 'DA' ? 'Duka work is ' : unitLv ? 'TA work is ' : 'This territory is ';
-    var say = who + sayOf(v) + ', ' + upTo() + '.' + (w && w.v < 95 ? ' Most help needed on <b>' + esc(w.p.title) + '</b>.' : '');
+    var say = who + arc(sayOf(v)) + ', ' + upTo() + '.' + (w && w.v < 95 ? ' Most help needed on <b>' + esc(w.p.title) + '</b>.' : '');
     if (dv != null) say += '<br>Duka work is ' + sayOf(dv) + '.' + (dw && dw.v < 95 ? ' Most help needed on <b>' + esc(dw.p.title) + '</b>.' : '');
-    var h = '<section class="ou" aria-label="' + esc(levelOf(u)) + '"><div class="ou-main"><div class="ou-id"><span class="ou-lv">' + esc(levelOf(u)) + '</span><h2>' + esc(unitName(u)) + '</h2>' +
-      '<div class="ou-meta"><span><b>' + esc(personOf(u)) + '</b></span></div></div><div class="ou-scores">' +
-      scoreBox(u.role === 'DA' ? 'Duka' : 'TAs', v) + (dv != null ? scoreBox('Duka', dv) : '') + '</div></div>' +
-      '<p class="answer">' + say + '</p></section>';
-    return h;
+    return '<section class="poster" aria-label="' + esc(levelOf(u)) + '">' + LEAF + '<div class="po-main"><div class="po-id"><span class="po-lv">' + esc(levelOf(u)) + '</span><h1>' + esc(unitName(u)) + '</h1><span class="po-who">' + esc(personOf(u)) + '</span></div>' +
+      '<div class="po-scores">' + scoreBox(u.role === 'DA' ? 'Duka' : unitLv ? 'TAs' : 'Score', v) + (dv != null ? scoreBox('Duka', dv) : '') + '</div></div>' +
+      '<p class="po-say">' + say + '</p></section>';
   }
   function prioLine(u, p) {
     var v = prioScore(u, p), m = M[p.metric];
     if (v == null) {
       var z = DATA.byId[u.zoneId] || u;
-      return '<li class="pl na"><div class="pl-t">' + pTag(p.metric) + '<b>' + esc(p.title) + '</b></div><p class="pl-s">Done by the Duka Assistants in ' + esc(z.name) + ': ' + z.das.map(function (o) { return esc(o.name); }).join(' and ') + '. Not part of this territory’s score.</p></li>';
+      return '<li class="pl na">' + pIcon(p.metric) + '<div class="pl-b"><div class="pl-t"><b>' + esc(p.title) + '</b></div><p class="pl-s">Done by the Duka Assistants in ' + esc(z.name) + ': ' + z.das.map(function (o) { return esc(o.name); }).join(' and ') + '. Not part of this territory’s score.</p></div></li>';
     }
     var rows = u.role === 'DA' ? [comp(S.region).byDA[u.id]] : idsUnder(u).map(function (id) { return comp(S.region).byTA[id]; });
     var a = WP.aggregate(rows, p), st = statusFromScore(v);
@@ -1250,17 +1264,17 @@
     var left = rows.length === 1 ? Math.max(0, a.need - a.gain) : a.ask, by = ' by ' + DAYS_LONG[p.deadline];
     var sofar = (a.gain > a.need ? 'Done so far: ' + amt(p.metric, a.gain) + ', more than the ' + amt(p.metric, a.need) + ' needed in total.' : 'Done so far: ' + amt(p.metric, a.gain) + ' of ' + amt(p.metric, a.need) + '.') +
       (left <= 0.5 ? ' Nothing more is needed.' : rows.length === 1 ? ' Still to do' + by + ': ' + amt(p.metric, left) + '.' : ' Still owed' + by + ' by those behind: ' + amt(p.metric, left) + '.');
-    return '<li class="pl"><div class="pl-t">' + pTag(p.metric) + '<b>' + esc(p.title) + '</b><span class="pl-n num">' + Math.round(v) + '</span>' + stateLine(v) + '</div>' +
-      '<div class="oup-bar"><i class="' + fcls(st) + '" style="width:' + Math.min(100, v) + '%"></i></div>' +
+    return '<li class="pl">' + pIcon(p.metric) + '<div class="pl-b"><div class="pl-t"><b>' + esc(p.title) + '</b><span class="pl-w">' + p.weight + '%</span></div>' +
       '<p class="pl-s">' + sofar + who + '</p>' +
+      '<div class="pl-bar"><i class="' + fcls(st) + '" style="width:' + Math.min(100, v) + '%"></i></div>' +
       '<details><summary>How is this worked out?</summary><p>' + esc(p.text) + '</p><p>Target: ' + esc(targetText(p)) + '. Weight ' + p.weight + '% of the ' + (isDA(p) ? 'duka' : 'TA') + ' set.</p>' +
-      '<p>By ' + DAYS_LONG[S.day] + ' about ' + amt(p.metric, a.expected) + ' should be done to keep pace for the deadline. The number (' + Math.round(v) + ') is how much of that is done, out of 100.</p></details></li>';
+      '<p>By ' + DAYS_LONG[S.day] + ' about ' + amt(p.metric, a.expected) + ' should be done to keep pace for the deadline. The number (' + Math.round(v) + ') is how much of that is done, out of 100.</p></details></div><div class="pl-r"><span class="pl-n num">' + Math.round(v) + '</span>' + stateLine(v) + '</div></li>';
   }
   function prioList(u) {
-    var ta = '<section class="sec"><h2>' + (u.role === 'DA' ? 'Duka priorities' : 'TA priorities') + '</h2><p class="sub">' + (u.role === 'DA' ? 'Cash sales and stock at the dukas. Weights total 100.' : 'Credit sales and extension. Weights total 100.') + '</p><ul class="plist2">' +
+    var ta = '<section class="sec"><div class="sh"><h2>' + (u.role === 'DA' ? 'Duka priorities' : 'TA priorities') + '</h2><p class="sub">' + (u.role === 'DA' ? 'Cash sales and stock at the dukas. Weights total 100.' : 'Credit sales and extension. Weights total 100.') + '</p></div><ul class="plist2 sheet">' +
       (u.role === 'DA' ? dprios() : prios()).map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
     if (u.role === 'DA' || !(u.areas || u.zones || u.tas) || !dprios().length) return ta;
-    return ta + '<section class="sec"><h2>Duka priorities</h2><p class="sub">Done by the Duka Assistants: cash sales and stock at the dukas. A separate set with its own weights.</p><ul class="plist2">' + dprios().map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
+    return ta + '<section class="sec"><div class="sh"><h2>Duka priorities</h2><p class="sub">Done by the Duka Assistants: cash sales and stock at the dukas. A separate set with its own weights.</p></div><ul class="plist2 sheet">' + dprios().map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
   }
   function childRow(c) {
     var v = scoreOf(c), w = weakest(c), dv = c.areas || c.zones || c.tas ? dukaScoreOf(c) : null;

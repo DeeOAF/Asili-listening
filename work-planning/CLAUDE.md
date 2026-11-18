@@ -19,4 +19,4 @@ Single-file HTML prototype. `node build.js` stitches src/template.html + style.c
 ## Files
 - src/engine.js: window.WP (METRICS, PILLARS, generateData, calcTA, computeRegion, aggregate, planTA, focusOf, reviewUnit, history, histUnit, weekCheck).
 - src/app.js: state S, scope helpers (sreg, sres, scopeIds), simple views (viewHome, unitCard, prioList, childList, territoryHome, daHome, viewPrioMerged), detailed views under More, approval workflows (browser state only).
-- src/style.css: tokens (single light look, no dark theme by choice), components.
+- src/style.css: tokens (single light look on a white page, no dark theme by choice), components. The last layer, "White refresh", is the current look: one Kakamega Green poster band per screen (unit name, round score badges, the one yellow arc), notebook sheets for priorities and lists (red margin rule, hairline rows, round line icons per pillar or duka measure). Follow the tupande-design skill.

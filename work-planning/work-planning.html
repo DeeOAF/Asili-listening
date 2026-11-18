@@ -611,6 +611,129 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
 .dset td { vertical-align: top; }
 @media (max-width: 720px) { .cr-two { gap: 8px; } .cr-two b { font-size: 17px; } }
 
+
+/* ================= White refresh (Tupande brandbook: poster × notebook) =================
+   White page. One Kakamega Green poster band per screen carries the headline, round score
+   badges and the single yellow arc. Everything read closely sits on notebook sheets:
+   faint ruled lines, a thin Red Ochre margin rule, big tabular figures, round line icons. */
+:root {
+  --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F7F4EC;
+  --line: #E4DECD; --line-2: #EFEADF;
+  --rule-faint: rgba(222, 214, 192, .42);
+  --shadow: none;
+}
+body { background: var(--bg); }
+body::before { background: var(--bg); }
+
+/* header: white, hairline below, the logo given its clear space */
+.hd { background: var(--bg); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; padding: 14px 0 12px; margin-bottom: 8px; max-width: 1180px; }
+.hd-row.hd-sub { border-top: 0; padding-top: 6px; }
+.brand .logo { height: 36px; }
+.brand .prod { border-left-color: var(--line); }
+@media (min-width: 721px) { .hd { position: sticky; top: env(safe-area-inset-top, 0px); } }
+
+/* nav: quiet text tabs with a green underline, no box */
+.tabs { background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; padding: 0; margin-bottom: 22px; }
+.tabs button, .more > summary { border-radius: 0; margin: 0; padding: 12px 14px 11px; border-bottom: 3px solid transparent; color: var(--ink-2); }
+.tabs button:hover, .more > summary:hover { background: transparent; color: var(--t-green-dark); }
+.tabs button[aria-selected="true"] { background: transparent; color: var(--t-green-dark); border-bottom-color: var(--t-green); }
+.more > summary.on { border-bottom-color: var(--t-green); }
+.more-m button { border-bottom: 0 !important; border-radius: 8px !important; }
+.more-m button[aria-selected="true"] { background: var(--t-green-20) !important; }
+.badge { background: var(--t-yellow); color: var(--ink); }
+
+/* poster band: the unit, its scores and the one arc */
+.poster { position: relative; overflow: hidden; background: var(--t-green); color: #fff; border-radius: 22px; padding: 26px 28px 24px; display: flex; flex-direction: column; gap: 16px; }
+.poster .leaf { position: absolute; right: -14px; bottom: -22px; width: 190px; height: 190px; fill: none; stroke: rgba(255,255,255,.16); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.po-main { display: flex; flex-wrap: wrap; gap: 16px 28px; justify-content: space-between; align-items: flex-end; position: relative; }
+.po-id { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.po-lv { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--t-yellow); }
+.poster h1 { font-family: var(--font-head); font-weight: 800; font-size: clamp(30px, 5vw, 46px); line-height: 1; letter-spacing: -.02em; margin: 0; }
+.po-who { color: rgba(255,255,255,.82); font-weight: 600; }
+.po-scores { display: flex; flex-wrap: wrap; gap: 14px 22px; }
+.badge-score { display: flex; align-items: center; gap: 10px; }
+.bs-ring { width: 72px; height: 72px; border-radius: 50%; background: #fff; color: var(--t-green-dark); display: grid; place-items: center; flex: none; }
+.bs-ring b { font-family: var(--font-head); font-weight: 800; font-size: 28px; }
+.bs-t { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.bs-t small { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,.85); }
+.poster .chip { background: #fff; }
+.po-say { position: relative; font-size: 18px; line-height: 1.55; max-width: 62ch; border-top: 1px solid rgba(255,255,255,.22); padding-top: 14px; }
+.po-say b { color: #fff; }
+.arc { position: relative; display: inline-block; font-weight: 700; padding-bottom: 2px; }
+.arc svg { position: absolute; left: -2%; bottom: -7px; width: 104%; height: 12px; fill: none; stroke: var(--t-yellow); stroke-width: 4; stroke-linecap: round; }
+
+/* section openers */
+.sh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; margin-bottom: 10px; }
+.sh h2 { font-size: 22px; margin: 0; }
+.sec { margin-top: 30px; }
+
+/* notebook sheet: ruled, with a margin rule; one row per priority */
+.sheet { position: relative; list-style: none; margin: 0; padding: 4px 0; display: flex !important; flex-direction: column; gap: 0 !important; border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+  background: var(--surface) repeating-linear-gradient(to bottom, transparent 0 35px, var(--rule-faint) 35px 36px); }
+.sheet::before { content: ""; position: absolute; top: 0; bottom: 0; left: 70px; width: 1.5px; background: var(--t-ochre); opacity: .45; }
+.sheet .pl { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 4px 30px; align-items: start; background: transparent; border: 0; border-radius: 0; padding: 16px 18px 14px; }
+.sheet .pl + .pl { border-top: 1px solid var(--line-2); }
+.sheet .pl.na { background: transparent; opacity: .85; }
+.pl-b { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pl-t { display: flex; align-items: baseline; gap: 10px; }
+.pl-t b { font-family: var(--font-head); font-weight: 700; font-size: 17px; margin-right: 0; }
+.pl-w { font-size: 12px; color: var(--ink-3); font-weight: 700; letter-spacing: .04em; }
+.pl-s { color: var(--ink-2); max-width: 60ch; }
+.pl-bar { height: 6px; background: var(--line-2); border-radius: 3px; overflow: hidden; max-width: 420px; }
+.pl-bar i { display: block; height: 100%; border-radius: 3px; }
+.pl-r { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.pl-n { font-family: var(--font-head); font-weight: 800; font-size: 34px; line-height: 1; }
+.pl details > summary { color: var(--t-green-dark); font-size: 14px; }
+
+/* round line icons per pillar */
+.pico { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--t-green-20); color: var(--t-green-dark); }
+.pico svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.pi-enrolment { background: var(--t-teal-20); color: var(--t-teal); }
+.pi-repayment { background: var(--t-green-20); color: var(--t-green-dark); }
+.pi-hvc { background: #ECEED6; color: #5C6A1E; }
+.pi-extension { background: var(--t-yellow-20); color: #7A5A12; }
+.pi-duka { background: #EEE2DA; color: var(--t-brown); }
+
+/* lists of units: one sheet, rows divided by hairlines */
+.clist { gap: 0 !important; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); }
+.clist li + li .crow, .clist li + li.crow { border-top: 1px solid var(--line-2); }
+.crow { border: 0 !important; border-radius: 0 !important; background: transparent; min-height: 60px; padding: 12px 18px; }
+.crow:hover { background: var(--surface-2); }
+.crow.static { padding-block: 10px; }
+.cr-go { color: var(--t-green); }
+
+/* plan days and other panels: white, hairline, no shadow */
+.dayd, .panel, .tile, .rcard, .ublock, .banner, .appr, .waiting { box-shadow: none; }
+.dayd { border-color: var(--line); border-radius: 14px; }
+.panel, .tile, .ublock { border-color: var(--line); }
+.rcard { border-top-color: var(--t-green); }
+.waiting { background: var(--t-yellow-20); border-color: #EDDDB2; }
+.btn { border-radius: 999px; padding-inline: 16px; }
+.btn.small { padding-inline: 12px; }
+.chip { font-weight: 700; }
+
+@media (max-width: 720px) {
+  .hd { padding-top: 10px; }
+  .poster { border-radius: 18px; padding: 20px 18px 18px; }
+  .bs-ring { width: 60px; height: 60px; } .bs-ring b { font-size: 24px; }
+  .po-say { font-size: 16px; }
+  .sheet::before { left: 56px; }
+  .sheet .pl { grid-template-columns: 36px minmax(0, 1fr); gap: 4px 22px; padding: 14px 14px 12px; }
+  .sheet .pl .pico { width: 36px; height: 36px; } .sheet .pl .pico svg { width: 20px; height: 20px; }
+  .pl-r { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; order: -1; }
+  .pl-n { font-size: 26px; }
+  .crow { padding: 12px 14px; }
+}
+@media (prefers-reduced-motion: no-preference) { .crow, .tabs button { transition: background .12s, color .12s, border-color .12s; } }
+.sheet { background: var(--surface); }
+.po-lv { color: rgba(255,255,255,.88); }
+.po-lv::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--t-yellow); margin-right: 8px; vertical-align: 1px; }
+.po-main, .po-say { z-index: 1; }
+@media (max-width: 720px) { .poster .leaf { width: 120px; height: 120px; right: -18px; bottom: -18px; stroke: rgba(255,255,255,.1); } }
+.clist li + li > .crow, .clist li + li.crow { box-shadow: inset 0 1px 0 var(--line-2); }
+.block .why { font-size: 12px; color: var(--ink-3); opacity: .85; }
+.day { box-shadow: none; }
+
 </style>
 <div id="app"></div>
 <script>
@@ -1522,6 +1645,20 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     return { home: S.role === 'ta' || S.role === 'da' ? 'My week' : 'Home', priorities: 'Priorities', team: S.role === 'zs' ? 'Plans to approve' : 'Plans in my zones',
       overview: 'All regions', cascade: 'Detailed table', review: 'Scorecards', trend: 'Week on week', week: S.role === 'ta' ? 'Change my plan' : 'A territory’s full plan', data: 'How it works' }[id] || id;
   }
+  var PICON = {
+    enrolment: '<circle cx="9" cy="8.5" r="2.6"/><circle cx="15.5" cy="9.5" r="2.1"/><path d="M4.5 18c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6M13.6 14.2c.6-.4 1.2-.6 1.9-.6 1.8 0 3.2 1.4 3.7 4.4"/>',
+    repayment: '<ellipse cx="12" cy="7.5" rx="5.5" ry="2.2"/><path d="M6.5 7.5v4.2c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2V7.5M6.5 11.7v4.3c0 1.2 2.5 2.2 5.5 2.2s5.5-1 5.5-2.2v-4.3"/>',
+    hvc: '<path d="M12 19.5V10.5M12 13c-3.8 0-5.6-2.2-5.8-5.4 3.4 0 5.6 1.6 5.8 5.4zM12 11c.2-3.4 2.3-5.3 5.8-5.3-.2 3.3-2.1 5.3-5.8 5.3zM7.5 19.5h9"/>',
+    extension: '<path d="M4.5 6.5c2.6-.8 5.1-.5 7.5 1v11c-2.4-1.5-4.9-1.8-7.5-1zM19.5 6.5c-2.6-.8-5.1-.5-7.5 1v11c2.4-1.5 4.9-1.8 7.5-1z"/>',
+    duka: '<path d="M4.5 9.5l1.3-4h12.4l1.3 4M4.5 9.5c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2M6 11.6v7.4h12v-7.4M10 19v-4h4v4"/>'
+  };
+  var MICON = {
+    tms: '<rect x="6" y="4.5" width="12" height="15" rx="2"/><path d="M9.5 4.5v1.8h5V4.5M9 12.5l2 2 4-4"/>',
+    invvar: '<path d="M12 5v14M7.5 19h9M5 8h14M5 8l-2.2 5c.4 1.2 1.3 1.8 2.2 1.8s1.8-.6 2.2-1.8L5 8zM19 8l-2.2 5c.4 1.2 1.3 1.8 2.2 1.8s1.8-.6 2.2-1.8L19 8z"/>',
+    expiry: '<circle cx="12" cy="13" r="6.5"/><path d="M12 9.5V13l2.5 1.6M10 3.5h4"/>',
+    dsales: '<path d="M4.5 9.5h15l-1.4 9H5.9zM8.5 9.5l3.5-5 3.5 5M12 12.5v3.5M10.5 14.2h3"/>'
+  };
+  function pIcon(metric) { var k = WP.pillarOf(metric), svg = MICON[metric] || PICON[k]; return '<span class="pico pi-' + k + '" title="' + esc(WP.PILLARS[k].label) + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + svg + '</svg></span>'; }
   function pTag(metric) { var k = WP.pillarOf(metric); return '<span class="ptag pt-' + k + '">' + esc(WP.PILLARS[k].short) + '</span>'; }
   function trendUnit() {
     var u = S.tu && DATA.byId[S.tu] && DATA.byId[S.tu].regionId === S.region ? DATA.byId[S.tu] : null;
@@ -2694,23 +2831,23 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
   var DAYS_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   function sayOf(v) { var st = statusFromScore(v); return st === 'on' ? 'on track' : st === 'slip' ? 'a little behind' : st === 'behind' ? 'behind' : 'well behind'; }
-  function scoreBox(label, v) { return '<div class="ou-score"><span class="sbl">' + label + '</span><span class="scn num">' + Math.round(v) + '</span>' + stateLine(v) + '</div>'; }
+  function scoreBox(label, v) { return '<div class="badge-score"><span class="bs-ring"><b class="num">' + Math.round(v) + '</b></span><span class="bs-t"><small>' + label + '</small>' + stateLine(v) + '</span></div>'; }
+  function arc(t) { return '<span class="arc">' + t + '<svg viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true"><path d="M3 10 Q50 1 97 10"/></svg></span>'; }
+  var LEAF = '<svg class="leaf" viewBox="0 0 120 120" aria-hidden="true"><path d="M20 104C24 52 54 22 106 16c-4 52-34 84-86 88z"/><path d="M20 104C46 78 68 56 92 30"/><path d="M44 80l-2-20M60 64l-1-18M74 50l-1-14M44 80l18 0M60 64l16 1"/></svg>';
   function unitCard(u) {
     var unitLv = !!(u.areas || u.zones || u.tas), v = scoreOf(u), dv = unitLv ? dukaScoreOf(u) : null, w = weakest(u), dw = unitLv && dv != null ? weakest(u, dprios()) : null;
     var who = u.role === 'DA' ? 'Duka work is ' : unitLv ? 'TA work is ' : 'This territory is ';
-    var say = who + sayOf(v) + ', ' + upTo() + '.' + (w && w.v < 95 ? ' Most help needed on <b>' + esc(w.p.title) + '</b>.' : '');
+    var say = who + arc(sayOf(v)) + ', ' + upTo() + '.' + (w && w.v < 95 ? ' Most help needed on <b>' + esc(w.p.title) + '</b>.' : '');
     if (dv != null) say += '<br>Duka work is ' + sayOf(dv) + '.' + (dw && dw.v < 95 ? ' Most help needed on <b>' + esc(dw.p.title) + '</b>.' : '');
-    var h = '<section class="ou" aria-label="' + esc(levelOf(u)) + '"><div class="ou-main"><div class="ou-id"><span class="ou-lv">' + esc(levelOf(u)) + '</span><h2>' + esc(unitName(u)) + '</h2>' +
-      '<div class="ou-meta"><span><b>' + esc(personOf(u)) + '</b></span></div></div><div class="ou-scores">' +
-      scoreBox(u.role === 'DA' ? 'Duka' : 'TAs', v) + (dv != null ? scoreBox('Duka', dv) : '') + '</div></div>' +
-      '<p class="answer">' + say + '</p></section>';
-    return h;
+    return '<section class="poster" aria-label="' + esc(levelOf(u)) + '">' + LEAF + '<div class="po-main"><div class="po-id"><span class="po-lv">' + esc(levelOf(u)) + '</span><h1>' + esc(unitName(u)) + '</h1><span class="po-who">' + esc(personOf(u)) + '</span></div>' +
+      '<div class="po-scores">' + scoreBox(u.role === 'DA' ? 'Duka' : unitLv ? 'TAs' : 'Score', v) + (dv != null ? scoreBox('Duka', dv) : '') + '</div></div>' +
+      '<p class="po-say">' + say + '</p></section>';
   }
   function prioLine(u, p) {
     var v = prioScore(u, p), m = M[p.metric];
     if (v == null) {
       var z = DATA.byId[u.zoneId] || u;
-      return '<li class="pl na"><div class="pl-t">' + pTag(p.metric) + '<b>' + esc(p.title) + '</b></div><p class="pl-s">Done by the Duka Assistants in ' + esc(z.name) + ': ' + z.das.map(function (o) { return esc(o.name); }).join(' and ') + '. Not part of this territory’s score.</p></li>';
+      return '<li class="pl na">' + pIcon(p.metric) + '<div class="pl-b"><div class="pl-t"><b>' + esc(p.title) + '</b></div><p class="pl-s">Done by the Duka Assistants in ' + esc(z.name) + ': ' + z.das.map(function (o) { return esc(o.name); }).join(' and ') + '. Not part of this territory’s score.</p></div></li>';
     }
     var rows = u.role === 'DA' ? [comp(S.region).byDA[u.id]] : idsUnder(u).map(function (id) { return comp(S.region).byTA[id]; });
     var a = WP.aggregate(rows, p), st = statusFromScore(v);
@@ -2718,17 +2855,17 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
     var left = rows.length === 1 ? Math.max(0, a.need - a.gain) : a.ask, by = ' by ' + DAYS_LONG[p.deadline];
     var sofar = (a.gain > a.need ? 'Done so far: ' + amt(p.metric, a.gain) + ', more than the ' + amt(p.metric, a.need) + ' needed in total.' : 'Done so far: ' + amt(p.metric, a.gain) + ' of ' + amt(p.metric, a.need) + '.') +
       (left <= 0.5 ? ' Nothing more is needed.' : rows.length === 1 ? ' Still to do' + by + ': ' + amt(p.metric, left) + '.' : ' Still owed' + by + ' by those behind: ' + amt(p.metric, left) + '.');
-    return '<li class="pl"><div class="pl-t">' + pTag(p.metric) + '<b>' + esc(p.title) + '</b><span class="pl-n num">' + Math.round(v) + '</span>' + stateLine(v) + '</div>' +
-      '<div class="oup-bar"><i class="' + fcls(st) + '" style="width:' + Math.min(100, v) + '%"></i></div>' +
+    return '<li class="pl">' + pIcon(p.metric) + '<div class="pl-b"><div class="pl-t"><b>' + esc(p.title) + '</b><span class="pl-w">' + p.weight + '%</span></div>' +
       '<p class="pl-s">' + sofar + who + '</p>' +
+      '<div class="pl-bar"><i class="' + fcls(st) + '" style="width:' + Math.min(100, v) + '%"></i></div>' +
       '<details><summary>How is this worked out?</summary><p>' + esc(p.text) + '</p><p>Target: ' + esc(targetText(p)) + '. Weight ' + p.weight + '% of the ' + (isDA(p) ? 'duka' : 'TA') + ' set.</p>' +
-      '<p>By ' + DAYS_LONG[S.day] + ' about ' + amt(p.metric, a.expected) + ' should be done to keep pace for the deadline. The number (' + Math.round(v) + ') is how much of that is done, out of 100.</p></details></li>';
+      '<p>By ' + DAYS_LONG[S.day] + ' about ' + amt(p.metric, a.expected) + ' should be done to keep pace for the deadline. The number (' + Math.round(v) + ') is how much of that is done, out of 100.</p></details></div><div class="pl-r"><span class="pl-n num">' + Math.round(v) + '</span>' + stateLine(v) + '</div></li>';
   }
   function prioList(u) {
-    var ta = '<section class="sec"><h2>' + (u.role === 'DA' ? 'Duka priorities' : 'TA priorities') + '</h2><p class="sub">' + (u.role === 'DA' ? 'Cash sales and stock at the dukas. Weights total 100.' : 'Credit sales and extension. Weights total 100.') + '</p><ul class="plist2">' +
+    var ta = '<section class="sec"><div class="sh"><h2>' + (u.role === 'DA' ? 'Duka priorities' : 'TA priorities') + '</h2><p class="sub">' + (u.role === 'DA' ? 'Cash sales and stock at the dukas. Weights total 100.' : 'Credit sales and extension. Weights total 100.') + '</p></div><ul class="plist2 sheet">' +
       (u.role === 'DA' ? dprios() : prios()).map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
     if (u.role === 'DA' || !(u.areas || u.zones || u.tas) || !dprios().length) return ta;
-    return ta + '<section class="sec"><h2>Duka priorities</h2><p class="sub">Done by the Duka Assistants: cash sales and stock at the dukas. A separate set with its own weights.</p><ul class="plist2">' + dprios().map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
+    return ta + '<section class="sec"><div class="sh"><h2>Duka priorities</h2><p class="sub">Done by the Duka Assistants: cash sales and stock at the dukas. A separate set with its own weights.</p></div><ul class="plist2 sheet">' + dprios().map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
   }
   function childRow(c) {
     var v = scoreOf(c), w = weakest(c), dv = c.areas || c.zones || c.tas ? dukaScoreOf(c) : null;

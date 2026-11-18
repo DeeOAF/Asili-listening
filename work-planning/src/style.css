@@ -599,3 +599,126 @@ details.sec > summary { font-family: var(--font-head); font-weight: 700; font-si
 .dset input[type=text] { min-width: 160px; }
 .dset td { vertical-align: top; }
 @media (max-width: 720px) { .cr-two { gap: 8px; } .cr-two b { font-size: 17px; } }
+
+
+/* ================= White refresh (Tupande brandbook: poster × notebook) =================
+   White page. One Kakamega Green poster band per screen carries the headline, round score
+   badges and the single yellow arc. Everything read closely sits on notebook sheets:
+   faint ruled lines, a thin Red Ochre margin rule, big tabular figures, round line icons. */
+:root {
+  --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F7F4EC;
+  --line: #E4DECD; --line-2: #EFEADF;
+  --rule-faint: rgba(222, 214, 192, .42);
+  --shadow: none;
+}
+body { background: var(--bg); }
+body::before { background: var(--bg); }
+
+/* header: white, hairline below, the logo given its clear space */
+.hd { background: var(--bg); border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; padding: 14px 0 12px; margin-bottom: 8px; max-width: 1180px; }
+.hd-row.hd-sub { border-top: 0; padding-top: 6px; }
+.brand .logo { height: 36px; }
+.brand .prod { border-left-color: var(--line); }
+@media (min-width: 721px) { .hd { position: sticky; top: env(safe-area-inset-top, 0px); } }
+
+/* nav: quiet text tabs with a green underline, no box */
+.tabs { background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; box-shadow: none; padding: 0; margin-bottom: 22px; }
+.tabs button, .more > summary { border-radius: 0; margin: 0; padding: 12px 14px 11px; border-bottom: 3px solid transparent; color: var(--ink-2); }
+.tabs button:hover, .more > summary:hover { background: transparent; color: var(--t-green-dark); }
+.tabs button[aria-selected="true"] { background: transparent; color: var(--t-green-dark); border-bottom-color: var(--t-green); }
+.more > summary.on { border-bottom-color: var(--t-green); }
+.more-m button { border-bottom: 0 !important; border-radius: 8px !important; }
+.more-m button[aria-selected="true"] { background: var(--t-green-20) !important; }
+.badge { background: var(--t-yellow); color: var(--ink); }
+
+/* poster band: the unit, its scores and the one arc */
+.poster { position: relative; overflow: hidden; background: var(--t-green); color: #fff; border-radius: 22px; padding: 26px 28px 24px; display: flex; flex-direction: column; gap: 16px; }
+.poster .leaf { position: absolute; right: -14px; bottom: -22px; width: 190px; height: 190px; fill: none; stroke: rgba(255,255,255,.16); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.po-main { display: flex; flex-wrap: wrap; gap: 16px 28px; justify-content: space-between; align-items: flex-end; position: relative; }
+.po-id { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.po-lv { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--t-yellow); }
+.poster h1 { font-family: var(--font-head); font-weight: 800; font-size: clamp(30px, 5vw, 46px); line-height: 1; letter-spacing: -.02em; margin: 0; }
+.po-who { color: rgba(255,255,255,.82); font-weight: 600; }
+.po-scores { display: flex; flex-wrap: wrap; gap: 14px 22px; }
+.badge-score { display: flex; align-items: center; gap: 10px; }
+.bs-ring { width: 72px; height: 72px; border-radius: 50%; background: #fff; color: var(--t-green-dark); display: grid; place-items: center; flex: none; }
+.bs-ring b { font-family: var(--font-head); font-weight: 800; font-size: 28px; }
+.bs-t { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.bs-t small { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,.85); }
+.poster .chip { background: #fff; }
+.po-say { position: relative; font-size: 18px; line-height: 1.55; max-width: 62ch; border-top: 1px solid rgba(255,255,255,.22); padding-top: 14px; }
+.po-say b { color: #fff; }
+.arc { position: relative; display: inline-block; font-weight: 700; padding-bottom: 2px; }
+.arc svg { position: absolute; left: -2%; bottom: -7px; width: 104%; height: 12px; fill: none; stroke: var(--t-yellow); stroke-width: 4; stroke-linecap: round; }
+
+/* section openers */
+.sh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; margin-bottom: 10px; }
+.sh h2 { font-size: 22px; margin: 0; }
+.sec { margin-top: 30px; }
+
+/* notebook sheet: ruled, with a margin rule; one row per priority */
+.sheet { position: relative; list-style: none; margin: 0; padding: 4px 0; display: flex !important; flex-direction: column; gap: 0 !important; border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+  background: var(--surface) repeating-linear-gradient(to bottom, transparent 0 35px, var(--rule-faint) 35px 36px); }
+.sheet::before { content: ""; position: absolute; top: 0; bottom: 0; left: 70px; width: 1.5px; background: var(--t-ochre); opacity: .45; }
+.sheet .pl { position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 4px 30px; align-items: start; background: transparent; border: 0; border-radius: 0; padding: 16px 18px 14px; }
+.sheet .pl + .pl { border-top: 1px solid var(--line-2); }
+.sheet .pl.na { background: transparent; opacity: .85; }
+.pl-b { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pl-t { display: flex; align-items: baseline; gap: 10px; }
+.pl-t b { font-family: var(--font-head); font-weight: 700; font-size: 17px; margin-right: 0; }
+.pl-w { font-size: 12px; color: var(--ink-3); font-weight: 700; letter-spacing: .04em; }
+.pl-s { color: var(--ink-2); max-width: 60ch; }
+.pl-bar { height: 6px; background: var(--line-2); border-radius: 3px; overflow: hidden; max-width: 420px; }
+.pl-bar i { display: block; height: 100%; border-radius: 3px; }
+.pl-r { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.pl-n { font-family: var(--font-head); font-weight: 800; font-size: 34px; line-height: 1; }
+.pl details > summary { color: var(--t-green-dark); font-size: 14px; }
+
+/* round line icons per pillar */
+.pico { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--t-green-20); color: var(--t-green-dark); }
+.pico svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.pi-enrolment { background: var(--t-teal-20); color: var(--t-teal); }
+.pi-repayment { background: var(--t-green-20); color: var(--t-green-dark); }
+.pi-hvc { background: #ECEED6; color: #5C6A1E; }
+.pi-extension { background: var(--t-yellow-20); color: #7A5A12; }
+.pi-duka { background: #EEE2DA; color: var(--t-brown); }
+
+/* lists of units: one sheet, rows divided by hairlines */
+.clist { gap: 0 !important; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--surface); }
+.clist li + li .crow, .clist li + li.crow { border-top: 1px solid var(--line-2); }
+.crow { border: 0 !important; border-radius: 0 !important; background: transparent; min-height: 60px; padding: 12px 18px; }
+.crow:hover { background: var(--surface-2); }
+.crow.static { padding-block: 10px; }
+.cr-go { color: var(--t-green); }
+
+/* plan days and other panels: white, hairline, no shadow */
+.dayd, .panel, .tile, .rcard, .ublock, .banner, .appr, .waiting { box-shadow: none; }
+.dayd { border-color: var(--line); border-radius: 14px; }
+.panel, .tile, .ublock { border-color: var(--line); }
+.rcard { border-top-color: var(--t-green); }
+.waiting { background: var(--t-yellow-20); border-color: #EDDDB2; }
+.btn { border-radius: 999px; padding-inline: 16px; }
+.btn.small { padding-inline: 12px; }
+.chip { font-weight: 700; }
+
+@media (max-width: 720px) {
+  .hd { padding-top: 10px; }
+  .poster { border-radius: 18px; padding: 20px 18px 18px; }
+  .bs-ring { width: 60px; height: 60px; } .bs-ring b { font-size: 24px; }
+  .po-say { font-size: 16px; }
+  .sheet::before { left: 56px; }
+  .sheet .pl { grid-template-columns: 36px minmax(0, 1fr); gap: 4px 22px; padding: 14px 14px 12px; }
+  .sheet .pl .pico { width: 36px; height: 36px; } .sheet .pl .pico svg { width: 20px; height: 20px; }
+  .pl-r { grid-column: 2; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; order: -1; }
+  .pl-n { font-size: 26px; }
+  .crow { padding: 12px 14px; }
+}
+@media (prefers-reduced-motion: no-preference) { .crow, .tabs button { transition: background .12s, color .12s, border-color .12s; } }
+.sheet { background: var(--surface); }
+.po-lv { color: rgba(255,255,255,.88); }
+.po-lv::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--t-yellow); margin-right: 8px; vertical-align: 1px; }
+.po-main, .po-say { z-index: 1; }
+@media (max-width: 720px) { .poster .leaf { width: 120px; height: 120px; right: -18px; bottom: -18px; stroke: rgba(255,255,255,.1); } }
+.clist li + li > .crow, .clist li + li.crow { box-shadow: inset 0 1px 0 var(--line-2); }
+.block .why { font-size: 12px; color: var(--ink-3); opacity: .85; }
+.day { box-shadow: none; }

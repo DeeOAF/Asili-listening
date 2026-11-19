@@ -1,17 +1,47 @@
 {
   "redirects": [
-    { "source": "/planner", "destination": "/planner/", "permanent": false }
+    {
+      "source": "/planner",
+      "destination": "/planner/",
+      "permanent": false
+    },
+    {
+      "source": "/work-planning",
+      "destination": "/work-planning/",
+      "permanent": false
+    }
   ],
   "rewrites": [
-    { "source": "/", "destination": "/tupande-farm-planner/index.html" },
-    { "source": "/assets/:path*", "destination": "/tupande-farm-planner/assets/:path*" },
-    { "source": "/planner/", "destination": "/tupande-farm-planner/planner/index.html" },
-    { "source": "/planner/:path*", "destination": "/tupande-farm-planner/planner/:path*" }
+    {
+      "source": "/",
+      "destination": "/tupande-farm-planner/index.html"
+    },
+    {
+      "source": "/assets/:path*",
+      "destination": "/tupande-farm-planner/assets/:path*"
+    },
+    {
+      "source": "/planner/",
+      "destination": "/tupande-farm-planner/planner/index.html"
+    },
+    {
+      "source": "/planner/:path*",
+      "destination": "/tupande-farm-planner/planner/:path*"
+    },
+    {
+      "source": "/work-planning/",
+      "destination": "/work-planning/work-planning.html"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
-      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ]
 }

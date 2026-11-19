@@ -841,3 +841,33 @@ body::before { background: var(--bg); }
   .bs-ring { width: 56px; height: 56px; } .bs-ring b { font-size: 22px; }
   .poster h1 { font-size: 30px; }
 }
+
+/* Zaituni (brandbook secondary green) for the context band and view icons: brighter than Rondo Teal.
+   White is too faint on Zaituni, so the band's text is a deep green ink (about 5:1). */
+:root { --t-zaituni: #8F9A36; --t-zaituni-20: #EEF0DC; --zink: #1E2A0C; }
+.ctxband { background: var(--t-zaituni); color: var(--zink); }
+.ctxband::after { background: var(--t-green); opacity: 1; }
+.ctxband .crumb small, .ctxband .lab { color: var(--zink); opacity: .78; }
+.ctxband .crumb span, .ctxband .crumb .linkbtn { color: var(--zink); }
+.ctxband .crumb .linkbtn { text-decoration-color: rgba(30,42,12,.4); }
+.ctxband .crumb b { color: var(--zink); }
+.ctxband .sep { color: rgba(30,42,12,.55); }
+.ctxband :focus-visible { outline-color: var(--t-green-dark); }
+.vh-ic { background: var(--t-zaituni); box-shadow: 0 0 0 5px var(--t-zaituni-20); }
+.vh-ey { color: #5C6A1E; }
+
+/* Farm Planner links (Enrolment pillar) */
+.farmlink { display: inline-flex; align-items: center; gap: 6px; color: var(--t-green-dark); font-weight: 700; font-size: 14px; text-decoration: none; min-height: 32px; }
+.farmlink:hover span:first-of-type { text-decoration: underline; text-underline-offset: 3px; }
+.farmlink svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.farmlink .ext { font-size: 12px; }
+.farmcard { margin-top: 24px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px 18px; align-items: center; background: var(--t-zaituni-20); border: 1px solid #DCE0B8; border-radius: 18px; padding: 18px 20px; }
+.fc-ic { width: 52px; height: 52px; border-radius: 50%; background: var(--t-zaituni); color: #fff; display: grid; place-items: center; box-shadow: 0 0 0 5px #fff; }
+.fc-ic svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.fc-ey { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #5C6A1E; }
+.farmcard h3 { font-family: var(--font-head); font-weight: 800; font-size: 21px; margin: 2px 0 4px; }
+.farmcard p { color: var(--ink-2); margin: 0; max-width: 60ch; }
+.farmcard .btn { text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.more-ext { display: block; padding: 10px 12px; border-top: 1px solid var(--line-2); margin-top: 4px; color: var(--t-green-dark); font-weight: 700; text-decoration: none; }
+.more-ext:hover { background: var(--t-green-20); border-radius: 8px; }
+@media (max-width: 720px) { .farmcard { grid-template-columns: auto minmax(0, 1fr); } .farmcard .btn { grid-column: 1 / -1; justify-content: center; } }

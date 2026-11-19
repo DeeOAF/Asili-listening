@@ -84,8 +84,17 @@
     globe: '<circle cx="12" cy="12" r="7.5"/><path d="M4.5 12h15M12 4.5c2.2 2.2 3.2 4.7 3.2 7.5s-1 5.3-3.2 7.5c-2.2-2.2-3.2-4.7-3.2-7.5s1-5.3 3.2-7.5z"/>',
     home: '<path d="M4.5 11L12 4.5l7.5 6.5M6.5 9.5v9.5h11V9.5M10 19v-5h4v5"/>',
     week: '<path d="M5 6.5h14M5 12h14M5 17.5h9"/><circle cx="18" cy="17.5" r="1.3"/>',
+    leafy: '<path d="M6 19c.4-6.6 4.2-11 12-12.5-.6 7.6-5 11.8-12 12.5zM6 19l7.5-7.5"/>',
     people: '<circle cx="9" cy="8.5" r="2.6"/><circle cx="15.5" cy="9.5" r="2.1"/><path d="M4.5 18c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6M13.6 14.2c.6-.4 1.2-.6 1.9-.6 1.8 0 3.2 1.4 3.7 4.4"/>'
   };
+  /* the Tupande Farm Planner (same repo, Vercel). On that site link relatively; everywhere else, absolute. */
+  var FARM_URL = 'https://asili-listen.vercel.app/planner/';
+  function farmUrl() { try { if (location.hostname === 'asili-listen.vercel.app') return '/planner/'; } catch (e) { /* no location */ } return FARM_URL; }
+  function farmLink(text) { return '<a class="farmlink" href="' + farmUrl() + '" target="_blank" rel="noopener">' + uic('leafy') + '<span>' + esc(text) + '</span><span class="ext" aria-hidden="true">↗</span><span class="sr"> (opens in a new tab)</span></a>'; }
+  function farmCard(lead) {
+    return '<aside class="farmcard"><span class="fc-ic">' + uic('leafy') + '</span><div class="fc-b"><span class="fc-ey">Enrolment tool</span><h3>Tupande Farm Planner</h3><p>' + esc(lead) + '</p></div>' +
+      '<a class="btn solid" href="' + farmUrl() + '" target="_blank" rel="noopener">Open the Farm Planner <span aria-hidden="true">↗</span><span class="sr"> (opens in a new tab)</span></a></aside>';
+  }
   function uic(k) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + UIC[k] + '</svg>'; }
   function secHead(icon, title, sub, count) {
     return '<header class="sh2"><span class="sh-ic">' + uic(icon) + '</span><div class="sh-t"><h2>' + title + (count != null ? ' <span class="sh-n num">' + count + '</span>' : '') + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div></header>';
@@ -715,7 +724,7 @@
       if (!day.blocks.length) h += '<p class="empty">Nothing planned.</p>';
       day.blocks.forEach(function (b) {
         var title = b.pid === 'ageing' ? 'Ageing check-ins' : (b.title || pById(b.pid).title);
-        h += '<div class="block' + (b.edited || b.added ? ' edited' : '') + '"><div class="meta"><span><b>' + esc(title) + '</b> · ' + b.part + (b.overdue ? ' · <span class="todo">deadline passed</span>' : '') + (b.added ? ' · added by you' : b.edited ? ' · edited' : '') + '</span><span class="num">' + fmtH(b.hours) + ' h</span></div><div class="act">' + esc(b.text) + '</div>';
+        h += '<div class="block' + (b.edited || b.added ? ' edited' : '') + '"><div class="meta"><span><b>' + esc(title) + '</b> · ' + b.part + (b.overdue ? ' · <span class="todo">deadline passed</span>' : '') + (b.added ? ' · added by you' : b.edited ? ' · edited' : '') + '</span><span class="num">' + fmtH(b.hours) + ' h</span></div><div class="act">' + esc(b.text) + '</div>' + (b.metric === 'clients' || b.metric === 'groups' ? farmLink('Farm Planner for these visits') : '');
         var why = b.reasons.join(' · ');
         if ((b.edited || b.added) && b.metric) why = 'At ' + fmtH(b.hours) + ' h this block covers about ' + withUnit(b.metric, b.hours / M[b.metric].hrs) + (b.edited ? '. The amounts in the sentence above are for the recommended ' + fmtH(b.rec) + ' h.' : '.');
         h += '<div class="why">' + esc(why) + '</div>';
@@ -1317,7 +1326,7 @@
       '<p class="pl-s">' + sofar + who + '</p>' +
       '<div class="pl-bar"><i class="' + fcls(st) + '" style="width:' + Math.min(100, v) + '%"></i></div>' +
       '<details><summary>How is this worked out?</summary><p>' + esc(p.text) + '</p><p>Target: ' + esc(targetText(p)) + '. Weight ' + p.weight + '% of the ' + (isDA(p) ? 'duka' : 'TA') + ' set.</p>' +
-      '<p>By ' + DAYS_LONG[S.day] + ' about ' + amt(p.metric, a.expected) + ' should be done to keep pace for the deadline. The number (' + Math.round(v) + ') is how much of that is done, out of 100.</p></details></div><div class="pl-r"><span class="pl-n num">' + Math.round(v) + '</span>' + stateLine(v) + '</div></li>';
+      '<p>By ' + DAYS_LONG[S.day] + ' about ' + amt(p.metric, a.expected) + ' should be done to keep pace for the deadline. The number (' + Math.round(v) + ') is how much of that is done, out of 100.</p></details>' + (WP.pillarOfP(p) === 'enrolment' ? farmLink('Plan with farmers in the Farm Planner') : '') + '</div><div class="pl-r"><span class="pl-n num">' + Math.round(v) + '</span>' + stateLine(v) + '</div></li>';
   }
   function prioList(u) {
     var set0 = u.role === 'DA' ? dprios() : prios();
@@ -1354,14 +1363,14 @@
   function dayBlocks(days) {
     if (!days.length) return '<p class="empty">The week is over, so there is nothing left to plan.</p>';
     return days.map(function (dd, i) {
-      var inner = dd.blocks.length ? dd.blocks.map(function (b) { return '<li><span class="bh num">' + fmtH(b.hours) + ' h</span><span>' + esc(b.text) + '</span></li>'; }).join('') : '<li class="muted">Nothing planned.</li>';
+      var inner = dd.blocks.length ? dd.blocks.map(function (b) { return '<li><span class="bh num">' + fmtH(b.hours) + ' h</span><span>' + esc(b.text) + (b.metric === 'clients' || b.metric === 'groups' ? '<br>' + farmLink('Farm Planner for these visits') : '') + '</span></li>'; }).join('') : '<li class="muted">Nothing planned.</li>';
       return '<details class="dayd"' + (i === 0 ? ' open' : '') + '><summary><b>' + DAYS_LONG[dd.i] + '</b> <span class="muted">' + dd.date + ' · ' + fmtH(dd.used) + ' of ' + dd.cap + ' h</span></summary><ul class="blocks">' + inner + '</ul></details>';
     }).join('');
   }
   function territoryHome(t) {
     S.ta = t.id; S.zone = t.zoneId;
     var r = comp(S.region).byTA[t.id], pl = peekPlan(t.id), days = pl ? effDays(pl, r) : r.plan.days, mine = S.role === 'ta';
-    var h = unitCard(t) + prioList(t);
+    var h = unitCard(t) + prioList(t) + (prios().some(function (p) { return WP.pillarOfP(p) === 'enrolment'; }) ? farmCard(mine ? 'Use it on enrolment visits: map the farmer’s field, protect household maize first, then show what the rest of the land could earn. It works on a phone, in the field.' : 'TAs use it on enrolment visits to map a farmer’s field, protect household maize and show what the rest of the land could earn.') : '');
     h += '<section class="sec">' + secHead('calendar', (mine ? 'Your plan' : 'The plan') + ' for the rest of the week', '') + '<div class="planhd">' + planChip(t.id) +
       (mine ? (!pl || pl.status === 'proposed' ? ' <button class="btn solid" data-act="accept">Accept this plan</button>' : '') + ' <button class="btn" data-tab="week">Change the plan</button>' : ' <button class="btn" data-tab="week">Open the full plan</button>') + '</div>' + dayBlocks(days) + '</section>';
     return h;
@@ -1525,7 +1534,8 @@
     if (more.length) {
       var inMore = more.indexOf(S.tab) >= 0;
       h += '<details class="more"><summary' + (inMore ? ' class="on"' : '') + '>More' + (inMore ? ': ' + esc(tabLabel(S.tab)) : '') + '</summary><div class="more-m">' +
-        more.map(function (t) { return '<button data-tab="' + t + '" aria-selected="' + (t === S.tab) + '">' + esc(tabLabel(t)) + '</button>'; }).join('') + '</div></details>';
+        more.map(function (t) { return '<button data-tab="' + t + '" aria-selected="' + (t === S.tab) + '">' + esc(tabLabel(t)) + '</button>'; }).join('') +
+        '<a class="more-ext" href="' + farmUrl() + '" target="_blank" rel="noopener">Farm Planner <span aria-hidden="true">↗</span><span class="sr"> (opens in a new tab)</span></a></div></details>';
     }
     return h + '</div>';
   }

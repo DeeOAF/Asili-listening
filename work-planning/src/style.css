@@ -871,3 +871,15 @@ body::before { background: var(--bg); }
 .more-ext { display: block; padding: 10px 12px; border-top: 1px solid var(--line-2); margin-top: 4px; color: var(--t-green-dark); font-weight: 700; text-decoration: none; }
 .more-ext:hover { background: var(--t-green-20); border-radius: 8px; }
 @media (max-width: 720px) { .farmcard { grid-template-columns: auto minmax(0, 1fr); } .farmcard .btn { grid-column: 1 / -1; justify-content: center; } }
+
+/* Header band in the deep green of the "Work Planning" title (Kakamega Green, darkened); white text, yellow labels */
+.ctxband { background: var(--t-green-dark); color: #fff; }
+.ctxband::after { background: var(--t-yellow); }
+.ctxband .crumb small, .ctxband .lab { color: #F3D693; opacity: 1; }
+.ctxband .crumb span, .ctxband .crumb .linkbtn { color: rgba(255,255,255,.9); }
+.ctxband .crumb .linkbtn { text-decoration-color: rgba(255,255,255,.45); }
+.ctxband .crumb b { color: #fff; }
+.ctxband .sep { color: rgba(255,255,255,.55); }
+.ctxband :focus-visible { outline-color: var(--t-yellow); }
+.vh-ic { background: var(--t-green-dark); box-shadow: 0 0 0 5px var(--t-green-20); }
+.vh-ey { color: var(--t-green-dark); }

@@ -768,3 +768,76 @@ body::before { background: var(--bg); }
 .savest.s-saving, .savest.s-loading { color: var(--ink-3); }
 .savest.s-error, .savest.s-slow { color: var(--s-crit); }
 .savest.s-readonly, .savest.s-local { color: var(--ink-3); }
+
+/* ================= Headers with presence ================= */
+/* app header: white logo row, then a Rondo Teal context band (where you are, which week) */
+.hd { padding-bottom: 0; border-bottom: 0; margin-bottom: 0; }
+.hd-row { padding-bottom: 12px; }
+.demo-tag { font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--t-brown); background: var(--t-yellow-20); border: 1px solid #EDDDB2; border-radius: 999px; padding: 3px 9px; }
+.ctxband { position: relative; overflow: hidden; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; background: var(--t-teal); color: #fff; border-radius: 16px; padding: 12px 18px; }
+.ctxband::after { content: ""; position: absolute; left: 18px; right: 18px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--t-yellow); opacity: .9; }
+.ctxband .crumb small { color: #F3D693; }
+.ctxband .crumb span, .ctxband .crumb .linkbtn { color: rgba(255,255,255,.9); }
+.ctxband .crumb .linkbtn { text-decoration-color: rgba(255,255,255,.45); }
+.ctxband .crumb b { color: #fff; font-size: 17px; }
+.ctxband .sep { color: rgba(255,255,255,.55); }
+.ctxband .lab { color: #F3D693; }
+.ctxband select { background: #fff; border-color: transparent; color: var(--ink); }
+.ctxband :focus-visible { outline-color: var(--t-yellow); }
+
+/* main tabs with line icons */
+.tabs { margin-top: 10px; }
+.tabs .tgb > button { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; }
+.tab-ic svg { width: 20px; height: 20px; display: block; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tabs .tgb > button[aria-selected="true"] .tab-ic { color: var(--t-green); }
+
+/* section headers: round green badge, Georama title, short yellow rule, count */
+.sh2 { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+.sh-ic { width: 44px; height: 44px; border-radius: 50%; background: var(--t-green); color: #fff; display: grid; place-items: center; flex: none; box-shadow: 0 0 0 4px var(--t-green-20); }
+.sh-ic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sh-t { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.sh2 h2 { font-family: var(--font-head); font-weight: 800; font-size: 24px; letter-spacing: -.015em; line-height: 1.1; margin: 0; position: relative; padding-bottom: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sh2 h2::after { content: ""; position: absolute; left: 0; bottom: 0; width: 44px; height: 4px; border-radius: 4px; background: var(--t-yellow); }
+.sh-n { font-family: var(--font-body); font-size: 13px; font-weight: 700; color: var(--t-green-dark); background: var(--t-green-20); border-radius: 999px; padding: 2px 9px; letter-spacing: 0; }
+.sh2 p { color: var(--ink-2); margin: 0; }
+.sec > .sh2 + .clist, .sec > .sh2 + .sheet { margin-top: 0; }
+
+/* title band for every view other than Home (notebook register: sand, ruled, margin rule) */
+.vhead { position: relative; display: flex; gap: 16px; align-items: center; background: var(--t-sand-20) repeating-linear-gradient(to bottom, transparent 0 27px, rgba(222,214,192,.55) 27px 28px); border: 1px solid var(--line); border-radius: 18px; padding: 18px 22px 18px 34px; margin-bottom: 22px; overflow: hidden; }
+.vhead::before { content: ""; position: absolute; left: 18px; top: 0; bottom: 0; width: 1.5px; background: var(--t-ochre); opacity: .55; }
+.vh-ic { width: 56px; height: 56px; border-radius: 50%; background: var(--t-teal); color: #fff; display: grid; place-items: center; flex: none; box-shadow: 0 0 0 5px rgba(47,96,103,.14); }
+.vh-ic svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.vh-ey { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--t-teal); }
+.vhead h1 { font-family: var(--font-head); font-weight: 800; font-size: clamp(26px, 4vw, 34px); letter-spacing: -.02em; line-height: 1.05; margin: 2px 0 4px; color: var(--ink); }
+.vhead p { color: var(--ink-2); margin: 0; max-width: 64ch; }
+
+@media (max-width: 720px) {
+  .ctxband { padding: 12px 14px; border-radius: 14px; }
+  .ctxband .crumb b { font-size: 15px; }
+  .ctxband .wkpick { width: 100%; }
+  .tabs .tgb > button { font-size: 15px; gap: 6px; }
+  .tab-ic svg { width: 18px; height: 18px; }
+  .sh-ic { width: 38px; height: 38px; } .sh-ic svg { width: 20px; height: 20px; }
+  .sh2 h2 { font-size: 20px; }
+  .vhead { padding: 14px 14px 14px 28px; gap: 12px; } .vhead::before { left: 14px; }
+  .vh-ic { width: 46px; height: 46px; } .vh-ic svg { width: 24px; height: 24px; }
+}
+.tl-short { display: none; }
+@media (max-width: 720px) {
+  .hd .who { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; align-items: center; }
+  .hd .who select { min-width: 0; font-size: 14px; }
+  .brand small { font-size: 11.5px; }
+  .ctxband .wkpick { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .ctxband .wkpick .lab { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .ctxband #wkSel { font-size: 14px; }
+  .ctxband .dayctl select { font-size: 14px; }
+  .tabs .tgb { flex-wrap: nowrap; justify-content: space-between; }
+  .tabs .tgb > button, .more > summary { padding: 10px 6px 9px; white-space: nowrap; }
+  .tl-long { display: none; } .tl-short { display: inline; }
+}
+@media (max-width: 720px) {
+  .po-scores { flex-wrap: nowrap; gap: 14px; width: 100%; }
+  .badge-score { gap: 8px; min-width: 0; }
+  .bs-ring { width: 56px; height: 56px; } .bs-ring b { font-size: 22px; }
+  .poster h1 { font-size: 30px; }
+}

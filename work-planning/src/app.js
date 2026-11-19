@@ -70,6 +70,26 @@
     expiry: '<circle cx="12" cy="13" r="6.5"/><path d="M12 9.5V13l2.5 1.6M10 3.5h4"/>',
     dsales: '<path d="M4.5 9.5h15l-1.4 9H5.9zM8.5 9.5l3.5-5 3.5 5M12 12.5v3.5M10.5 14.2h3"/>'
   };
+  /* line icons for headers: one weight, round caps, like the brandbook's illustrations */
+  var UIC = {
+    target: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.8"/>',
+    pin: '<path d="M12 20s-6-5.3-6-10a6 6 0 0 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="10" r="2.2"/>',
+    shop: '<path d="M4.5 9.5l1.3-4h12.4l1.3 4M4.5 9.5c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2c0 1.3 1 2.2 2.5 2.2s2.5-.9 2.5-2.2M6 11.6v7.4h12v-7.4M10 19v-4h4v4"/>',
+    calendar: '<rect x="4.5" y="6" width="15" height="13.5" rx="2"/><path d="M4.5 10h15M9 4v4M15 4v4M8 13.5h2M14 13.5h2M8 16.5h2"/>',
+    check: '<circle cx="12" cy="12" r="7.5"/><path d="M8.6 12.2l2.3 2.3 4.5-4.6"/>',
+    chart: '<path d="M5 19.5h14M7.5 16v-4M12 16V8M16.5 16v-6.5"/>',
+    trend: '<path d="M4.5 16.5l4.5-4.5 3.5 3 7-7M14.5 8h5v5"/>',
+    table: '<rect x="4.5" y="5.5" width="15" height="13" rx="1.5"/><path d="M4.5 9.5h15M4.5 13.5h15M10 9.5v9"/>',
+    info: '<circle cx="12" cy="12" r="7.5"/><path d="M12 11v5M12 8h.01"/>',
+    globe: '<circle cx="12" cy="12" r="7.5"/><path d="M4.5 12h15M12 4.5c2.2 2.2 3.2 4.7 3.2 7.5s-1 5.3-3.2 7.5c-2.2-2.2-3.2-4.7-3.2-7.5s1-5.3 3.2-7.5z"/>',
+    home: '<path d="M4.5 11L12 4.5l7.5 6.5M6.5 9.5v9.5h11V9.5M10 19v-5h4v5"/>',
+    week: '<path d="M5 6.5h14M5 12h14M5 17.5h9"/><circle cx="18" cy="17.5" r="1.3"/>',
+    people: '<circle cx="9" cy="8.5" r="2.6"/><circle cx="15.5" cy="9.5" r="2.1"/><path d="M4.5 18c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6M13.6 14.2c.6-.4 1.2-.6 1.9-.6 1.8 0 3.2 1.4 3.7 4.4"/>'
+  };
+  function uic(k) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + UIC[k] + '</svg>'; }
+  function secHead(icon, title, sub, count) {
+    return '<header class="sh2"><span class="sh-ic">' + uic(icon) + '</span><div class="sh-t"><h2>' + title + (count != null ? ' <span class="sh-n num">' + count + '</span>' : '') + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div></header>';
+  }
   function pIcon(x) { var metric = typeof x === 'object' ? x.metric : x, k = typeof x === 'object' ? WP.pillarOfP(x) : WP.pillarOf(x), svg = (k === WP.pillarOf(metric) && MICON[metric]) || PICON[k]; return '<span class="pico pi-' + k + '" title="' + esc(WP.PILLARS[k].label) + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + svg + '</svg></span>'; }
   function pTag(x) { var k = typeof x === 'object' ? WP.pillarOfP(x) : WP.pillarOf(x); return '<span class="ptag pt-' + k + '">' + esc(WP.PILLARS[k].short) + '</span>'; }
   function trendUnit() {
@@ -661,7 +681,7 @@
   /* the plan, its status and the edit controls */
   function planSection(r, l) {
     var plan = getPlan(r.ta.id), editing = S.edit && S.editTa === r.ta.id && S.editKey === plan.key && !!plan.days, days = effDays(plan, r), zs = r.zone.zs;
-    var h = '<div class="sec"><h2>Your plan for the rest of the week</h2>';
+    var h = '<div class="sec">' + secHead('calendar', 'Your plan for the rest of the week', '') ;
     if (!r.plan.days.length) return h + '<p class="empty">Nothing left to plan. Move the “as of” day earlier to see a plan.</p></div>';
     var draft = plan.status === 'proposed' && plan.days && !editing;
     var st = editing ? 'Editing' : draft ? 'Draft' : PLAN_LABEL[plan.status][0];
@@ -1300,10 +1320,11 @@
       '<p>By ' + DAYS_LONG[S.day] + ' about ' + amt(p.metric, a.expected) + ' should be done to keep pace for the deadline. The number (' + Math.round(v) + ') is how much of that is done, out of 100.</p></details></div><div class="pl-r"><span class="pl-n num">' + Math.round(v) + '</span>' + stateLine(v) + '</div></li>';
   }
   function prioList(u) {
-    var ta = '<section class="sec"><div class="sh"><h2>' + (u.role === 'DA' ? 'Duka priorities' : 'TA priorities') + '</h2><p class="sub">' + (u.role === 'DA' ? 'Cash sales and stock at the dukas. Weights total 100.' : 'Credit sales and extension. Weights total 100.') + '</p></div><ul class="plist2 sheet">' +
+    var set0 = u.role === 'DA' ? dprios() : prios();
+    var ta = '<section class="sec">' + secHead(u.role === 'DA' ? 'shop' : 'target', u.role === 'DA' ? 'Duka priorities' : 'TA priorities', u.role === 'DA' ? 'Cash sales and stock at the dukas. Weights total 100.' : 'Credit sales and extension. Weights total 100.', set0.length) + '<ul class="plist2 sheet">' +
       (u.role === 'DA' ? dprios() : prios()).map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
     if (u.role === 'DA' || !(u.areas || u.zones || u.tas) || !dprios().length) return ta;
-    return ta + '<section class="sec"><div class="sh"><h2>Duka priorities</h2><p class="sub">Done by the Duka Assistants: cash sales and stock at the dukas. A separate set with its own weights.</p></div><ul class="plist2 sheet">' + dprios().map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
+    return ta + '<section class="sec">' + secHead('shop', 'Duka priorities', 'Done by the Duka Assistants: cash sales and stock at the dukas. A separate set with its own weights.', dprios().length) + '<ul class="plist2 sheet">' + dprios().map(function (p) { return prioLine(u, p); }).join('') + '</ul></section>';
   }
   function childRow(c) {
     var v = scoreOf(c), w = weakest(c), dv = c.areas || c.zones || c.tas ? dukaScoreOf(c) : null;
@@ -1314,9 +1335,9 @@
     var kids = childrenOf(u); if (!kids.length) return '';
     var terr = kids.filter(function (c) { return c.role !== 'DA'; }), das = kids.filter(function (c) { return c.role === 'DA'; });
     var lv = u.areas ? 'Areas' : u.zones ? 'Zones' : 'Territories';
-    var h = '<section class="sec"><h2>' + lv + ' in ' + esc(u.name) + '</h2><p class="sub">Lowest first. Tap one to open it.</p><ul class="clist">' +
+    var h = '<section class="sec">' + secHead('pin', lv + ' in ' + esc(u.name), 'Lowest first. Tap one to open it.', terr.length) + '<ul class="clist">' +
       terr.slice().sort(function (a, b) { var da = dukaScoreOf(a), db = dukaScoreOf(b); return Math.min(scoreOf(a), da == null ? 1e9 : da) - Math.min(scoreOf(b), db == null ? 1e9 : db); }).map(childRow).join('') + '</ul>';
-    if (das.length) h += '<h3 class="sec2">Duka Assistants in ' + esc(u.name) + '</h3><ul class="clist">' + das.slice().sort(function (a, b) { return scoreOf(a) - scoreOf(b); }).map(childRow).join('') + '</ul>';
+    if (das.length) h += '<div class="sec">' + secHead('shop', 'Duka Assistants in ' + esc(u.name), 'Cash sales and stock at the dukas.', das.length) + '</div><ul class="clist">' + das.slice().sort(function (a, b) { return scoreOf(a) - scoreOf(b); }).map(childRow).join('') + '</ul>';
     return h + '</section>';
   }
   function waitingHTML() {
@@ -1341,15 +1362,15 @@
     S.ta = t.id; S.zone = t.zoneId;
     var r = comp(S.region).byTA[t.id], pl = peekPlan(t.id), days = pl ? effDays(pl, r) : r.plan.days, mine = S.role === 'ta';
     var h = unitCard(t) + prioList(t);
-    h += '<section class="sec"><h2>' + (mine ? 'Your plan' : 'The plan') + ' for the rest of the week</h2><div class="planhd">' + planChip(t.id) +
+    h += '<section class="sec">' + secHead('calendar', (mine ? 'Your plan' : 'The plan') + ' for the rest of the week', '') + '<div class="planhd">' + planChip(t.id) +
       (mine ? (!pl || pl.status === 'proposed' ? ' <button class="btn solid" data-act="accept">Accept this plan</button>' : '') + ' <button class="btn" data-tab="week">Change the plan</button>' : ' <button class="btn" data-tab="week">Open the full plan</button>') + '</div>' + dayBlocks(days) + '</section>';
     return h;
   }
   function daHome(o) {
     S.ta = o.id; S.zone = o.zoneId;
     var r = comp(S.region).byDA[o.id], h = unitCard(o) + prioList(o);
-    h += S.role === 'da' ? planSection(r, dprios()) : '<section class="sec"><h2>The plan for the rest of the week</h2><div class="planhd">' + planChip(o.id) + '</div>' + dayBlocks(effDays(peekPlan(o.id) || {}, r)) + '</section>';
-    h += '<section class="sec"><h2>' + (S.role === 'da' ? 'Your dukas' : 'Dukas') + '</h2><ul class="clist">' + o.dukas.map(function (d) { return '<li class="crow static"><span class="cr-n"><b>' + esc(d.name) + '</b><small>' + esc(d.village) + '</small></span></li>'; }).join('') + '</ul></section>';
+    h += S.role === 'da' ? planSection(r, dprios()) : '<section class="sec">' + secHead('calendar', 'The plan for the rest of the week', '') + '<div class="planhd">' + planChip(o.id) + '</div>' + dayBlocks(effDays(peekPlan(o.id) || {}, r)) + '</section>';
+    h += '<section class="sec">' + secHead('shop', S.role === 'da' ? 'Your dukas' : 'Dukas', '', o.dukas.length) + '<ul class="clist">' + o.dukas.map(function (d) { return '<li class="crow static"><span class="cr-n"><b>' + esc(d.name) + '</b><small>' + esc(d.village) + '</small></span></li>'; }).join('') + '</ul></section>';
     return h;
   }
   function viewHome() {
@@ -1379,7 +1400,7 @@
   }
   /* calendar of weeks: pick one to see or set its priorities ahead of time */
   function calendarHTML() {
-    var h = '<section class="cal" aria-label="Weeks"><div class="sh"><h2>Weeks</h2><p class="sub">' + (S.role === 'rm' ? 'Pick a week to see its results or set its priorities ahead of time.' : 'Pick a week to see its priorities.') + '</p></div><div class="cal-strip" role="list">';
+    var h = '<section class="cal" aria-label="Weeks">' + secHead('week', 'Weeks', S.role === 'rm' ? 'Pick a week to see its results or set its priorities ahead of time.' : 'Pick a week to see its priorities.') + '<div class="cal-strip" role="list">';
     WEEKS.forEach(function (w, i) {
       var st = wkStatus(i), cls = st === 'Published' ? 'c-done' : st === 'Draft' ? 'c-slip' : st === 'Results' ? 'c-on' : st === 'Closed' ? 'c-done' : 'c-none';
       h += '<button class="cal-w" role="listitem" data-act="pickWeek" data-wk="' + i + '" aria-current="' + (i === S.wk ? 'true' : 'false') + '"><small>' + esc(w[2]) + '</small><b>' + esc(w[0]) + '</b><span class="muted">to ' + esc(w[1]) + '</span><span class="chip ' + cls + '">' + st + '</span></button>';
@@ -1484,8 +1505,8 @@
   /* ---------- shell ---------- */
   function shell() {
     var h = '<header class="hd"><div class="hd-row"><div class="brand"><img class="logo" src="../tupande-farm-planner/assets/tupande-by-oaf-horizontal.png" alt="Tupande by One Acre Fund" width="900" height="267"><div class="prod"><b>Work Planning</b><small>Prototype · made-up data · <span id="saveSt" class="savest" role="status"></span></small></div></div>' +
-      '<div class="ctl who"><label class="lab" for="roleSel">Demo: view as</label><select id="roleSel">' + ROLES.map(function (r) { return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join('') + '</select><select id="whoSel" aria-label="Which one"></select></div></div>' +
-      '<div class="hd-row hd-sub"><nav class="path" id="path" aria-label="Where you are"></nav><span class="bsp"></span>' +
+      '<div class="ctl who"><span class="demo-tag">Demo</span><label class="lab" for="roleSel">View as</label><select id="roleSel">' + ROLES.map(function (r) { return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join('') + '</select><select id="whoSel" aria-label="Which one"></select></div></div>' +
+      '<div class="ctxband"><nav class="path" id="path" aria-label="Where you are"></nav><span class="bsp"></span>' +
       '<div class="wkpick"><label class="lab" for="wkSel">Week</label><select id="wkSel"></select><span id="dayCtl" class="dayctl"><label class="lab" for="daySel">Up to</label><select id="daySel">' +
       DAYS.map(function (d, i) { return '<option value="' + i + '">' + DAYS_LONG[i] + '</option>'; }).join('') + '</select></span></div></div>';
     h += '</header>' +
@@ -1498,7 +1519,7 @@
     MAIN_TABS.forEach(function (t) {
       if (allowed.indexOf(t) < 0) return;
       var n = t === 'team' ? np : t === 'priorities' ? na : 0;
-      h += '<button data-tab="' + t + '" aria-selected="' + (t === S.tab) + '">' + esc(tabLabel(t)) + (n ? ' <span class="badge" aria-label="' + n + ' waiting">' + n + '</span>' : '') + '</button>';
+      h += '<button data-tab="' + t + '" aria-selected="' + (t === S.tab) + '"><span class="tab-ic">' + uic(t === 'home' ? (S.role === 'ta' || S.role === 'da' ? 'calendar' : 'home') : t === 'priorities' ? 'target' : 'check') + '</span><span class="tl-long">' + esc(tabLabel(t)) + '</span><span class="tl-short" aria-hidden="true">' + esc(t === 'team' ? 'Plans' : tabLabel(t)) + '</span>' + (n ? ' <span class="badge" aria-label="' + n + ' waiting">' + n + '</span>' : '') + '</button>';
     });
     var more = allowed.filter(function (t) { return MAIN_TABS.indexOf(t) < 0; });
     if (more.length) {
@@ -1534,6 +1555,20 @@
     }).join('');
   }
 
+  var VHEAD = {
+    priorities: ['target', 'Plan', 'Set the week’s priorities, accept them or adjust the weights.'],
+    team: ['check', 'Act', 'Plans sent for approval, and how each territory and Duka Assistant stands.'],
+    overview: ['globe', 'More', 'Every region side by side, with what each RM set.'],
+    cascade: ['table', 'More', 'The full table, from region down to each territory.'],
+    review: ['chart', 'More', 'A card per priority, with the score day by day.'],
+    trend: ['trend', 'More', 'Eight weeks of results, and whether priorities lifted the numbers.'],
+    week: ['calendar', 'More', 'A territory’s plan in full, with every block and why it is there.'],
+    data: ['info', 'More', 'Where the numbers come from and how the engine works.']
+  };
+  function viewHead() {
+    var v = VHEAD[S.tab]; if (!v) return '';
+    return '<header class="vhead"><span class="vh-ic">' + uic(v[0]) + '</span><div><span class="vh-ey">' + v[1] + ' · ' + esc(unitName(curUnit())) + '</span><h1>' + esc(tabLabel(S.tab)) + '</h1><p>' + esc(v[2]) + '</p></div></header>';
+  }
   function render() {
     ACC_SET = 'ta';
     ensure();
@@ -1544,7 +1579,7 @@
     $('wkSel').value = String(S.wk); $('dayCtl').hidden = S.wk !== 1; $('daySel').value = String(S.day);
     $('path').innerHTML = pathHTML();
     $('tabs').innerHTML = tabsHTML();
-    $('view').innerHTML = (S.wk !== 1 && S.tab !== 'priorities' && S.tab !== 'data' && S.tab !== 'home') ? offWeek() : VIEWS[S.tab]();
+    $('view').innerHTML = viewHead() + ((S.wk !== 1 && S.tab !== 'priorities' && S.tab !== 'data' && S.tab !== 'home') ? offWeek() : VIEWS[S.tab]());
     try { history.replaceState(null, '', '#' + S.tab); } catch (e) { /* hash is a convenience only */ }
   }
 

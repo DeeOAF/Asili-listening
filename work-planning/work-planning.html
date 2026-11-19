@@ -1859,8 +1859,8 @@ body::before { background: var(--bg); }
   };
   /* the Tupande Farm Planner (same repo, Vercel). On that site link relatively; everywhere else, absolute. */
   var FARM_URL = 'https://asili-listen.vercel.app/planner/';
-  /* on any Vercel deployment of this repo the planner sits at /planner/ on the same site */
-  function farmUrl() { try { if (/\.vercel\.app$/.test(location.hostname)) return '/planner/'; } catch (e) { /* no location */ } return FARM_URL; }
+  /* the planner lives on the asili-listen site; link relatively only when Work Planning is served from that same site */
+  function farmUrl() { try { if (location.hostname === 'asili-listen.vercel.app') return '/planner/'; } catch (e) { /* no location */ } return FARM_URL; }
   function farmLink(text) { return '<a class="farmlink" href="' + farmUrl() + '" target="_blank" rel="noopener">' + uic('leafy') + '<span>' + esc(text) + '</span><span class="ext" aria-hidden="true">↗</span><span class="sr"> (opens in a new tab)</span></a>'; }
   function farmCard(lead) {
     return '<aside class="farmcard"><span class="fc-ic">' + uic('leafy') + '</span><div class="fc-b"><span class="fc-ey">Enrolment tool</span><h3>Tupande Farm Planner</h3><p>' + esc(lead) + '</p></div>' +

@@ -1,2 +1,0 @@
-{ "name": "work-planning-prototype", "version": "0.10.0", "private": true,
-  "scripts": { "build": "node build.js", "test": "node test.js", "open": "node build.js && echo open work-planning.html" } }
